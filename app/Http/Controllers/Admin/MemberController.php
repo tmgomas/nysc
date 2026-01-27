@@ -102,7 +102,7 @@ class MemberController extends Controller
 
     public function show(Member $member)
     {
-        $member->load(['user', 'sports', 'payments', 'attendances']);
+        $member->load(['user', 'sports', 'payments', 'attendances', 'paymentSchedules']);
         $stats = $this->memberService->getStatistics($member);
 
         return Inertia::render('Admin/Members/Show', [

@@ -35,6 +35,14 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 
 interface Sport {
     id: string;
@@ -93,6 +101,26 @@ interface Member {
     // Meta
     created_at: string;
     updated_at: string;
+    payments: Payment[];
+    payment_schedules: PaymentSchedule[];
+}
+
+interface Payment {
+    id: string;
+    amount: number;
+    type: string;
+    status: string;
+    month_year: string | null;
+    created_at: string;
+    paid_date: string;
+}
+
+interface PaymentSchedule {
+    id: string;
+    month_year: string;
+    amount: number;
+    status: string;
+    due_date: string;
 }
 
 interface Props {
@@ -117,6 +145,27 @@ export default function Show({ member, stats }: Props) {
     const [suspendReason, setSuspendReason] = useState('');
     const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
     const [processing, setProcessing] = useState(false);
+    const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+    const [paymentMonth, setPaymentMonth] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState('cash');
+
+    const handlePayment = () => {
+        if (!paymentMonth) return;
+        setProcessing(true);
+        router.post(`/admin/payments`, {
+            member_id: member.id,
+            type: 'monthly',
+            payment_method: paymentMethod,
+            month_year: paymentMonth,
+        }, {
+            onSuccess: () => {
+                setIsPaymentOpen(false);
+                setProcessing(false);
+                setPaymentMonth('');
+            },
+            onError: () => setProcessing(false)
+        });
+    };
 
     const handleApprove = () => {
         setProcessing(true);
@@ -288,6 +337,63 @@ export default function Show({ member, stats }: Props) {
                         </div>
                     </div>
 
+                    {/* Payment Dialog */}
+                    <Dialog open={isPaymentOpen} onOpenChange={setIsPaymentOpen}>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Record Monthly Payment</DialogTitle>
+                                <DialogDescription>
+                                    Record a manual payment for a specific month.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-4 space-y-4">
+                                <div className="space-y-2">
+                                    <Label>Select Month</Label>
+                                    <Select value={paymentMonth} onValueChange={setPaymentMonth}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select month to pay" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {member.payment_schedules
+                                                .filter(s => s.status === 'pending')
+                                                .map(schedule => (
+                                                    <SelectItem key={schedule.id} value={schedule.month_year}>
+                                                        {schedule.month_year} (Rs. {schedule.amount})
+                                                    </SelectItem>
+                                                ))}
+                                            {member.payment_schedules.filter(s => s.status === 'pending').length === 0 && (
+                                                <SelectItem value="" disabled>No pending schedules</SelectItem>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Payment Method</Label>
+                                    <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="cash">Cash</SelectItem>
+                                            <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                                            <SelectItem value="online">Online</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="p-4 bg-muted rounded text-sm">
+                                    <span className="font-semibold">Fee Amount:</span> Rs. {stats.total_monthly_fee.toFixed(2)}
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsPaymentOpen(false)}>Cancel</Button>
+                                <Button onClick={handlePayment} disabled={processing || !paymentMonth}>
+                                    {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Record Payment
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+
                     <div className="grid gap-6 lg:grid-cols-3">
                         {/* Left Column - Main Info */}
                         <div className="space-y-6 lg:col-span-2">
@@ -413,6 +519,104 @@ export default function Show({ member, stats }: Props) {
                                                 </Badge>
                                             </div>
                                         ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Payment History & Schedules */}
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between">
+                                    <CardTitle className="flex items-center gap-2">
+                                        <CreditCard className="h-5 w-5" />
+                                        Payments & Schedules
+                                    </CardTitle>
+                                    {member.status === 'active' && (
+                                        <Button size="sm" onClick={() => setIsPaymentOpen(true)}>
+                                            Record Payment
+                                        </Button>
+                                    )}
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    {/* Unpaid Schedules */}
+                                    <div>
+                                        <h4 className="font-semibold text-sm mb-3">Upcoming Due Payments</h4>
+                                        {member.payment_schedules && member.payment_schedules.filter(s => s.status === 'pending').length > 0 ? (
+                                            <div className="border rounded-lg overflow-hidden">
+                                                <table className="w-full text-sm text-left">
+                                                    <thead className="bg-muted/50">
+                                                        <tr>
+                                                            <th className="p-3 font-medium">Month</th>
+                                                            <th className="p-3 font-medium">Amount</th>
+                                                            <th className="p-3 font-medium">Due Date</th>
+                                                            <th className="p-3 font-medium">Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {member.payment_schedules.filter(s => s.status === 'pending').slice(0, 5).map(schedule => (
+                                                            <tr key={schedule.id} className="border-t">
+                                                                <td className="p-3">{schedule.month_year}</td>
+                                                                <td className="p-3">Rs. {schedule.amount}</td>
+                                                                <td className="p-3">{new Date(schedule.due_date).toLocaleDateString()}</td>
+                                                                <td className="p-3">
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-6 text-primary"
+                                                                        onClick={() => {
+                                                                            setPaymentMonth(schedule.month_year);
+                                                                            setIsPaymentOpen(true);
+                                                                        }}
+                                                                    >
+                                                                        Pay
+                                                                    </Button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        ) : (
+                                            <div className="text-sm text-muted-foreground p-4 text-center border rounded-lg border-dashed">
+                                                No pending payments found.
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Payment History */}
+                                    <div>
+                                        <h4 className="font-semibold text-sm mb-3">Recent Payment History</h4>
+                                        {member.payments && member.payments.length > 0 ? (
+                                            <div className="border rounded-lg overflow-hidden">
+                                                <table className="w-full text-sm text-left">
+                                                    <thead className="bg-muted/50">
+                                                        <tr>
+                                                            <th className="p-3 font-medium">Date</th>
+                                                            <th className="p-3 font-medium">Type</th>
+                                                            <th className="p-3 font-medium">Amount</th>
+                                                            <th className="p-3 font-medium">Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {member.payments.slice(0, 5).map(payment => (
+                                                            <tr key={payment.id} className="border-t">
+                                                                <td className="p-3">{new Date(payment.paid_date).toLocaleDateString()}</td>
+                                                                <td className="p-3 capitalize">{payment.type} {payment.month_year && `(${payment.month_year})`}</td>
+                                                                <td className="p-3">Rs. {payment.amount}</td>
+                                                                <td className="p-3">
+                                                                    <Badge variant="outline" className="text-xs">
+                                                                        {payment.status}
+                                                                    </Badge>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        ) : (
+                                            <div className="text-sm text-muted-foreground p-4 text-center border rounded-lg border-dashed">
+                                                No payment history.
+                                            </div>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>
