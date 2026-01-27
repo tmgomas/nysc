@@ -25,7 +25,7 @@ class PaymentService
      */
     public function calculateFees(Member $member, bool $includeAdmission = false): array
     {
-        $sportIds = $member->activeSports()->pluck('id')->toArray();
+        $sportIds = $member->activeSports()->pluck('sports.id')->toArray();
         return $this->calculateFee->execute($sportIds, $includeAdmission);
     }
 
@@ -66,7 +66,7 @@ class PaymentService
         $amount = 0;
 
         if ($sportId) {
-            $sport = $member->activeSports()->find($sportId);
+            $sport = $member->activeSports()->where('sports.id', $sportId)->first();
             if (!$sport) {
                 throw new \Exception("Sport not found or not active for this member");
             }
@@ -100,7 +100,7 @@ class PaymentService
         ?string $receiptUrl = null,
         ?string $referenceNumber = null
     ): Payment {
-        $sportIds = $member->activeSports()->pluck('id')->toArray();
+        $sportIds = $member->activeSports()->pluck('sports.id')->toArray();
         $bulkFees = $this->calculateFee->calculateBulkPayment($sportIds, $months);
 
         return $this->processPayment->execute(
