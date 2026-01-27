@@ -2,13 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\{Member, Payment};
+use App\Models\{Member, Payment, MemberPaymentSchedule};
 use App\Actions\{
     CalculateMembershipFeeAction,
     ProcessPaymentAction,
     GeneratePaymentScheduleAction
 };
-use App\Enums\{PaymentType, PaymentStatus};
+use App\Enums\{PaymentType, PaymentStatus, ScheduleStatus};
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -63,30 +63,61 @@ class PaymentService
         ?string $referenceNumber = null,
         ?string $sportId = null
     ): Payment {
-        $amount = 0;
-
+        // Option 1: Pay for specific sport
         if ($sportId) {
             $sport = $member->activeSports()->where('sports.id', $sportId)->first();
             if (!$sport) {
                 throw new \Exception("Sport not found or not active for this member");
             }
-            $amount = $sport->monthly_fee;
-        } else {
-            $fees = $this->calculateFees($member);
-            $amount = $fees['monthly_total'];
+
+            return $this->processPayment->execute(
+                $member,
+                PaymentType::MONTHLY,
+                $sport->monthly_fee,
+                $paymentMethod,
+                $monthYear,
+                1,
+                $receiptUrl,
+                $referenceNumber,
+                $sportId
+            );
         }
 
-        return $this->processPayment->execute(
-            $member,
-            PaymentType::MONTHLY,
-            $amount,
-            $paymentMethod,
-            $monthYear,
-            1,
-            $receiptUrl,
-            $referenceNumber,
-            $sportId
-        );
+        // Option 2: Pay for ALL active sports (Split into individual records)
+        $sports = $member->activeSports;
+        $payments = [];
+
+        DB::transaction(function () use ($member, $sports, $monthYear, $paymentMethod, $receiptUrl, $referenceNumber, &$payments) {
+            foreach ($sports as $sport) {
+                // Check if already paid for this month to avoid duplicates
+                $isPaid = MemberPaymentSchedule::where('member_id', $member->id)
+                    ->where('sport_id', $sport->id)
+                    ->where('month_year', $monthYear)
+                    ->where('status', ScheduleStatus::PAID)
+                    ->exists();
+
+                if ($isPaid) continue;
+
+                $payments[] = $this->processPayment->execute(
+                    $member,
+                    PaymentType::MONTHLY,
+                    $sport->monthly_fee,
+                    $paymentMethod,
+                    $monthYear,
+                    1,
+                    $receiptUrl,
+                    $referenceNumber,
+                    $sport->id
+                );
+            }
+        });
+
+        if (empty($payments)) {
+            throw new \Exception("No pending payments found for the selected month.");
+        }
+
+        // Return the last payment to satisfy return type (Controller handles response)
+        return end($payments);
     }
 
     /**
