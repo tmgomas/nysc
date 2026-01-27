@@ -1,0 +1,95 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\{Member, Payment};
+use App\Services\PaymentService;
+use App\Enums\{PaymentType, PaymentMethod};
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+
+class PaymentController extends Controller
+{
+    public function __construct(
+        protected PaymentService $paymentService
+    ) {}
+
+    public function index(Request $request)
+    {
+        $payments = Payment::with(['member.user'])
+            ->when($request->status, fn($q, $status) => $q->where('status', $status))
+            ->when($request->type, fn($q, $type) => $q->where('type', $type))
+            ->latest()
+            ->paginate(15);
+
+        return Inertia::render('Admin/Payments/Index', [
+            'payments' => $payments,
+            'filters' => $request->only(['status', 'type']),
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'member_id' => 'required|exists:members,id',
+            'type' => 'required|in:admission,monthly,bulk',
+            'payment_method' => 'required|in:cash,bank_transfer,online',
+            'month_year' => 'nullable|string',
+            'months_count' => 'nullable|integer|min:1',
+            'receipt_url' => 'nullable|url',
+            'reference_number' => 'nullable|string',
+        ]);
+
+        $member = Member::findOrFail($validated['member_id']);
+        $type = PaymentType::from($validated['type']);
+        $method = PaymentMethod::from($validated['payment_method']);
+
+        $payment = match($type) {
+            PaymentType::ADMISSION => $this->paymentService->processAdmissionPayment(
+                $member,
+                $method->value,
+                $validated['receipt_url'] ?? null,
+                $validated['reference_number'] ?? null
+            ),
+            PaymentType::MONTHLY => $this->paymentService->processMonthlyPayment(
+                $member,
+                $validated['month_year'],
+                $method->value,
+                $validated['receipt_url'] ?? null,
+                $validated['reference_number'] ?? null
+            ),
+            PaymentType::BULK => $this->paymentService->processBulkPayment(
+                $member,
+                $validated['months_count'],
+                $validated['month_year'],
+                $method->value,
+                $validated['receipt_url'] ?? null,
+                $validated['reference_number'] ?? null
+            ),
+        };
+
+        return redirect()->route('admin.payments.show', $payment)
+            ->with('success', 'Payment processed successfully');
+    }
+
+    public function verify(Payment $payment)
+    {
+        $this->paymentService->verifyPayment($payment);
+
+        return redirect()->back()
+            ->with('success', 'Payment verified');
+    }
+
+    public function reject(Request $request, Payment $payment)
+    {
+        $validated = $request->validate([
+            'reason' => 'required|string',
+        ]);
+
+        $this->paymentService->rejectPayment($payment, $validated['reason']);
+
+        return redirect()->back()
+            ->with('success', 'Payment rejected');
+    }
+}
