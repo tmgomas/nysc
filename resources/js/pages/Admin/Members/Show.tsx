@@ -406,7 +406,7 @@ export default function Show({ member, stats }: Props) {
                                     </Select>
                                 </div>
                                 <div className="p-4 bg-muted rounded text-sm">
-                                    <span className="font-semibold">Fee Amount:</span> Rs. {selectedAmount > 0 ? selectedAmount.toFixed(2) : '0.00'}
+                                    <span className="font-semibold">Fee Amount:</span> Rs. {Number(selectedAmount) > 0 ? Number(selectedAmount).toFixed(2) : '0.00'}
                                 </div>
                             </div>
                             <DialogFooter>
