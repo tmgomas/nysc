@@ -615,33 +615,37 @@ export default function Show({ member, stats }: Props) {
                                         {member.payment_schedules && member.payment_schedules.filter(s => s.status === 'pending').length > 0 ? (
                                             <div className="border rounded-lg overflow-hidden">
                                                 <table className="w-full text-sm text-left">
-                                                    <thead className="bg-muted/50">
+                                                    <thead className="bg-muted/50 text-muted-foreground font-medium">
                                                         <tr>
                                                             <th className="p-3 font-medium">Month</th>
                                                             <th className="p-3 font-medium">Sport</th>
-                                                            <th className="p-3 font-medium">Amount</th>
+                                                            <th className="p-3 font-medium text-right">Amount</th>
                                                             <th className="p-3 font-medium">Due Date</th>
-                                                            <th className="p-3 font-medium">Action</th>
+                                                            <th className="p-3 font-medium text-right">Action</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody>
+                                                    <tbody className="divide-y">
                                                         {member.payment_schedules.filter(s => s.status === 'pending').slice(0, 5).map(schedule => (
-                                                            <tr key={schedule.id} className="border-t">
-                                                                <td className="p-3">{schedule.month_year}</td>
-                                                                <td className="p-3 text-muted-foreground">{schedule.sport?.name || '-'}</td>
-                                                                <td className="p-3">Rs. {schedule.amount}</td>
-                                                                <td className="p-3">{new Date(schedule.due_date).toLocaleDateString()}</td>
+                                                            <tr key={schedule.id} className="hover:bg-muted/50 transition-colors">
+                                                                <td className="p-3 font-medium">{schedule.month_year}</td>
                                                                 <td className="p-3">
+                                                                    <Badge variant="outline" className="font-normal">
+                                                                        {schedule.sport?.name || 'General'}
+                                                                    </Badge>
+                                                                </td>
+                                                                <td className="p-3 text-right font-mono">Rs. {Number(schedule.amount).toFixed(2)}</td>
+                                                                <td className="p-3 text-muted-foreground">{new Date(schedule.due_date).toLocaleDateString()}</td>
+                                                                <td className="p-3 text-right">
                                                                     <Button
-                                                                        variant="ghost"
+                                                                        variant="outline"
                                                                         size="sm"
-                                                                        className="h-6 text-primary"
+                                                                        className="h-7 text-xs"
                                                                         onClick={() => {
                                                                             setSelectedScheduleId(schedule.id);
                                                                             setIsPaymentOpen(true);
                                                                         }}
                                                                     >
-                                                                        Pay
+                                                                        Pay Now
                                                                     </Button>
                                                                 </td>
                                                             </tr>
@@ -662,24 +666,41 @@ export default function Show({ member, stats }: Props) {
                                         {member.payments && member.payments.length > 0 ? (
                                             <div className="border rounded-lg overflow-hidden">
                                                 <table className="w-full text-sm text-left">
-                                                    <thead className="bg-muted/50">
+                                                    <thead className="bg-muted/50 text-muted-foreground font-medium">
                                                         <tr>
-                                                            <th className="p-3 font-medium">Date</th>
-                                                            <th className="p-3 font-medium">Type</th>
+                                                            <th className="p-3 font-medium">Paid Date</th>
+                                                            <th className="p-3 font-medium">Description</th>
                                                             <th className="p-3 font-medium">Sport</th>
-                                                            <th className="p-3 font-medium">Amount</th>
-                                                            <th className="p-3 font-medium">Status</th>
+                                                            <th className="p-3 font-medium text-right">Amount</th>
+                                                            <th className="p-3 font-medium text-right">Status</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody>
-                                                        {member.payments.slice(0, 5).map(payment => (
-                                                            <tr key={payment.id} className="border-t">
-                                                                <td className="p-3">{new Date(payment.paid_date).toLocaleDateString()}</td>
-                                                                <td className="p-3 capitalize">{payment.type} {payment.month_year && `(${payment.month_year})`}</td>
-                                                                <td className="p-3 text-muted-foreground">{payment.sport?.name || '-'}</td>
-                                                                <td className="p-3">Rs. {payment.amount}</td>
+                                                    <tbody className="divide-y">
+                                                        {member.payments.slice(0, 10).map(payment => (
+                                                            <tr key={payment.id} className="hover:bg-muted/50 transition-colors">
+                                                                <td className="p-3 text-muted-foreground">
+                                                                    {new Date(payment.paid_date).toLocaleDateString()}
+                                                                </td>
                                                                 <td className="p-3">
-                                                                    <Badge variant="outline" className="text-xs">
+                                                                    <span className="capitalize font-medium block text-foreground">
+                                                                        {payment.type}
+                                                                    </span>
+                                                                    {payment.month_year && (
+                                                                        <span className="text-xs text-muted-foreground">
+                                                                            For {payment.month_year}
+                                                                        </span>
+                                                                    )}
+                                                                </td>
+                                                                <td className="p-3">
+                                                                    <Badge variant="secondary" className="font-normal text-xs">
+                                                                        {payment.sport?.name || 'General'}
+                                                                    </Badge>
+                                                                </td>
+                                                                <td className="p-3 text-right font-mono">Rs. {Number(payment.amount).toFixed(2)}</td>
+                                                                <td className="p-3 text-right">
+                                                                    <Badge variant="outline" className={`text-xs ${payment.status === 'verified' ? 'border-green-500 text-green-600 bg-green-50' :
+                                                                            payment.status === 'paid' ? 'border-blue-500 text-blue-600 bg-blue-50' : ''
+                                                                        }`}>
                                                                         {payment.status}
                                                                     </Badge>
                                                                 </td>
