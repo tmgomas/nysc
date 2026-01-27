@@ -160,6 +160,27 @@ export default function Show({ member, stats }: Props) {
     const handlePayment = () => {
         if (!selectedScheduleId) return;
 
+        // Check if "ALL" option selected
+        if (selectedScheduleId.startsWith('ALL:')) {
+            const [_, monthYear] = selectedScheduleId.split(':');
+            setProcessing(true);
+            router.post(`/admin/payments`, {
+                member_id: member.id,
+                type: 'monthly',
+                payment_method: paymentMethod,
+                month_year: monthYear,
+                sport_id: null, // Indicates pay for all
+            }, {
+                onSuccess: () => {
+                    setIsPaymentOpen(false);
+                    setProcessing(false);
+                    setSelectedScheduleId('');
+                },
+                onError: () => setProcessing(false)
+            });
+            return;
+        }
+
         const schedule = member.payment_schedules.find(s => s.id === selectedScheduleId);
         if (!schedule) return;
 
@@ -183,9 +204,17 @@ export default function Show({ member, stats }: Props) {
     // Update selected amount when schedule changes
     React.useEffect(() => {
         if (selectedScheduleId) {
-            const schedule = member.payment_schedules.find(s => s.id === selectedScheduleId);
-            if (schedule) {
-                setSelectedAmount(schedule.amount);
+            if (selectedScheduleId.startsWith('ALL:')) {
+                const [_, monthYear] = selectedScheduleId.split(':');
+                const total = member.payment_schedules
+                    .filter(s => s.status === 'pending' && s.month_year === monthYear)
+                    .reduce((sum, s) => sum + Number(s.amount), 0);
+                setSelectedAmount(total);
+            } else {
+                const schedule = member.payment_schedules.find(s => s.id === selectedScheduleId);
+                if (schedule) {
+                    setSelectedAmount(schedule.amount);
+                }
             }
         } else {
             setSelectedAmount(stats.total_monthly_fee); // Default or explicit 0?
@@ -379,13 +408,31 @@ export default function Show({ member, stats }: Props) {
                                             <SelectValue placeholder="Select month/sport to pay" />
                                         </SelectTrigger>
                                         <SelectContent>
+                                            {/* Render "Pay All" options for months with multiple pending payments */}
+                                            {Array.from(new Set(member.payment_schedules.filter(s => s.status === 'pending').map(s => s.month_year)))
+                                                .map(month => {
+                                                    const schedules = member.payment_schedules.filter(s => s.status === 'pending' && s.month_year === month);
+                                                    if (schedules.length > 1) {
+                                                        const total = schedules.reduce((sum, s) => sum + Number(s.amount), 0);
+                                                        return (
+                                                            <SelectItem key={`ALL:${month}`} value={`ALL:${month}`} className="font-semibold text-primary">
+                                                                {month} - All Sports (Total Rs. {total.toFixed(2)})
+                                                            </SelectItem>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })}
+
+                                            {/* Divider if needed? No, Select handles it fine */}
+
                                             {member.payment_schedules
                                                 .filter(s => s.status === 'pending')
                                                 .map(schedule => (
                                                     <SelectItem key={schedule.id} value={schedule.id}>
-                                                        {schedule.month_year} - {schedule.sport?.name || 'General'} (Rs. {schedule.amount})
+                                                        {schedule.month_year} - {schedule.sport?.name || 'General'} (Rs. {Number(schedule.amount).toFixed(2)})
                                                     </SelectItem>
                                                 ))}
+
                                             {member.payment_schedules.filter(s => s.status === 'pending').length === 0 && (
                                                 <SelectItem value="" disabled>No pending schedules</SelectItem>
                                             )}

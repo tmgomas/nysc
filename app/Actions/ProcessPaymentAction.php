@@ -71,23 +71,17 @@ class ProcessPaymentAction
         for ($i = 0; $i < $monthsCount; $i++) {
             $monthYear = $startDate->copy()->addMonths($i)->format('Y-m');
 
-            $query = [
-                'member_id' => $member->id,
-                'month_year' => $monthYear,
-            ];
+            $query = MemberPaymentSchedule::where('member_id', $member->id)
+                ->where('month_year', $monthYear);
 
             if ($sportId) {
-                $query['sport_id'] = $sportId;
+                $query->where('sport_id', $sportId);
             }
 
-            MemberPaymentSchedule::updateOrCreate(
-                $query,
-                [
-                    'status' => ScheduleStatus::PAID,
-                    'payment_id' => $payment->id,
-                    'amount' => $payment->amount, // Optional: Update amount if it differs? Maybe not.
-                ]
-            );
+            $query->update([
+                'status' => ScheduleStatus::PAID,
+                'payment_id' => $payment->id,
+            ]);
         }
     }
 }
