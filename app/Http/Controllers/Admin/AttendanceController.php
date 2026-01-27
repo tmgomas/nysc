@@ -109,6 +109,75 @@ class AttendanceController extends Controller
     // Since check_in_time includes TIME, updateOrCreate won't find existing record for "today".
     // I should use explicit check.
 
+    public function scan(Request $request)
+    {
+        $validated = $request->validate([
+            'date' => 'required|date',
+            'sport_id' => 'required|exists:sports,id',
+            'member_number' => 'required|string',
+        ]);
+
+        $date = $validated['date'];
+        $sportId = $validated['sport_id'];
+        $memberNumber = $validated['member_number'];
+
+        $member = Member::where('member_number', $memberNumber)->first();
+
+        if (!$member) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Member not found.',
+            ], 404);
+        }
+
+        // Check if member is assigned to this sport
+        $hasSport = $member->sports()->where('sports.id', $sportId)->exists();
+        
+        if (!$hasSport) {
+            // Check if we should allow them anyway? For now, strict check.
+            return response()->json([
+                'success' => false,
+                'message' => "Member {$member->full_name} is not registered for this sport.",
+            ], 400);
+        }
+
+        if (!in_array($member->status, ['active', 'pending'])) {
+             return response()->json([
+                'success' => false,
+                'message' => "Member {$member->full_name} is {$member->status}.",
+            ], 400);
+        }
+
+        // Check if already marked
+        $attendance = Attendance::where('member_id', $member->id)
+            ->where('sport_id', $sportId)
+            ->whereDate('check_in_time', $date)
+            ->first();
+
+        if ($attendance) {
+            return response()->json([
+                'success' => true,
+                'message' => "Create: {$member->full_name} already marked present at " . $attendance->check_in_time->format('H:i'),
+                'member' => $member,
+                'already_marked' => true
+            ]);
+        }
+
+        Attendance::create([
+            'member_id' => $member->id,
+            'sport_id' => $sportId,
+            'check_in_time' => Carbon::now()->setDateFrom($date), // Use current time but selected date
+            'marked_by' => Auth::id(),
+            'method' => 'qr_code',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Marked Present: {$member->full_name}",
+            'member' => $member,
+        ]);
+    }
+
     public function bulkMark(Request $request)
     {
         $validated = $request->validate([

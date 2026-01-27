@@ -52,6 +52,7 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
     
     // Attendance
     Route::get('attendance', [AdminAttendanceController::class, 'index'])->name('attendance.index');
+    Route::post('attendance/scan', [AdminAttendanceController::class, 'scan'])->name('attendance.scan');
     Route::post('attendance/mark', [AdminAttendanceController::class, 'mark'])->name('attendance.mark');
     Route::post('attendance/bulk', [AdminAttendanceController::class, 'bulkMark'])->name('attendance.bulk');
     

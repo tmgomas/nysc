@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,8 +14,12 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Save, Calendar as CalendarIcon, Filter, Search } from 'lucide-react';
+import { Loader2, Save, Calendar as CalendarIcon, Filter, Search, QrCode, XCircle, CheckCircle } from 'lucide-react';
 import { debounce } from 'lodash';
+import QrScanner from '@/components/RefactoredQrScanner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import axios from 'axios';
+import { route } from 'ziggy-js';
 
 interface Sport {
     id: string;
@@ -51,6 +55,20 @@ interface AttendanceState {
     check_in: string;
 }
 
+const apiPost = async (url: string, data: any) => {
+    const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrfToken || '',
+        },
+        body: JSON.stringify(data),
+    });
+    return response.json();
+};
+
 export default function Index({ sports, filters, members, currentDate }: Props) {
     const [selectedDate, setSelectedDate] = useState(filters.date || currentDate);
     const [selectedSportId, setSelectedSportId] = useState(filters.sport_id || '');
@@ -58,6 +76,11 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
     const [attendanceData, setAttendanceData] = useState<AttendanceState[]>([]);
     const [processing, setProcessing] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
+
+    // QR Scanning State
+    const [isScanning, setIsScanning] = useState(false);
+    const [lastScanned, setLastScanned] = useState<string | null>(null);
+    const [scanResult, setScanResult] = useState<{ success: boolean; message: string; member?: any } | null>(null);
 
     // Initialize state from props
     useEffect(() => {
@@ -76,11 +99,9 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
 
     // Handle Filters Change
     const applyFilters = (date: string, sportId: string) => {
-        router.get(
-            route('admin.attendance.index'),
-            { date, sport_id: sportId },
-            { preserveState: true, preserveScroll: true }
+        router.get('/admin/attendance', { date, sport_id: sportId }, { preserveState: true, preserveScroll: true }
         );
+
     };
 
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,7 +136,7 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
         if (!selectedSportId) return;
 
         setProcessing(true);
-        router.post(route('admin.attendance.bulk'), {
+        router.post('admin/attendance/bulk', {
             date: selectedDate,
             sport_id: selectedSportId,
             attendances: attendanceData.map(a => ({
@@ -129,6 +150,47 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                 setIsDirty(false);
             },
             onError: () => setProcessing(false) // Keep dirty state on error
+        });
+    };
+
+    // QR Scan Handler
+    const handleQrScan = (decodedText: string) => {
+        if (!selectedSportId || decodedText === lastScanned) return;
+
+        setLastScanned(decodedText);
+
+        // Play a beep sound (optional, but good for UX)
+        // const audio = new Audio('/beep.mp3'); audio.play().catch(e => {});
+
+        apiPost('admin/attendance/scan', {
+            date: selectedDate,
+            sport_id: selectedSportId,
+            member_number: decodedText
+        }).then(data => {
+            if (data.success) {
+                setScanResult({ success: true, message: data.message, member: data.member });
+
+                // Update local list if member is found in the current list
+                if (data.member) {
+                    setAttendanceData(prev => prev.map(item =>
+                        item.id === data.member.id ? { ...item, present: true, check_in: new Date().toLocaleTimeString('en-US', { hour12: false, hour: "2-digit", minute: "2-digit" }) } : item
+                    ));
+                    // Also silently refresh the full list from server to ensure sync
+                    router.reload({ only: ['members'] });
+                }
+            } else {
+                setScanResult({ success: false, message: data.message });
+            }
+
+            // Clear result message after delay
+            setTimeout(() => setScanResult(null), 3000);
+
+            // Allow re-scanning the same code after delay
+            setTimeout(() => setLastScanned(null), 4000);
+        }).catch(err => {
+            console.error(err);
+            setScanResult({ success: false, message: "Network error or invalid response." });
+            setLastScanned(null);
         });
     };
 
@@ -157,19 +219,21 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                                 Mark daily attendance for sports activities.
                             </p>
                         </div>
-                        <div className="flex items-center gap-3 bg-white p-2 rounded-lg shadow-sm border">
-                            <div className="flex items-center gap-2">
-                                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    type="date"
-                                    value={selectedDate}
-                                    onChange={handleDateChange}
-                                    className="w-40 border-0 shadow-none focus-visible:ring-0 px-0 h-9"
-                                />
+                        <div className="flex flex-col md:flex-row items-center gap-3 bg-white p-2 rounded-lg shadow-sm border">
+                            <div className="flex w-full md:w-auto gap-2">
+                                <div className="flex items-center gap-2 flex-1 md:flex-none">
+                                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        type="date"
+                                        value={selectedDate}
+                                        onChange={handleDateChange}
+                                        className="w-full md:w-40 border-0 shadow-none focus-visible:ring-0 px-0 h-9"
+                                    />
+                                </div>
+                                <div className="hidden md:block h-6 w-px bg-border" />
                             </div>
-                            <div className="h-6 w-px bg-border" />
                             <Select value={selectedSportId} onValueChange={handleSportChange}>
-                                <SelectTrigger className="w-[200px] border-0 shadow-none focus:ring-0 h-9">
+                                <SelectTrigger className="w-full md:w-[200px] border-0 shadow-none focus:ring-0 h-9">
                                     <SelectValue placeholder="Select Sport" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -178,12 +242,24 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                                     ))}
                                 </SelectContent>
                             </Select>
+
+                            <div className="hidden md:block h-6 w-px bg-border" />
+
+                            <Button
+                                variant="secondary"
+                                className="w-full md:w-auto bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border-indigo-200"
+                                onClick={() => setIsScanning(true)}
+                                disabled={!selectedSportId}
+                            >
+                                <QrCode className="mr-2 h-4 w-4" />
+                                Scan QR
+                            </Button>
                         </div>
                     </div>
 
                     {/* Main Content */}
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-4">
+                        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between pb-4 gap-4">
                             <div>
                                 <CardTitle>Mark Attendance</CardTitle>
                                 <CardDescription>
@@ -193,13 +269,13 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                                 </CardDescription>
                             </div>
                             {selectedSportId && (
-                                <div className="flex items-center gap-4">
+                                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4">
                                     <div className="relative">
                                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                         <Input
                                             type="search"
                                             placeholder="Search members..."
-                                            className="pl-9 w-[250px]"
+                                            className="pl-9 w-full md:w-[250px]"
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
                                         />
@@ -225,7 +301,7 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                                     <p>No active members found for this sport.</p>
                                 </div>
                             ) : (
-                                <div className="relative overflow-x-auto rounded-md border">
+                                <div className="relative overflow-x-auto rounded-md border text-left">
                                     <table className="w-full text-sm text-left">
                                         <thead className="bg-muted/50 text-muted-foreground font-medium">
                                             <tr>
@@ -247,11 +323,14 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                                                             <Checkbox
                                                                 checked={state.present}
                                                                 onCheckedChange={(checked) => togglePresent(member.id, checked as boolean)}
+                                                                id={`check-${member.id}`}
                                                             />
                                                         </td>
                                                         <td className="p-4">
-                                                            <div className="font-medium text-gray-900">{member.full_name}</div>
-                                                            <div className="text-muted-foreground text-xs">{member.member_number}</div>
+                                                            <Label htmlFor={`check-${member.id}`} className="cursor-pointer">
+                                                                <div className="font-medium text-gray-900">{member.full_name}</div>
+                                                                <div className="text-muted-foreground text-xs">{member.member_number}</div>
+                                                            </Label>
                                                         </td>
                                                         <td className="p-4">
                                                             <Input
@@ -280,6 +359,44 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                     </Card>
                 </div>
             </div>
+
+            {/* QR Scanner Modal */}
+            <Dialog open={isScanning} onOpenChange={setIsScanning}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Scan Member QR</DialogTitle>
+                        <DialogDescription>
+                            Point camera at the member's QR code card.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="py-4 space-y-4">
+                        {isScanning && (
+                            <QrScanner
+                                fps={10}
+                                qrbox={250}
+                                disableFlip={false}
+                                qrCodeSuccessCallback={handleQrScan}
+                            />
+                        )}
+
+                        {scanResult && (
+                            <div className={`p-4 rounded-md flex items-start gap-3 ${scanResult.success ? 'bg-green-50 text-green-900 border border-green-200' : 'bg-red-50 text-red-900 border border-red-200'}`}>
+                                {scanResult.success ? <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" /> : <XCircle className="h-5 w-5 text-red-600 mt-0.5" />}
+                                <div>
+                                    <h4 className="font-semibold text-sm">{scanResult.success ? 'Success' : 'Error'}</h4>
+                                    <p className="text-sm opacity-90">{scanResult.message}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="text-xs text-center text-muted-foreground">
+                            Scanning for: <span className="font-semibold text-gray-900">{sports.find(s => s.id == selectedSportId)?.name}</span>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
         </AppLayout>
     );
 }
