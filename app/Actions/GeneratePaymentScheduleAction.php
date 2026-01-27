@@ -19,10 +19,17 @@ class GeneratePaymentScheduleAction
     public function execute(Member $member, int $months = 12, ?Carbon $startDate = null): array
     {
         $startDate = $startDate ?? now()->addMonth()->startOfMonth();
-        $monthlyFee = $member->total_monthly_fee;
+        
+        if (!$member->relationLoaded('sports')) {
+            $member->load('sports');
+        }
 
-        if ($monthlyFee <= 0) {
-            throw new \Exception('Member has no active sports with monthly fees');
+        $activeSports = $member->sports->filter(function ($sport) {
+            return $sport->pivot->status === 'active';
+        });
+
+        if ($activeSports->isEmpty()) {
+            return []; // No active sports, no schedules
         }
 
         $schedules = [];
@@ -31,21 +38,25 @@ class GeneratePaymentScheduleAction
             $dueDate = $startDate->copy()->addMonths($i);
             $monthYear = $dueDate->format('Y-m');
 
-            // Check if schedule already exists
-            $existing = MemberPaymentSchedule::where('member_id', $member->id)
-                ->where('month_year', $monthYear)
-                ->first();
+            foreach ($activeSports as $sport) {
+                // Check if schedule already exists for this sport and month
+                $existing = MemberPaymentSchedule::where('member_id', $member->id)
+                    ->where('sport_id', $sport->id)
+                    ->where('month_year', $monthYear)
+                    ->first();
 
-            if (!$existing) {
-                $schedule = MemberPaymentSchedule::create([
-                    'member_id' => $member->id,
-                    'month_year' => $monthYear,
-                    'amount' => $monthlyFee,
-                    'status' => ScheduleStatus::PENDING,
-                    'due_date' => $dueDate->endOfMonth(),
-                ]);
+                if (!$existing) {
+                    $schedule = MemberPaymentSchedule::create([
+                        'member_id' => $member->id,
+                        'sport_id' => $sport->id,
+                        'month_year' => $monthYear,
+                        'amount' => $sport->monthly_fee,
+                        'status' => ScheduleStatus::PENDING,
+                        'due_date' => $dueDate->endOfMonth(),
+                    ]);
 
-                $schedules[] = $schedule;
+                    $schedules[] = $schedule;
+                }
             }
         }
 
@@ -53,17 +64,30 @@ class GeneratePaymentScheduleAction
     }
 
     /**
-     * Update schedule when member's sports change
+     * Update schedule when member's sports change or fees change
      */
     public function updateFutureSchedules(Member $member): int
     {
-        $newMonthlyFee = $member->total_monthly_fee;
-        
-        $updated = MemberPaymentSchedule::where('member_id', $member->id)
-            ->where('status', ScheduleStatus::PENDING)
-            ->where('due_date', '>', now())
-            ->update(['amount' => $newMonthlyFee]);
+        if (!$member->relationLoaded('sports')) {
+            $member->load('sports');
+        }
 
-        return $updated;
+        $count = 0;
+        $activeSports = $member->sports->filter(function ($sport) {
+            return $sport->pivot->status === 'active';
+        });
+
+        foreach ($activeSports as $sport) {
+            $count += MemberPaymentSchedule::where('member_id', $member->id)
+                ->where('sport_id', $sport->id)
+                ->where('status', ScheduleStatus::PENDING)
+                ->where('due_date', '>', now())
+                ->update(['amount' => $sport->monthly_fee]);
+        }
+
+        // Optional: We might want to cancel/delete schedules for sports that are no longer active
+        // But for now, we just update active ones.
+
+        return $count;
     }
 }

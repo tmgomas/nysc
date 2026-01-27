@@ -113,6 +113,9 @@ interface Payment {
     month_year: string | null;
     created_at: string;
     paid_date: string;
+    sport?: {
+        name: string;
+    };
 }
 
 interface PaymentSchedule {
@@ -121,6 +124,10 @@ interface PaymentSchedule {
     amount: number;
     status: string;
     due_date: string;
+    sport_id?: string;
+    sport?: {
+        name: string;
+    };
 }
 
 interface Props {
@@ -146,26 +153,44 @@ export default function Show({ member, stats }: Props) {
     const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
-    const [paymentMonth, setPaymentMonth] = useState('');
+    const [selectedScheduleId, setSelectedScheduleId] = useState('');
+    const [selectedAmount, setSelectedAmount] = useState<number>(0);
     const [paymentMethod, setPaymentMethod] = useState('cash');
 
     const handlePayment = () => {
-        if (!paymentMonth) return;
+        if (!selectedScheduleId) return;
+
+        const schedule = member.payment_schedules.find(s => s.id === selectedScheduleId);
+        if (!schedule) return;
+
         setProcessing(true);
         router.post(`/admin/payments`, {
             member_id: member.id,
             type: 'monthly',
             payment_method: paymentMethod,
-            month_year: paymentMonth,
+            month_year: schedule.month_year,
+            sport_id: schedule.sport_id,
         }, {
             onSuccess: () => {
                 setIsPaymentOpen(false);
                 setProcessing(false);
-                setPaymentMonth('');
+                setSelectedScheduleId('');
             },
             onError: () => setProcessing(false)
         });
     };
+
+    // Update selected amount when schedule changes
+    React.useEffect(() => {
+        if (selectedScheduleId) {
+            const schedule = member.payment_schedules.find(s => s.id === selectedScheduleId);
+            if (schedule) {
+                setSelectedAmount(schedule.amount);
+            }
+        } else {
+            setSelectedAmount(stats.total_monthly_fee); // Default or explicit 0?
+        }
+    }, [selectedScheduleId, member.payment_schedules]);
 
     const handleApprove = () => {
         setProcessing(true);
@@ -348,17 +373,17 @@ export default function Show({ member, stats }: Props) {
                             </DialogHeader>
                             <div className="py-4 space-y-4">
                                 <div className="space-y-2">
-                                    <Label>Select Month</Label>
-                                    <Select value={paymentMonth} onValueChange={setPaymentMonth}>
+                                    <Label>Select Payment</Label>
+                                    <Select value={selectedScheduleId} onValueChange={setSelectedScheduleId}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select month to pay" />
+                                            <SelectValue placeholder="Select month/sport to pay" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {member.payment_schedules
                                                 .filter(s => s.status === 'pending')
                                                 .map(schedule => (
-                                                    <SelectItem key={schedule.id} value={schedule.month_year}>
-                                                        {schedule.month_year} (Rs. {schedule.amount})
+                                                    <SelectItem key={schedule.id} value={schedule.id}>
+                                                        {schedule.month_year} - {schedule.sport?.name || 'General'} (Rs. {schedule.amount})
                                                     </SelectItem>
                                                 ))}
                                             {member.payment_schedules.filter(s => s.status === 'pending').length === 0 && (
@@ -381,12 +406,12 @@ export default function Show({ member, stats }: Props) {
                                     </Select>
                                 </div>
                                 <div className="p-4 bg-muted rounded text-sm">
-                                    <span className="font-semibold">Fee Amount:</span> Rs. {stats.total_monthly_fee.toFixed(2)}
+                                    <span className="font-semibold">Fee Amount:</span> Rs. {selectedAmount > 0 ? selectedAmount.toFixed(2) : '0.00'}
                                 </div>
                             </div>
                             <DialogFooter>
                                 <Button variant="outline" onClick={() => setIsPaymentOpen(false)}>Cancel</Button>
-                                <Button onClick={handlePayment} disabled={processing || !paymentMonth}>
+                                <Button onClick={handlePayment} disabled={processing || !selectedScheduleId}>
                                     {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Record Payment
                                 </Button>
@@ -546,6 +571,7 @@ export default function Show({ member, stats }: Props) {
                                                     <thead className="bg-muted/50">
                                                         <tr>
                                                             <th className="p-3 font-medium">Month</th>
+                                                            <th className="p-3 font-medium">Sport</th>
                                                             <th className="p-3 font-medium">Amount</th>
                                                             <th className="p-3 font-medium">Due Date</th>
                                                             <th className="p-3 font-medium">Action</th>
@@ -555,6 +581,7 @@ export default function Show({ member, stats }: Props) {
                                                         {member.payment_schedules.filter(s => s.status === 'pending').slice(0, 5).map(schedule => (
                                                             <tr key={schedule.id} className="border-t">
                                                                 <td className="p-3">{schedule.month_year}</td>
+                                                                <td className="p-3 text-muted-foreground">{schedule.sport?.name || '-'}</td>
                                                                 <td className="p-3">Rs. {schedule.amount}</td>
                                                                 <td className="p-3">{new Date(schedule.due_date).toLocaleDateString()}</td>
                                                                 <td className="p-3">
@@ -563,7 +590,7 @@ export default function Show({ member, stats }: Props) {
                                                                         size="sm"
                                                                         className="h-6 text-primary"
                                                                         onClick={() => {
-                                                                            setPaymentMonth(schedule.month_year);
+                                                                            setSelectedScheduleId(schedule.id);
                                                                             setIsPaymentOpen(true);
                                                                         }}
                                                                     >
@@ -592,6 +619,7 @@ export default function Show({ member, stats }: Props) {
                                                         <tr>
                                                             <th className="p-3 font-medium">Date</th>
                                                             <th className="p-3 font-medium">Type</th>
+                                                            <th className="p-3 font-medium">Sport</th>
                                                             <th className="p-3 font-medium">Amount</th>
                                                             <th className="p-3 font-medium">Status</th>
                                                         </tr>
@@ -601,6 +629,7 @@ export default function Show({ member, stats }: Props) {
                                                             <tr key={payment.id} className="border-t">
                                                                 <td className="p-3">{new Date(payment.paid_date).toLocaleDateString()}</td>
                                                                 <td className="p-3 capitalize">{payment.type} {payment.month_year && `(${payment.month_year})`}</td>
+                                                                <td className="p-3 text-muted-foreground">{payment.sport?.name || '-'}</td>
                                                                 <td className="p-3">Rs. {payment.amount}</td>
                                                                 <td className="p-3">
                                                                     <Badge variant="outline" className="text-xs">

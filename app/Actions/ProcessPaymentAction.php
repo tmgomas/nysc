@@ -21,7 +21,8 @@ class ProcessPaymentAction
         ?string $monthYear = null,
         int $monthsCount = 1,
         ?string $receiptUrl = null,
-        ?string $referenceNumber = null
+        ?string $referenceNumber = null,
+        ?string $sportId = null
     ): Payment {
         $dueDate = $monthYear 
             ? Carbon::createFromFormat('Y-m', $monthYear)->endOfMonth()
@@ -29,6 +30,7 @@ class ProcessPaymentAction
 
         $payment = Payment::create([
             'member_id' => $member->id,
+            'sport_id' => $sportId,
             'type' => $type,
             'amount' => $amount,
             'month_year' => $monthYear,
@@ -43,7 +45,7 @@ class ProcessPaymentAction
 
         // Update payment schedules if monthly or bulk payment
         if ($type === PaymentType::MONTHLY || $type === PaymentType::BULK) {
-            $this->updateSchedules($member, $payment, $monthYear, $monthsCount);
+            $this->updateSchedules($member, $payment, $monthYear, $monthsCount, $sportId);
         }
 
         // Log the payment
@@ -51,6 +53,7 @@ class ProcessPaymentAction
             'payment_id' => $payment->id,
             'type' => $type->value,
             'amount' => $amount,
+            'sport_id' => $sportId,
         ]);
 
         return $payment;
@@ -59,7 +62,7 @@ class ProcessPaymentAction
     /**
      * Update payment schedules after payment
      */
-    protected function updateSchedules(Member $member, Payment $payment, ?string $startMonthYear, int $monthsCount): void
+    protected function updateSchedules(Member $member, Payment $payment, ?string $startMonthYear, int $monthsCount, ?string $sportId = null): void
     {
         $startDate = $startMonthYear 
             ? Carbon::createFromFormat('Y-m', $startMonthYear)
@@ -68,14 +71,21 @@ class ProcessPaymentAction
         for ($i = 0; $i < $monthsCount; $i++) {
             $monthYear = $startDate->copy()->addMonths($i)->format('Y-m');
 
+            $query = [
+                'member_id' => $member->id,
+                'month_year' => $monthYear,
+            ];
+
+            if ($sportId) {
+                $query['sport_id'] = $sportId;
+            }
+
             MemberPaymentSchedule::updateOrCreate(
-                [
-                    'member_id' => $member->id,
-                    'month_year' => $monthYear,
-                ],
+                $query,
                 [
                     'status' => ScheduleStatus::PAID,
                     'payment_id' => $payment->id,
+                    'amount' => $payment->amount, // Optional: Update amount if it differs? Maybe not.
                 ]
             );
         }

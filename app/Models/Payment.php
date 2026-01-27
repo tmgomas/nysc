@@ -16,6 +16,7 @@ class Payment extends Model
 
     protected $fillable = [
         'member_id',
+        'sport_id', // Added
         'type',
         'amount',
         'month_year',
@@ -46,6 +47,11 @@ class Payment extends Model
     public function member()
     {
         return $this->belongsTo(Member::class);
+    }
+
+    public function sport()
+    {
+        return $this->belongsTo(Sport::class);
     }
 
     public function verifiedBy()

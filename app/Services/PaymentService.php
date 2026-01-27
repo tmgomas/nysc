@@ -60,19 +60,32 @@ class PaymentService
         string $monthYear,
         string $paymentMethod,
         ?string $receiptUrl = null,
-        ?string $referenceNumber = null
+        ?string $referenceNumber = null,
+        ?string $sportId = null
     ): Payment {
-        $fees = $this->calculateFees($member);
+        $amount = 0;
+
+        if ($sportId) {
+            $sport = $member->activeSports()->find($sportId);
+            if (!$sport) {
+                throw new \Exception("Sport not found or not active for this member");
+            }
+            $amount = $sport->monthly_fee;
+        } else {
+            $fees = $this->calculateFees($member);
+            $amount = $fees['monthly_total'];
+        }
 
         return $this->processPayment->execute(
             $member,
             PaymentType::MONTHLY,
-            $fees['monthly_total'],
+            $amount,
             $paymentMethod,
             $monthYear,
             1,
             $receiptUrl,
-            $referenceNumber
+            $referenceNumber,
+            $sportId
         );
     }
 
