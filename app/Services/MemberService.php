@@ -143,14 +143,10 @@ class MemberService
                         'type' => \App\Enums\PaymentType::ADMISSION,
                         'amount' => $additionalAdmissionFee,
                         'month_year' => now()->format('Y-m'),
-                        'status' => \App\Enums\PaymentStatus::PENDING, // Pending until paid
-                        'paid_date' => now(), // Required field usually, but for pending maybe null? Checking model... 
-                                              // Model casts to date. Let's keep it null if nullable or safe default.
-                                              // Looking at Approve logic, it sets paid_date to now().
-                                              // But status is PENDING here. 
-                                              // Let's check Payment migration if paid_date is nullable.
-                        'due_date' => now(),
-                        'payment_method' => \App\Enums\PaymentMethod::CASH, // Default placeholder
+                        'status' => \App\Enums\PaymentStatus::PENDING,
+                        'due_date' => now()->addDays(7), // Give 7 days to pay
+                        'paid_date' => null, // Not paid yet
+                        'payment_method' => null, // Will be set when paid
                         'notes' => 'Admission fee for newly added sports: ' . $addedSports->pluck('name')->implode(', '),
                     ]);
                 }

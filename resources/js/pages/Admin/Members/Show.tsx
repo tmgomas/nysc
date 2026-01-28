@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
+import { showConfirm, showInput, showLoading, closeLoading } from '@/utils/sweetalert'
 
 interface Sport {
     id: string;
@@ -176,17 +177,32 @@ export default function Show({ member, stats, availableSports }: Props) {
         }
     }, [isEditSportsOpen, member]);
 
-    const handleUpdateSports = () => {
-        setProcessing(true);
-        router.put(route('admin.members.update-sports', member.id), {
-            sport_ids: selectedSports
-        }, {
-            onSuccess: () => {
-                setIsEditSportsOpen(false);
-                setProcessing(false);
-            },
-            onError: () => setProcessing(false)
-        });
+    const handleUpdateSports = async () => {
+        // Close modal first to avoid z-index issues with Sweet Alert
+        setIsEditSportsOpen(false);
+
+        // Small delay to ensure modal is fully closed
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const result = await showConfirm(
+            'Update Sports?',
+            'This will update the member\'s enrolled sports and generate new payment schedules if needed.'
+        );
+
+        if (result.isConfirmed) {
+            showLoading('Updating sports...', 'Please wait');
+            router.put(route('admin.members.update-sports', member.id), {
+                sport_ids: selectedSports
+            }, {
+                onSuccess: () => {
+                    closeLoading();
+                },
+                onFinish: () => closeLoading()
+            });
+        } else {
+            // If cancelled, reopen the modal
+            setIsEditSportsOpen(true);
+        }
     };
 
     const toggleSport = (sportId: string) => {
@@ -197,13 +213,30 @@ export default function Show({ member, stats, availableSports }: Props) {
         );
     };
 
-    const handlePayment = () => {
+    const handlePayment = async () => {
         if (!selectedScheduleId) return;
+
+        // Close modal first to avoid z-index issues
+        setIsPaymentOpen(false);
+
+        // Small delay to ensure modal is fully closed
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const confirmed = await showConfirm(
+            'Record Payment?',
+            'Do you want to record this payment?'
+        );
+
+        if (!confirmed.isConfirmed) {
+            // If cancelled, reopen the modal
+            setIsPaymentOpen(true);
+            return;
+        }
 
         // Check if "ALL" option selected
         if (selectedScheduleId.startsWith('ALL:')) {
             const [_, monthYear] = selectedScheduleId.split(':');
-            setProcessing(true);
+            showLoading('Recording payment...', 'Please wait');
             router.post(`/admin/payments`, {
                 member_id: member.id,
                 type: 'monthly',
@@ -212,27 +245,23 @@ export default function Show({ member, stats, availableSports }: Props) {
                 sport_id: null, // Indicates pay for all
             }, {
                 onSuccess: () => {
-                    setIsPaymentOpen(false);
-                    setProcessing(false);
                     setSelectedScheduleId('');
                 },
-                onError: () => setProcessing(false)
+                onFinish: () => closeLoading()
             });
             return;
         }
 
         if (selectedScheduleId.startsWith('PAYMENT:')) {
             const paymentId = selectedScheduleId.split(':')[1];
-            setProcessing(true);
+            showLoading('Recording payment...', 'Please wait');
             router.put(route('admin.payments.mark-as-paid', paymentId), {
                 payment_method: paymentMethod
             }, {
                 onSuccess: () => {
-                    setIsPaymentOpen(false);
-                    setProcessing(false);
                     setSelectedScheduleId('');
                 },
-                onError: () => setProcessing(false)
+                onFinish: () => closeLoading()
             });
             return;
         }
@@ -240,7 +269,7 @@ export default function Show({ member, stats, availableSports }: Props) {
         const schedule = member.payment_schedules.find(s => s.id === selectedScheduleId);
         if (!schedule) return;
 
-        setProcessing(true);
+        showLoading('Recording payment...', 'Please wait');
         router.post(`/admin/payments`, {
             member_id: member.id,
             type: 'monthly',
@@ -249,11 +278,9 @@ export default function Show({ member, stats, availableSports }: Props) {
             sport_id: schedule.sport_id,
         }, {
             onSuccess: () => {
-                setIsPaymentOpen(false);
-                setProcessing(false);
                 setSelectedScheduleId('');
             },
-            onError: () => setProcessing(false)
+            onFinish: () => closeLoading()
         });
     };
 
@@ -283,28 +310,39 @@ export default function Show({ member, stats, availableSports }: Props) {
         }
     }, [selectedScheduleId, member.payment_schedules]);
 
-    const handleApprove = () => {
-        setProcessing(true);
-        router.post(`/admin/members/${member.id}/approve`, {}, {
-            onSuccess: () => {
-                setIsApproveOpen(false);
-                setProcessing(false);
-            },
-            onError: () => setProcessing(false)
-        });
+    const handleApprove = async () => {
+        const result = await showConfirm(
+            'Approve Member?',
+            `Do you want to approve ${member.full_name}? This will create their user account.`
+        );
+
+        if (result.isConfirmed) {
+            showLoading('Approving member...', 'Please wait');
+            router.post(route('admin.members.approve', member.id), {}, {
+                onFinish: () => closeLoading()
+            });
+        }
     };
 
-    const handleSuspend = () => {
-        if (!suspendReason) return;
-        setProcessing(true);
-        router.post(`/admin/members/${member.id}/suspend`, { reason: suspendReason }, {
-            onSuccess: () => {
-                setIsSuspendOpen(false);
-                setProcessing(false);
-                setSuspendReason('');
-            },
-            onError: () => setProcessing(false)
-        });
+    const handleSuspend = async () => {
+        const result = await showInput(
+            'Suspend Member',
+            'textarea',
+            'Enter reason for suspension...'
+        );
+
+        if (result.isConfirmed && result.value) {
+            showLoading('Suspending member...', 'Please wait');
+            router.post(route('admin.members.suspend', member.id), {
+                reason: result.value
+            }, {
+                onSuccess: () => {
+                    setIsSuspendOpen(false);
+                    closeLoading();
+                },
+                onFinish: () => closeLoading()
+            });
+        }
     };
 
     const getStatusBadge = (status: string) => {

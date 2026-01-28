@@ -30,5 +30,74 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Handle custom payment exceptions
+        $exceptions->renderable(function (\App\Exceptions\Payment\InvalidPaymentAmountException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'error' => 'invalid_payment_amount'
+                ], 422);
+            }
+            
+            return back()->withErrors(['amount' => $e->getMessage()]);
+        });
+
+        $exceptions->renderable(function (\App\Exceptions\Payment\PaymentNotFoundException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'error' => 'payment_not_found'
+                ], 404);
+            }
+            
+            return back()->withErrors(['payment' => $e->getMessage()]);
+        });
+
+        // Handle custom member exceptions
+        $exceptions->renderable(function (\App\Exceptions\Member\MemberNotFoundException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'error' => 'member_not_found'
+                ], 404);
+            }
+            
+            return redirect()->route('admin.members.index')
+                ->withErrors(['member' => $e->getMessage()]);
+        });
+
+        $exceptions->renderable(function (\App\Exceptions\Member\InvalidMemberStatusException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'error' => 'invalid_member_status'
+                ], 403);
+            }
+            
+            return back()->withErrors(['status' => $e->getMessage()]);
+        });
+
+        // Handle custom sport exceptions
+        $exceptions->renderable(function (\App\Exceptions\Sport\SportNotFoundException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'error' => 'sport_not_found'
+                ], 404);
+            }
+            
+            return back()->withErrors(['sport' => $e->getMessage()]);
+        });
+
+        $exceptions->renderable(function (\App\Exceptions\Sport\SportCapacityExceededException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'error' => 'sport_capacity_exceeded'
+                ], 422);
+            }
+            
+            return back()->withErrors(['sport' => $e->getMessage()]);
+        });
     })->create();
+

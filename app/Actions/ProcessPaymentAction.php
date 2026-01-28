@@ -5,13 +5,33 @@ namespace App\Actions;
 use App\Models\Member;
 use App\Models\Payment;
 use App\Models\MemberPaymentSchedule;
-use App\Enums\{PaymentType, PaymentStatus, ScheduleStatus};
+use App\Enums\{PaymentType, PaymentStatus, ScheduleStatus, MemberStatus};
+use App\Exceptions\Payment\InvalidPaymentAmountException;
+use App\Exceptions\Payment\PaymentNotFoundException;
+use App\Exceptions\Member\InvalidMemberStatusException;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ProcessPaymentAction
 {
     /**
      * Process a payment and update related schedules
+     * 
+     * @param Member $member The member making the payment
+     * @param PaymentType $type Type of payment (monthly, bulk, admission)
+     * @param float $amount Payment amount
+     * @param string $paymentMethod Payment method (cash, bank_transfer, online)
+     * @param string|null $monthYear Month-year for the payment (Y-m format)
+     * @param int $monthsCount Number of months for bulk payment
+     * @param string|null $receiptUrl URL to payment receipt
+     * @param string|null $referenceNumber Payment reference number
+     * @param string|null $sportId Sport ID if payment is for specific sport
+     * @return Payment The created payment record
+     * 
+     * @throws InvalidPaymentAmountException If payment amount is invalid
+     * @throws InvalidMemberStatusException If member status doesn't allow payments
+     * @throws PaymentNotFoundException If payment schedule not found
      */
     public function execute(
         Member $member,
@@ -24,46 +44,121 @@ class ProcessPaymentAction
         ?string $referenceNumber = null,
         ?string $sportId = null
     ): Payment {
-        $dueDate = $monthYear 
-            ? Carbon::createFromFormat('Y-m', $monthYear)->endOfMonth()
-            : now();
+        // Validate payment amount
+        $this->validateAmount($amount);
+        
+        // Validate member status
+        $this->validateMemberStatus($member);
 
-        $payment = Payment::create([
-            'member_id' => $member->id,
-            'sport_id' => $sportId,
-            'type' => $type,
-            'amount' => $amount,
-            'month_year' => $monthYear,
-            'months_count' => $monthsCount,
-            'status' => PaymentStatus::PAID,
-            'due_date' => $dueDate,
-            'paid_date' => now(),
-            'payment_method' => $paymentMethod,
-            'receipt_url' => $receiptUrl,
-            'reference_number' => $referenceNumber,
-        ]);
+        // Wrap in database transaction for data integrity
+        return DB::transaction(function () use (
+            $member, $type, $amount, $paymentMethod, 
+            $monthYear, $monthsCount, $receiptUrl, 
+            $referenceNumber, $sportId
+        ) {
+            try {
+                $dueDate = $monthYear 
+                    ? Carbon::createFromFormat('Y-m', $monthYear)->endOfMonth()
+                    : now();
 
-        // Update payment schedules if monthly or bulk payment
-        if ($type === PaymentType::MONTHLY || $type === PaymentType::BULK) {
-            $this->updateSchedules($member, $payment, $monthYear, $monthsCount, $sportId);
+                // Create payment record
+                $payment = Payment::create([
+                    'member_id' => $member->id,
+                    'sport_id' => $sportId,
+                    'type' => $type,
+                    'amount' => $amount,
+                    'month_year' => $monthYear,
+                    'months_count' => $monthsCount,
+                    'status' => PaymentStatus::PAID,
+                    'due_date' => $dueDate,
+                    'paid_date' => now(),
+                    'payment_method' => $paymentMethod,
+                    'receipt_url' => $receiptUrl,
+                    'reference_number' => $referenceNumber,
+                ]);
+
+                // Update payment schedules if monthly or bulk payment
+                if ($type === PaymentType::MONTHLY || $type === PaymentType::BULK) {
+                    $this->updateSchedules($member, $payment, $monthYear, $monthsCount, $sportId);
+                }
+
+                // Log the payment
+                $this->logPayment($member, $payment, $type, $amount, $sportId);
+
+                // Log success
+                Log::info('Payment processed successfully', [
+                    'payment_id' => $payment->id,
+                    'member_id' => $member->id,
+                    'amount' => $amount,
+                    'type' => $type->value,
+                ]);
+
+                return $payment;
+
+            } catch (\Exception $e) {
+                // Log error
+                Log::error('Payment processing failed', [
+                    'member_id' => $member->id,
+                    'amount' => $amount,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+
+                throw $e;
+            }
+        });
+    }
+
+    /**
+     * Validate payment amount
+     * 
+     * @throws InvalidPaymentAmountException
+     */
+    protected function validateAmount(float $amount): void
+    {
+        if ($amount < 0) {
+            throw InvalidPaymentAmountException::negative($amount);
         }
 
-        // Log the payment
-        $member->log('payment_received', "Payment of Rs. {$amount} received", [
-            'payment_id' => $payment->id,
-            'type' => $type->value,
-            'amount' => $amount,
-            'sport_id' => $sportId,
-        ]);
+        if ($amount === 0.0) {
+            throw InvalidPaymentAmountException::zero();
+        }
 
-        return $payment;
+        // Optional: Add maximum amount validation
+        $maxAmount = 100000; // Rs. 100,000
+        if ($amount > $maxAmount) {
+            throw InvalidPaymentAmountException::exceedsMaximum($amount, $maxAmount);
+        }
+    }
+
+    /**
+     * Validate member status allows payments
+     * 
+     * @throws InvalidMemberStatusException
+     */
+    protected function validateMemberStatus(Member $member): void
+    {
+        if ($member->status === MemberStatus::SUSPENDED) {
+            throw InvalidMemberStatusException::suspended($member);
+        }
+
+        if ($member->status === MemberStatus::INACTIVE) {
+            throw InvalidMemberStatusException::inactive($member);
+        }
     }
 
     /**
      * Update payment schedules after payment
+     * 
+     * @throws PaymentNotFoundException If schedule not found
      */
-    protected function updateSchedules(Member $member, Payment $payment, ?string $startMonthYear, int $monthsCount, ?string $sportId = null): void
-    {
+    protected function updateSchedules(
+        Member $member, 
+        Payment $payment, 
+        ?string $startMonthYear, 
+        int $monthsCount, 
+        ?string $sportId = null
+    ): void {
         $startDate = $startMonthYear 
             ? Carbon::createFromFormat('Y-m', $startMonthYear)
             : now();
@@ -78,10 +173,39 @@ class ProcessPaymentAction
                 $query->where('sport_id', $sportId);
             }
 
-            $query->update([
+            $affectedRows = $query->update([
                 'status' => ScheduleStatus::PAID,
                 'payment_id' => $payment->id,
             ]);
+
+            // Log warning if no schedules were updated
+            if ($affectedRows === 0) {
+                Log::warning('No payment schedule found to update', [
+                    'member_id' => $member->id,
+                    'month_year' => $monthYear,
+                    'sport_id' => $sportId,
+                ]);
+            }
         }
+    }
+
+    /**
+     * Log payment activity
+     */
+    protected function logPayment(
+        Member $member, 
+        Payment $payment, 
+        PaymentType $type, 
+        float $amount, 
+        ?string $sportId
+    ): void {
+        $member->log('payment_received', "Payment of Rs. {$amount} received", [
+            'payment_id' => $payment->id,
+            'type' => $type->value,
+            'amount' => $amount,
+            'sport_id' => $sportId,
+            'payment_method' => $payment->payment_method,
+            'reference_number' => $payment->reference_number,
+        ]);
     }
 }
