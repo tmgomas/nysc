@@ -53,6 +53,7 @@ interface AttendanceState {
     id: string; // Member ID
     present: boolean;
     check_in: string;
+    check_out: string;
 }
 
 const apiPost = async (url: string, data: any) => {
@@ -89,6 +90,7 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                 id: m.id,
                 present: !!m.attendance,
                 check_in: m.attendance?.check_in_time || '08:00', // Default time
+                check_out: m.attendance?.check_out_time || '',
             }));
             setAttendanceData(initialData);
         } else {
@@ -132,17 +134,25 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
         setIsDirty(true);
     };
 
+    const updateCheckOutTime = (memberId: string, time: string) => {
+        setAttendanceData(prev => prev.map(item =>
+            item.id === memberId ? { ...item, check_out: time } : item
+        ));
+        setIsDirty(true);
+    };
+
     const handleSave = () => {
         if (!selectedSportId) return;
 
         setProcessing(true);
-        router.post('admin/attendance/bulk', {
+        router.post('/admin/attendance/bulk', {
             date: selectedDate,
             sport_id: selectedSportId,
             attendances: attendanceData.map(a => ({
                 member_id: a.id,
                 present: a.present,
-                check_in: a.check_in
+                check_in: a.check_in,
+                check_out: a.check_out
             }))
         }, {
             onSuccess: () => {
@@ -162,7 +172,7 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
         // Play a beep sound (optional, but good for UX)
         // const audio = new Audio('/beep.mp3'); audio.play().catch(e => {});
 
-        apiPost('admin/attendance/scan', {
+        apiPost('/admin/attendance/scan', {
             date: selectedDate,
             sport_id: selectedSportId,
             member_number: decodedText
@@ -172,9 +182,16 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
 
                 // Update local list if member is found in the current list
                 if (data.member) {
-                    setAttendanceData(prev => prev.map(item =>
-                        item.id === data.member.id ? { ...item, present: true, check_in: new Date().toLocaleTimeString('en-US', { hour12: false, hour: "2-digit", minute: "2-digit" }) } : item
-                    ));
+                    setAttendanceData(prev => prev.map(item => {
+                        if (item.id !== data.member.id) return item;
+
+                        // If checking out (based on response or logic) update check out
+                        if (data.status === 'checked_out') {
+                            return { ...item, present: true, check_out: new Date().toLocaleTimeString('en-US', { hour12: false, hour: "2-digit", minute: "2-digit" }) };
+                        }
+                        // Default Check in
+                        return { ...item, present: true, check_in: new Date().toLocaleTimeString('en-US', { hour12: false, hour: "2-digit", minute: "2-digit" }) };
+                    }));
                     // Also silently refresh the full list from server to ensure sync
                     router.reload({ only: ['members'] });
                 }
@@ -280,11 +297,7 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                                             onChange={(e) => setSearchTerm(e.target.value)}
                                         />
                                     </div>
-                                    <Button onClick={handleSave} disabled={processing || !isDirty || members.length === 0}>
-                                        {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        <Save className="mr-2 h-4 w-4" />
-                                        Save Changes
-                                    </Button>
+                                    {/* Save button moved below CardContent */}
                                 </div>
                             )}
                         </CardHeader>
@@ -310,12 +323,13 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                                                 </th>
                                                 <th className="p-4">Member Info</th>
                                                 <th className="p-4">Check-in Time</th>
+                                                <th className="p-4">Check-out Time</th>
                                                 <th className="p-4 text-right">Status</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y">
                                             {filteredMembers.map((member) => {
-                                                const state = attendanceData.find(a => a.id === member.id) || { present: false, check_in: '08:00', id: member.id };
+                                                const state = attendanceData.find(a => a.id === member.id) || { present: false, check_in: '08:00', check_out: '', id: member.id };
 
                                                 return (
                                                     <tr key={member.id} className={state.present ? "bg-green-50/50 hover:bg-green-50" : "hover:bg-muted/50"}>
@@ -341,6 +355,15 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                                                                 className={`w-[120px] h-8 ${!state.present ? 'opacity-50' : ''}`}
                                                             />
                                                         </td>
+                                                        <td className="p-4">
+                                                            <Input
+                                                                type="time"
+                                                                value={state.check_out}
+                                                                onChange={(e) => updateCheckOutTime(member.id, e.target.value)}
+                                                                disabled={!state.present}
+                                                                className={`w-[120px] h-8 ${!state.present ? 'opacity-50' : ''}`}
+                                                            />
+                                                        </td>
                                                         <td className="p-4 text-right">
                                                             {state.present ? (
                                                                 <Badge className="bg-green-600 hover:bg-green-700">Present</Badge>
@@ -353,6 +376,15 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                                             })}
                                         </tbody>
                                     </table>
+                                </div>
+                            )}
+                            {selectedSportId && members.length > 0 && (
+                                <div className="mt-4 flex justify-end">
+                                    <Button onClick={handleSave} disabled={processing || !isDirty || members.length === 0}>
+                                        {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        <Save className="mr-2 h-4 w-4" />
+                                        Save Changes
+                                    </Button>
                                 </div>
                             )}
                         </CardContent>

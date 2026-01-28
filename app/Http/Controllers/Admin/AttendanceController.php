@@ -148,21 +148,37 @@ class AttendanceController extends Controller
             ], 400);
         }
 
-        // Check if already marked
+        // Check for existing attendance on this day for this sport
         $attendance = Attendance::where('member_id', $member->id)
             ->where('sport_id', $sportId)
             ->whereDate('check_in_time', $date)
             ->first();
 
         if ($attendance) {
-            return response()->json([
-                'success' => true,
-                'message' => "Create: {$member->full_name} already marked present at " . $attendance->check_in_time->format('H:i'),
-                'member' => $member,
-                'already_marked' => true
-            ]);
+            // Already checked in. Check if checked out?
+            if ($attendance->check_out_time) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Already Checked Out: {$member->full_name} at " . $attendance->check_out_time->format('H:i'),
+                    'member' => $member,
+                    'status' => 'checked_out'
+                ]);
+            } else {
+                // Perform Check-out
+                $attendance->update([
+                    'check_out_time' => Carbon::now(),
+                ]);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => "Checked Out: {$member->full_name}",
+                    'member' => $member,
+                    'status' => 'checked_out'
+                ]);
+            }
         }
 
+        // Check In
         Attendance::create([
             'member_id' => $member->id,
             'sport_id' => $sportId,
@@ -173,8 +189,9 @@ class AttendanceController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Marked Present: {$member->full_name}",
+            'message' => "Checked In: {$member->full_name}",
             'member' => $member,
+            'status' => 'checked_in'
         ]);
     }
 
@@ -187,6 +204,7 @@ class AttendanceController extends Controller
             'attendances.*.member_id' => 'required|exists:members,id',
             'attendances.*.present' => 'required|boolean',
             'attendances.*.check_in' => 'nullable|string', // HH:mm format
+            'attendances.*.check_out' => 'nullable|string', // HH:mm format
         ]);
 
         $dateStr = $validated['date'];
@@ -202,19 +220,32 @@ class AttendanceController extends Controller
                     ->first();
 
                 if ($item['present']) {
-                    $time = $item['check_in'] ?? Carbon::now()->format('H:i');
-                    $fullDateTime = Carbon::parse("$dateStr $time");
+                    $checkInTime = $item['check_in'] ?? Carbon::now()->format('H:i');
+                    $fullCheckIn = Carbon::parse("$dateStr $checkInTime");
+                    
+                    $fullCheckOut = null;
+                    if (!empty($item['check_out'])) {
+                        $fullCheckOut = Carbon::parse("$dateStr " . $item['check_out']);
+                        // Handle overnight shifts if needed? detailed requirement not given, assuming same day.
+                        if ($fullCheckOut->lessThan($fullCheckIn)) {
+                           // If check out is earlier than check in, maybe it's next day? 
+                           // For simplicity in manual entry, let's assume valid same-day input or ignored.
+                           // Or just set it. 
+                        }
+                    }
 
                     if ($attendance) {
                         $attendance->update([
-                            'check_in_time' => $fullDateTime,
+                            'check_in_time' => $fullCheckIn,
+                            'check_out_time' => $fullCheckOut,
                             'marked_by' => $userId,
                         ]);
                     } else {
                         Attendance::create([
                             'member_id' => $item['member_id'],
                             'sport_id' => $sportId,
-                            'check_in_time' => $fullDateTime,
+                            'check_in_time' => $fullCheckIn,
+                            'check_out_time' => $fullCheckOut,
                             'marked_by' => $userId,
                             'method' => 'bulk', // or manual
                         ]);

@@ -16,17 +16,19 @@ return new class extends Migration
             $table->foreignUuid('sport_id')->nullable()->after('member_id')->constrained('sports')->onDelete('cascade');
         });
 
-        // Add sport_id to member_payment_schedules and update unique constraint
+        // Step 1: Add a simple index on member_id so the generic FK has something to latch onto
         Schema::table('member_payment_schedules', function (Blueprint $table) {
-            // Drop the old unique constraint first
+             $table->index('member_id');
+        });
+
+        // Step 2: Drop the unique index (now safe) and modify columns
+        Schema::table('member_payment_schedules', function (Blueprint $table) {
             $table->dropUnique(['member_id', 'month_year']);
-            
             $table->foreignUuid('sport_id')->nullable()->after('member_id')->constrained('sports')->onDelete('cascade');
-            
-            // Add new unique constraint including sport_id
-            // Note: We use a name for the index to avoid auto-generation length issues
             $table->unique(['member_id', 'sport_id', 'month_year'], 'mps_member_sport_month_unique');
         });
+        
+        // Remove Step 3 since we didn't drop the FK
     }
 
     /**
