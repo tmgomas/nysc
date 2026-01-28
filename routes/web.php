@@ -44,6 +44,9 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
     Route::post('members/{member}/approve', [AdminMemberController::class, 'approve'])->name('members.approve');
     Route::post('members/{member}/suspend', [AdminMemberController::class, 'suspend'])->name('members.suspend');
     Route::post('members/{member}/reactivate', [AdminMemberController::class, 'reactivate'])->name('members.reactivate');
+    Route::put('members/{member}/sports', [AdminMemberController::class, 'updateSports'])->name('members.update-sports');
+    
+    Route::put('payments/{payment}/mark-as-paid', [AdminPaymentController::class, 'markAsPaid'])->name('payments.mark-as-paid');
     
     // Payments
     Route::resource('payments', AdminPaymentController::class)->except(['edit', 'update', 'destroy']);

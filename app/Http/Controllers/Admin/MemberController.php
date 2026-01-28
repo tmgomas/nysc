@@ -108,6 +108,7 @@ class MemberController extends Controller
         return Inertia::render('Admin/Members/Show', [
             'member' => $member,
             'stats' => $stats,
+            'availableSports' => \App\Models\Sport::where('is_active', true)->select('id', 'name', 'monthly_fee')->get(),
         ]);
     }
 
@@ -129,5 +130,18 @@ class MemberController extends Controller
 
         return redirect()->back()
             ->with('success', 'Member suspended');
+    }
+
+    public function updateSports(Request $request, Member $member)
+    {
+        $validated = $request->validate([
+            'sport_ids' => 'required|array', // Allow empty array if they want to remove all? No, logical min 1 usually, but let's stick to array.
+            'sport_ids.*' => 'exists:sports,id',
+        ]);
+
+        $this->memberService->updateSports($member, $validated['sport_ids']);
+
+        return redirect()->back()
+            ->with('success', 'Member sports updated successfully');
     }
 }

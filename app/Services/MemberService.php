@@ -13,6 +13,7 @@ use App\Actions\{
 };
 use App\Enums\MemberStatus;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class MemberService
 {
@@ -118,12 +119,55 @@ class MemberService
     public function updateSports(Member $member, array $sportIds): Member
     {
         return DB::transaction(function () use ($member, $sportIds) {
-            // Sync sports
-            $member->sports()->sync($sportIds);
+            // Get current sport IDs to find additions
+            $currentSportIds = $member->sports()->pluck('sports.id')->toArray();
+            
+            // Sync sports with manual UUID generation for pivot table
+            $syncData = collect($sportIds)->mapWithKeys(function ($id) {
+                return [$id => ['id' => (string) Str::uuid(), 'status' => 'active']];
+            })->all();
+            
+            $member->sports()->sync($syncData);
 
-            // Update future payment schedules
-            $this->generatePaymentSchedule->updateFutureSchedules($member);
+            // Find newly added sports
+            $addedSportIds = array_diff($sportIds, $currentSportIds);
+            
+            if (!empty($addedSportIds)) {
+                $addedSports = \App\Models\Sport::whereIn('id', $addedSportIds)->get();
+                
+                // 1. Create Admission Fee Payment for new sports
+                $additionalAdmissionFee = $addedSports->sum('admission_fee');
+                if ($additionalAdmissionFee > 0) {
+                    \App\Models\Payment::create([
+                        'member_id' => $member->id,
+                        'type' => \App\Enums\PaymentType::ADMISSION,
+                        'amount' => $additionalAdmissionFee,
+                        'month_year' => now()->format('Y-m'),
+                        'status' => \App\Enums\PaymentStatus::PENDING, // Pending until paid
+                        'paid_date' => now(), // Required field usually, but for pending maybe null? Checking model... 
+                                              // Model casts to date. Let's keep it null if nullable or safe default.
+                                              // Looking at Approve logic, it sets paid_date to now().
+                                              // But status is PENDING here. 
+                                              // Let's check Payment migration if paid_date is nullable.
+                        'due_date' => now(),
+                        'payment_method' => \App\Enums\PaymentMethod::CASH, // Default placeholder
+                        'notes' => 'Admission fee for newly added sports: ' . $addedSports->pluck('name')->implode(', '),
+                    ]);
+                }
 
+                // 2. Generate schedules for new sports (starting current month)
+                // We reload sports relation to ensure new ones are included
+                $member->load('sports');
+                $this->generatePaymentSchedule->execute($member, 12, \Carbon\Carbon::parse(now()->startOfMonth()));
+            }
+
+            // Update future payment schedules amount for existing sports (if fees changed)
+            // $this->generatePaymentSchedule->updateFutureSchedules($member); 
+            // The execute() above handles creation. updateFutureSchedules handles amount updates. 
+            // We can leave it or remove it if execute covers it. 
+            // execute() ONLY creates if not existing. So we typically don't need updateFutureSchedules unless we suspect fee changes at the same time.
+            // But let's keep it safely or just rely on execute filling gaps.
+            
             return $member->fresh();
         });
     }

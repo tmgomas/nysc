@@ -82,6 +82,7 @@ class Member extends Model
     public function sports()
     {
         return $this->belongsToMany(Sport::class, 'member_sports')
+            ->using(MemberSport::class)
             ->withPivot('enrolled_at', 'status')
             ->withTimestamps();
     }

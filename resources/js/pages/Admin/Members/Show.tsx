@@ -23,7 +23,8 @@ import {
     Heart,
     Dumbbell,
     AlertCircle,
-    Loader2
+    Loader2,
+    Pencil
 } from 'lucide-react';
 import {
     Dialog,
@@ -43,6 +44,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
 
 interface Sport {
     id: string;
@@ -144,9 +146,14 @@ interface Props {
         next_due_payment: string | null;
         last_attendance: string | null;
     };
+    availableSports: {
+        id: string;
+        name: string;
+        monthly_fee: number;
+    }[];
 }
 
-export default function Show({ member, stats }: Props) {
+export default function Show({ member, stats, availableSports }: Props) {
     const [isApproveOpen, setIsApproveOpen] = useState(false);
     const [isSuspendOpen, setIsSuspendOpen] = useState(false);
     const [suspendReason, setSuspendReason] = useState('');
@@ -156,6 +163,37 @@ export default function Show({ member, stats }: Props) {
     const [selectedScheduleId, setSelectedScheduleId] = useState('');
     const [selectedAmount, setSelectedAmount] = useState<number>(0);
     const [paymentMethod, setPaymentMethod] = useState('cash');
+
+    // Sports Management
+    const [isEditSportsOpen, setIsEditSportsOpen] = useState(false);
+    const [selectedSports, setSelectedSports] = useState<string[]>([]); // Will be populated on open
+
+    React.useEffect(() => {
+        if (isEditSportsOpen) {
+            setSelectedSports(member.sports.map(s => s.id));
+        }
+    }, [isEditSportsOpen, member]);
+
+    const handleUpdateSports = () => {
+        setProcessing(true);
+        router.put(route('admin.members.update-sports', member.id), {
+            sport_ids: selectedSports
+        }, {
+            onSuccess: () => {
+                setIsEditSportsOpen(false);
+                setProcessing(false);
+            },
+            onError: () => setProcessing(false)
+        });
+    };
+
+    const toggleSport = (sportId: string) => {
+        setSelectedSports(current =>
+            current.includes(sportId)
+                ? current.filter(id => id !== sportId)
+                : [...current, sportId]
+        );
+    };
 
     const handlePayment = () => {
         if (!selectedScheduleId) return;
@@ -170,6 +208,22 @@ export default function Show({ member, stats }: Props) {
                 payment_method: paymentMethod,
                 month_year: monthYear,
                 sport_id: null, // Indicates pay for all
+            }, {
+                onSuccess: () => {
+                    setIsPaymentOpen(false);
+                    setProcessing(false);
+                    setSelectedScheduleId('');
+                },
+                onError: () => setProcessing(false)
+            });
+            return;
+        }
+
+        if (selectedScheduleId.startsWith('PAYMENT:')) {
+            const paymentId = selectedScheduleId.split(':')[1];
+            setProcessing(true);
+            router.put(route('admin.payments.mark-as-paid', paymentId), {
+                payment_method: paymentMethod
             }, {
                 onSuccess: () => {
                     setIsPaymentOpen(false);
@@ -210,6 +264,12 @@ export default function Show({ member, stats }: Props) {
                     .filter(s => s.status === 'pending' && s.month_year === monthYear)
                     .reduce((sum, s) => sum + Number(s.amount), 0);
                 setSelectedAmount(total);
+            } else if (selectedScheduleId.startsWith('PAYMENT:')) {
+                const paymentId = selectedScheduleId.split(':')[1];
+                const payment = member.payments.find(p => p.id === paymentId);
+                if (payment) {
+                    setSelectedAmount(payment.amount);
+                }
             } else {
                 const schedule = member.payment_schedules.find(s => s.id === selectedScheduleId);
                 if (schedule) {
@@ -408,6 +468,23 @@ export default function Show({ member, stats }: Props) {
                                             <SelectValue placeholder="Select month/sport to pay" />
                                         </SelectTrigger>
                                         <SelectContent>
+
+                                            {/* Pending One-off Payments (Admission etc) */}
+                                            {member.payments
+                                                .filter(p => p.status === 'pending')
+                                                .map(payment => (
+                                                    <SelectItem key={payment.id} value={`PAYMENT:${payment.id}`}>
+                                                        {payment.type === 'admission' ? 'Admission Fee' : payment.type} - {payment.notes || 'Pending'} (Rs. {Number(payment.amount).toFixed(2)})
+                                                    </SelectItem>
+                                                ))}
+
+                                            {member.payments.filter(p => p.status === 'pending').length > 0 &&
+                                                member.payment_schedules.filter(s => s.status === 'pending').length > 0 && (
+                                                    <SelectItem value="DIVIDER_1" disabled className="text-muted-foreground text-xs font-semibold bg-muted/30 pl-2">
+                                                        --- Monthly Schedules ---
+                                                    </SelectItem>
+                                                )}
+
                                             {/* Render "Pay All" options for months with multiple pending payments */}
                                             {Array.from(new Set(member.payment_schedules.filter(s => s.status === 'pending').map(s => s.month_year)))
                                                 .map(month => {
@@ -433,9 +510,10 @@ export default function Show({ member, stats }: Props) {
                                                     </SelectItem>
                                                 ))}
 
-                                            {member.payment_schedules.filter(s => s.status === 'pending').length === 0 && (
-                                                <SelectItem value="" disabled>No pending schedules</SelectItem>
-                                            )}
+                                            {(member.payment_schedules.filter(s => s.status === 'pending').length === 0 &&
+                                                member.payments.filter(p => p.status === 'pending').length === 0) && (
+                                                    <SelectItem value="" disabled>No pending schedules</SelectItem>
+                                                )}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -461,6 +539,55 @@ export default function Show({ member, stats }: Props) {
                                 <Button onClick={handlePayment} disabled={processing || !selectedScheduleId}>
                                     {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Record Payment
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+
+
+
+                    {/* Manage Sports Dialog */}
+                    <Dialog open={isEditSportsOpen} onOpenChange={setIsEditSportsOpen}>
+                        <DialogContent className="max-h-[90vh] flex flex-col">
+                            <DialogHeader>
+                                <DialogTitle>Manage Sports Enrollment</DialogTitle>
+                                <DialogDescription>
+                                    Select the sports this member should be enrolled in. Unselecting a sport will remove them from future schedules.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-4 space-y-4 overflow-y-auto flex-1">
+                                <div className="grid grid-cols-1 gap-3">
+                                    {availableSports.map((sport) => (
+                                        <div key={sport.id} className="flex items-start space-x-3 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                            <Checkbox
+                                                id={`sport-${sport.id}`}
+                                                checked={selectedSports.includes(sport.id)}
+                                                onCheckedChange={() => toggleSport(sport.id)}
+                                            />
+                                            <div className="grid gap-1.5 leading-none">
+                                                <Label
+                                                    htmlFor={`sport-${sport.id}`}
+                                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                                >
+                                                    {sport.name}
+                                                </Label>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Monthly Fee: Rs. {Number(sport.monthly_fee).toFixed(2)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="p-3 bg-amber-50 text-amber-800 border-amber-200 border rounded-md text-xs">
+                                    <h4 className="font-semibold mb-1">Important Note</h4>
+                                    Updating enrollments will recalculate future payment schedules. Past payments remain unaffected.
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsEditSportsOpen(false)}>Cancel</Button>
+                                <Button onClick={handleUpdateSports} disabled={processing}>
+                                    {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Update Enrollments
                                 </Button>
                             </DialogFooter>
                         </DialogContent>
@@ -568,11 +695,15 @@ export default function Show({ member, stats }: Props) {
 
                             {/* Sports Enrollment */}
                             <Card>
-                                <CardHeader>
+                                <CardHeader className="flex flex-row items-center justify-between">
                                     <CardTitle className="flex items-center gap-2">
                                         <Dumbbell className="h-5 w-5" />
                                         Sports Enrollment
                                     </CardTitle>
+                                    <Button variant="outline" size="sm" onClick={() => setIsEditSportsOpen(true)}>
+                                        <Pencil className="h-3.5 w-3.5 mr-2" />
+                                        Manage
+                                    </Button>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-4">
@@ -612,12 +743,12 @@ export default function Show({ member, stats }: Props) {
                                     {/* Unpaid Schedules */}
                                     <div>
                                         <h4 className="font-semibold text-sm mb-3">Upcoming Due Payments</h4>
-                                        {member.payment_schedules && member.payment_schedules.filter(s => s.status === 'pending').length > 0 ? (
+                                        {(member.payment_schedules && member.payment_schedules.filter(s => s.status === 'pending').length > 0) || (member.payments && member.payments.filter(p => p.status === 'pending').length > 0) ? (
                                             <div className="border rounded-lg overflow-hidden">
                                                 <table className="w-full text-sm text-left">
                                                     <thead className="bg-muted/50 text-muted-foreground font-medium">
                                                         <tr>
-                                                            <th className="p-3 font-medium">Month</th>
+                                                            <th className="p-3 font-medium">Description</th>
                                                             <th className="p-3 font-medium">Sport</th>
                                                             <th className="p-3 font-medium text-right">Amount</th>
                                                             <th className="p-3 font-medium">Due Date</th>
@@ -625,9 +756,39 @@ export default function Show({ member, stats }: Props) {
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y">
+                                                        {member.payments.filter(p => p.status === 'pending').map(payment => (
+                                                            <tr key={payment.id} className="hover:bg-muted/50 transition-colors bg-amber-50/50">
+                                                                <td className="p-3 font-medium">
+                                                                    <div className="flex flex-col">
+                                                                        <span className="capitalize">{payment.type}</span>
+                                                                        {payment.notes && <span className="text-xs text-muted-foreground">{payment.notes}</span>}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="p-3">
+                                                                    <Badge variant="outline" className="font-normal">
+                                                                        {payment.sport?.name || 'General'}
+                                                                    </Badge>
+                                                                </td>
+                                                                <td className="p-3 text-right font-mono">Rs. {Number(payment.amount).toFixed(2)}</td>
+                                                                <td className="p-3 text-muted-foreground">{new Date(payment.due_date).toLocaleDateString()}</td>
+                                                                <td className="p-3 text-right">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        className="h-7 text-xs"
+                                                                        onClick={() => {
+                                                                            setSelectedScheduleId(`PAYMENT:${payment.id}`);
+                                                                            setIsPaymentOpen(true);
+                                                                        }}
+                                                                    >
+                                                                        Pay Now
+                                                                    </Button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
                                                         {member.payment_schedules.filter(s => s.status === 'pending').slice(0, 5).map(schedule => (
                                                             <tr key={schedule.id} className="hover:bg-muted/50 transition-colors">
-                                                                <td className="p-3 font-medium">{schedule.month_year}</td>
+                                                                <td className="p-3 font-medium">{schedule.month_year} - Monthly Fee</td>
                                                                 <td className="p-3">
                                                                     <Badge variant="outline" className="font-normal">
                                                                         {schedule.sport?.name || 'General'}
@@ -699,7 +860,7 @@ export default function Show({ member, stats }: Props) {
                                                                 <td className="p-3 text-right font-mono">Rs. {Number(payment.amount).toFixed(2)}</td>
                                                                 <td className="p-3 text-right">
                                                                     <Badge variant="outline" className={`text-xs ${payment.status === 'verified' ? 'border-green-500 text-green-600 bg-green-50' :
-                                                                            payment.status === 'paid' ? 'border-blue-500 text-blue-600 bg-blue-50' : ''
+                                                                        payment.status === 'paid' ? 'border-blue-500 text-blue-600 bg-blue-50' : ''
                                                                         }`}>
                                                                         {payment.status}
                                                                     </Badge>
@@ -813,6 +974,6 @@ export default function Show({ member, stats }: Props) {
                     </div>
                 </div>
             </div>
-        </AppLayout>
+        </AppLayout >
     );
 }

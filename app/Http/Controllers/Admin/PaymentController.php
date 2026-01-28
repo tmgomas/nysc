@@ -94,4 +94,32 @@ class PaymentController extends Controller
         return redirect()->back()
             ->with('success', 'Payment rejected');
     }
+
+    public function markAsPaid(Request $request, Payment $payment)
+    {
+        $validated = $request->validate([
+            'payment_method' => 'required|in:cash,bank_transfer,online',
+            'reference_number' => 'nullable|string',
+        ]);
+
+        if ($payment->status !== \App\Enums\PaymentStatus::PENDING) {
+            return redirect()->back()->with('error', 'Payment is not pending');
+        }
+
+        $payment->update([
+            'status' => \App\Enums\PaymentStatus::VERIFIED, // Admin recording is considered verified
+            'paid_date' => now(),
+            'payment_method' => $validated['payment_method'],
+            'reference_number' => $validated['reference_number'] ?? null,
+            'verified_by' => auth()->id(),
+            'verified_at' => now(),
+        ]);
+        
+        // No schedule to update for Admission items usually, but strictly speaking 
+        // if this was a manually created monthly payment pending record?
+        // But for our Admission case, it's fine.
+
+        return redirect()->back()
+            ->with('success', 'Payment marked as received');
+    }
 }
