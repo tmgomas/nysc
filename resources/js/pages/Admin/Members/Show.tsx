@@ -108,6 +108,8 @@ interface Member {
 }
 
 interface Payment {
+    due_date: string | number | Date;
+    notes: string;
     id: string;
     amount: number;
     type: string;
