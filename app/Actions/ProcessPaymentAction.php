@@ -61,6 +61,18 @@ class ProcessPaymentAction
                     ? Carbon::createFromFormat('Y-m', $monthYear)->endOfMonth()
                     : now();
 
+                // Generate reference number if not provided
+                if (!$referenceNumber) {
+                    $referenceGenerator = new GeneratePaymentReferenceAction();
+                    $referenceNumber = $sportId 
+                        ? $referenceGenerator->execute($sportId, $dueDate)
+                        : $referenceGenerator->executeForMultipleSports($dueDate);
+                }
+
+                // Generate receipt number
+                $receiptGenerator = new GenerateReceiptNumberAction();
+                $receiptNumber = $receiptGenerator->execute(now());
+
                 // Create payment record
                 $payment = Payment::create([
                     'member_id' => $member->id,
@@ -75,6 +87,7 @@ class ProcessPaymentAction
                     'payment_method' => $paymentMethod,
                     'receipt_url' => $receiptUrl,
                     'reference_number' => $referenceNumber,
+                    'receipt_number' => $receiptNumber,
                 ]);
 
                 // Update payment schedules if monthly or bulk payment

@@ -27,6 +27,7 @@ class Payment extends Model
         'payment_method',
         'receipt_url',
         'reference_number',
+        'receipt_number',
         'notes',
         'verified_by',
         'verified_at',

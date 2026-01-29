@@ -14,7 +14,7 @@ trait HasSports
     {
         return $this->belongsToMany(Sport::class, 'member_sports')
             ->using(MemberSport::class)
-            ->withPivot('enrolled_at', 'status')
+            ->withPivot('enrolled_at', 'status', 'sport_reference')
             ->withTimestamps();
     }
 
@@ -59,10 +59,18 @@ trait HasSports
             return false;
         }
 
+        // Generate sport reference if member is already approved
+        $sportReference = null;
+        if ($this->status === \App\Enums\MemberStatus::ACTIVE) {
+            $referenceGenerator = new \App\Actions\GenerateRegistrationReferenceAction();
+            $sportReference = $referenceGenerator->execute($sportId, $this->registration_date);
+        }
+
         return $this->sports()->attach($sportId, [
             'id' => (string) \Illuminate\Support\Str::uuid(),
             'enrolled_at' => now(),
             'status' => $status,
+            'sport_reference' => $sportReference,
         ]);
     }
 

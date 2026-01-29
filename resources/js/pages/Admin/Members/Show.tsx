@@ -368,11 +368,20 @@ export default function Show({ member, stats, availableSports }: Props) {
                                 </CardHeader>
                                 <CardContent className="space-y-2">
                                     {member.sports.map((sport) => (
-                                        <div key={sport.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-                                            <span className="text-sm font-medium">{sport.name}</span>
-                                            <Badge variant={sport.pivot.status === 'active' ? 'default' : 'secondary'} className="text-xs">
-                                                {sport.pivot.status}
-                                            </Badge>
+                                        <div key={sport.id} className="p-3 rounded-md bg-muted/50 space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm font-medium">{sport.name}</span>
+                                                <Badge variant={sport.pivot.status === 'active' ? 'default' : 'secondary'} className="text-xs">
+                                                    {sport.pivot.status}
+                                                </Badge>
+                                            </div>
+                                            {sport.pivot.sport_reference && (
+                                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                    <span className="font-mono bg-background px-2 py-0.5 rounded border">
+                                                        {sport.pivot.sport_reference}
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                     <Button

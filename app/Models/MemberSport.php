@@ -10,12 +10,15 @@ class MemberSport extends Pivot
 {
     use HasFactory, HasUuids;
 
+    protected $table = 'member_sports';
+
     public $incrementing = false;
     protected $keyType = 'string';
 
     protected $fillable = [
         'member_id',
         'sport_id',
+        'sport_reference',
         'enrolled_at',
         'status',
     ];

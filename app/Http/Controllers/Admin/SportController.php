@@ -53,6 +53,7 @@ class SportController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'short_code' => 'nullable|string|max:10|unique:sports,short_code',
             'description' => 'nullable|string',
             'admission_fee' => 'required|numeric|min:0',
             'monthly_fee' => 'required|numeric|min:0',
@@ -93,6 +94,7 @@ class SportController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'short_code' => 'nullable|string|max:10|unique:sports,short_code,' . $sport->id,
             'description' => 'nullable|string',
             'admission_fee' => 'required|numeric|min:0',
             'monthly_fee' => 'required|numeric|min:0',

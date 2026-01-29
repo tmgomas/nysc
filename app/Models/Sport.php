@@ -15,6 +15,7 @@ class Sport extends Model
 
     protected $fillable = [
         'name',
+        'short_code',
         'description',
         'admission_fee',
         'monthly_fee',

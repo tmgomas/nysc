@@ -10,7 +10,8 @@ use App\Http\Controllers\Admin\{
     PaymentController as AdminPaymentController,
     AttendanceController as AdminAttendanceController,
     SportController as AdminSportController,
-    ReportController as AdminReportController
+    ReportController as AdminReportController,
+    SettingController as AdminSettingController
 };
 
 // Public Routes
@@ -67,6 +68,12 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
     Route::get('reports/payments', [AdminReportController::class, 'payments'])->name('reports.payments');
     Route::get('reports/attendance', [AdminReportController::class, 'attendance'])->name('reports.attendance');
     Route::get('reports/revenue', [AdminReportController::class, 'revenue'])->name('reports.revenue');
+    
+    // Settings
+    Route::get('settings', [AdminSettingController::class, 'index'])->name('settings.index');
+    Route::post('settings', [AdminSettingController::class, 'update'])->name('settings.update');
+    Route::get('settings/{key}', [AdminSettingController::class, 'show'])->name('settings.show');
+    Route::put('settings/{key}', [AdminSettingController::class, 'updateSingle'])->name('settings.update-single');
 });
 
 // Member Routes

@@ -6,6 +6,7 @@ export interface Sport {
     pivot: {
         status: string;
         enrolled_at: string;
+        sport_reference?: string;
     };
 }
 

@@ -20,6 +20,7 @@ class Member extends Model
     protected $fillable = [
         'user_id',
         'member_number',
+        'registration_reference',
         'full_name',
         'calling_name',
         'email',
@@ -83,7 +84,7 @@ class Member extends Model
     {
         return $this->belongsToMany(Sport::class, 'member_sports')
             ->using(MemberSport::class)
-            ->withPivot('enrolled_at', 'status')
+            ->withPivot('enrolled_at', 'status','sport_reference')
             ->withTimestamps();
     }
 
