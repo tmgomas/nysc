@@ -1,0 +1,94 @@
+<?php
+
+namespace App\Actions;
+
+use App\Models\{Member, Payment, PaymentItem};
+use App\Enums\{PaymentType, PaymentStatus};
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+
+class CreatePendingAdmissionPaymentAction
+{
+    /**
+     * Create pending admission payment with line items for member's enrolled sports
+     * 
+     * @param Member $member The approved member
+     * @return Payment The created pending payment
+     */
+    public function execute(Member $member): Payment
+    {
+        if (!$member->relationLoaded('sports')) {
+            $member->load('sports');
+        }
+
+        $enrolledSports = $member->sports->where('pivot.status', 'active');
+
+        if ($enrolledSports->isEmpty()) {
+            throw new \Exception('Member must have at least one active sport to create admission payment.');
+        }
+
+        return DB::transaction(function () use ($member, $enrolledSports) {
+            // Calculate total amount
+            $totalAmount = 0;
+            $currentMonth = now()->format('Y-m');
+
+            // Calculate admission fees + first month fees
+            foreach ($enrolledSports as $sport) {
+                $totalAmount += $sport->admission_fee + $sport->monthly_fee;
+            }
+
+            // Generate receipt number
+            $receiptGenerator = new GenerateReceiptNumberAction();
+            $receiptNumber = $receiptGenerator->execute(now());
+
+            // Create the main payment record
+            $payment = Payment::create([
+                'member_id' => $member->id,
+                'sport_id' => null, // Compound payment for multiple sports
+                'type' => PaymentType::ADMISSION,
+                'amount' => $totalAmount,
+                'month_year' => $currentMonth,
+                'months_count' => 1,
+                'status' => PaymentStatus::PENDING,
+                'due_date' => now()->addDays(7), // 7 days to pay
+                'paid_date' => null,
+                'payment_method' => null,
+                'receipt_number' => $receiptNumber,
+                'reference_number' => null, // Will be set when paid
+                'notes' => 'Initial admission fee and first month fee - created upon member approval',
+            ]);
+
+            // Create payment items for each sport
+            foreach ($enrolledSports as $sport) {
+                // Admission fee item
+                PaymentItem::create([
+                    'payment_id' => $payment->id,
+                    'sport_id' => $sport->id,
+                    'type' => PaymentType::ADMISSION,
+                    'amount' => $sport->admission_fee,
+                    'month_year' => null,
+                    'description' => "{$sport->name} - Admission Fee",
+                ]);
+
+                // First month fee item
+                PaymentItem::create([
+                    'payment_id' => $payment->id,
+                    'sport_id' => $sport->id,
+                    'type' => PaymentType::MONTHLY,
+                    'amount' => $sport->monthly_fee,
+                    'month_year' => $currentMonth,
+                    'description' => "{$sport->name} - Monthly Fee ({$currentMonth})",
+                ]);
+            }
+
+            // Log the creation
+            $member->log('payment_created', "Pending admission payment created: {$receiptNumber}", [
+                'payment_id' => $payment->id,
+                'amount' => $totalAmount,
+                'sports_count' => $enrolledSports->count(),
+            ]);
+
+            return $payment->fresh(['items.sport']);
+        });
+    }
+}

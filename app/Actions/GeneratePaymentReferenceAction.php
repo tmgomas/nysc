@@ -6,6 +6,8 @@ use App\Models\Payment;
 use App\Models\Sport;
 use App\Models\Setting;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 
 class GeneratePaymentReferenceAction
 {
@@ -15,10 +17,10 @@ class GeneratePaymentReferenceAction
      * Example: 26-SW-0001 (2026, Swimming, 1st payment)
      * 
      * @param string $sportId The sport ID
-     * @param Carbon|null $date The payment date (defaults to current date)
+     * @param CarbonInterface|null $date The payment date (defaults to current date)
      * @return string The generated reference number
      */
-    public function execute(string $sportId, ?Carbon $date = null): string
+    public function execute(string $sportId, ?CarbonInterface $date = null): string
     {
         $date = $date ?? now();
         
@@ -65,7 +67,7 @@ class GeneratePaymentReferenceAction
      * Format: {YEAR}-ALL-{NUMBER}
      * Example: 26-ALL-0001
      */
-    public function executeForMultipleSports(?Carbon $date = null): string
+    public function executeForMultipleSports(?CarbonInterface $date = null): string
     {
         $date = $date ?? now();
         

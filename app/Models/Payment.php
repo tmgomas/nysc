@@ -65,6 +65,11 @@ class Payment extends Model
         return $this->hasMany(MemberPaymentSchedule::class);
     }
 
+    public function items()
+    {
+        return $this->hasMany(PaymentItem::class);
+    }
+
     // Scopes
     public function scopePending($query)
     {

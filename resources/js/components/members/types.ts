@@ -17,6 +17,20 @@ export interface User {
     temporary_password?: string;
 }
 
+export interface PaymentItem {
+    id: string;
+    payment_id: string;
+    sport_id: string | null;
+    type: 'admission' | 'monthly';
+    amount: number;
+    month_year: string | null;
+    description: string | null;
+    sport?: {
+        name: string;
+        short_code?: string;
+    };
+}
+
 export interface Payment {
     due_date: string | number | Date;
     notes: string;
@@ -27,9 +41,12 @@ export interface Payment {
     month_year: string | null;
     created_at: string;
     paid_date: string;
+    receipt_number?: string;
+    reference_number?: string;
     sport?: {
         name: string;
     };
+    items?: PaymentItem[];
 }
 
 export interface PaymentSchedule {

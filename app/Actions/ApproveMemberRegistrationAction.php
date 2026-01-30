@@ -52,9 +52,13 @@ class ApproveMemberRegistrationAction
             'approved_at' => now(),
         ]);
 
+        // Create pending admission payment with line items
+        $createPendingPayment = new CreatePendingAdmissionPaymentAction();
+        $pendingPayment = $createPendingPayment->execute($member);
+
         // Log the approval with all sport references
         $referencesText = implode(', ', $sportReferences);
-        $member->log('approved', 'Member registration approved by ' . Auth::user()->name . '. Sport References: ' . $referencesText);
+        $member->log('approved', 'Member registration approved by ' . Auth::user()->name . '. Sport References: ' . $referencesText . '. Pending payment created: ' . $pendingPayment->receipt_number);
 
         return $member->fresh();
     }

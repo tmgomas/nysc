@@ -54,7 +54,6 @@ export default function Show({ member, stats, availableSports }: Props) {
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
 
     // Form states
-    const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
     const [selectedSports, setSelectedSports] = useState<string[]>([]);
     const [selectedScheduleId, setSelectedScheduleId] = useState('');
     const [selectedAmount, setSelectedAmount] = useState<number>(0);
@@ -94,18 +93,12 @@ export default function Show({ member, stats, availableSports }: Props) {
     }, [selectedScheduleId, member.payment_schedules]);
 
     // Handlers
-    const handleApprove = async () => {
-        const result = await showConfirm(
-            'Approve Member?',
-            `Do you want to approve ${member.full_name}? This will create their user account.`
-        );
-
-        if (result.isConfirmed) {
-            showLoading('Approving member...', 'Please wait');
-            router.post(route('admin.members.approve', member.id), {}, {
-                onFinish: () => closeLoading()
-            });
-        }
+    const handleApprove = () => {
+        setIsApproveOpen(false);
+        showLoading('Approving member...', 'Please wait');
+        router.post(route('admin.members.approve', member.id), {}, {
+            onFinish: () => closeLoading()
+        });
     };
 
     const handleSuspend = async () => {
@@ -566,8 +559,6 @@ export default function Show({ member, stats, availableSports }: Props) {
                         open={isApproveOpen}
                         onOpenChange={setIsApproveOpen}
                         member={member}
-                        isPaymentConfirmed={isPaymentConfirmed}
-                        setIsPaymentConfirmed={setIsPaymentConfirmed}
                         onApprove={handleApprove}
                     />
 

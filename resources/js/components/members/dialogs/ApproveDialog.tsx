@@ -14,8 +14,6 @@ interface ApproveDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     member: Member;
-    isPaymentConfirmed: boolean;
-    setIsPaymentConfirmed: (confirmed: boolean) => void;
     onApprove: () => void;
 }
 
@@ -23,11 +21,11 @@ export function ApproveDialog({
     open,
     onOpenChange,
     member,
-    isPaymentConfirmed,
-    setIsPaymentConfirmed,
     onApprove,
 }: ApproveDialogProps) {
     const totalAdmissionFee = member.sports.reduce((sum, sport) => sum + Number(sport.admission_fee), 0);
+    const totalMonthlyFee = member.sports.reduce((sum, sport) => sum + Number(sport.monthly_fee), 0);
+    const totalDue = totalAdmissionFee + totalMonthlyFee;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -35,32 +33,37 @@ export function ApproveDialog({
                 <DialogHeader>
                     <DialogTitle>Approve Member Registration</DialogTitle>
                     <DialogDescription>
-                        This will activate the member account, generate payment schedules, and create a user login.
+                        This will activate the member account, generate sport-specific references, and create a pending payment.
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="py-4 space-y-4">
-                    <div className="p-4 rounded-lg bg-muted text-sm space-y-2">
-                        <div className="flex justify-between font-medium">
-                            <span>Total Admission Fee:</span>
-                            <span>Rs. {totalAdmissionFee.toFixed(2)}</span>
+                    <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 text-sm space-y-3">
+                        <div className="font-semibold text-amber-900">Pending Payment Will Be Created:</div>
+                        <div className="space-y-2 text-amber-800">
+                            <div className="flex justify-between">
+                                <span>Admission Fees:</span>
+                                <span className="font-mono">Rs. {totalAdmissionFee.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>First Month Fees:</span>
+                                <span className="font-mono">Rs. {totalMonthlyFee.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between font-semibold border-t border-amber-300 pt-2">
+                                <span>Total Due:</span>
+                                <span className="font-mono">Rs. {totalDue.toFixed(2)}</span>
+                            </div>
                         </div>
-                        <p className="text-muted-foreground text-xs">
-                            Please collect this amount before approving the member.
-                        </p>
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                        <input
-                            type="checkbox"
-                            id="confirmPayment"
-                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                            checked={isPaymentConfirmed}
-                            onChange={(e) => setIsPaymentConfirmed(e.target.checked)}
-                        />
-                        <Label htmlFor="confirmPayment" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            I confirm that the admission fee has been paid
-                        </Label>
+                    <div className="p-4 rounded-lg bg-blue-50 border border-blue-200 text-sm">
+                        <p className="text-blue-900 font-medium mb-2">What happens on approval:</p>
+                        <ul className="list-disc list-inside space-y-1 text-blue-800 text-xs">
+                            <li>Member account will be activated</li>
+                            <li>Sport-specific references will be generated</li>
+                            <li>A pending payment will be created</li>
+                            <li>Member can be marked as paid later from their profile</li>
+                        </ul>
                     </div>
                 </div>
 
@@ -68,7 +71,7 @@ export function ApproveDialog({
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
                         Cancel
                     </Button>
-                    <Button onClick={onApprove} disabled={!isPaymentConfirmed}>
+                    <Button onClick={onApprove}>
                         Confirm Approval
                     </Button>
                 </DialogFooter>

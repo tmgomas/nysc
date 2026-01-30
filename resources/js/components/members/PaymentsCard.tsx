@@ -1,8 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard } from 'lucide-react';
+import {
+    CreditCard,
+    ChevronDown,
+    ChevronUp,
+    Calendar,
+    DollarSign,
+    CheckCircle2,
+    Clock,
+    Receipt,
+    Banknote,
+    Smartphone,
+    Building2,
+    AlertCircle
+} from 'lucide-react';
 import type { Member } from './types';
+import { useState } from 'react';
 
 interface PaymentsCardProps {
     member: Member;
@@ -10,12 +24,51 @@ interface PaymentsCardProps {
 }
 
 export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
+    const [expandedPayments, setExpandedPayments] = useState<Set<string>>(new Set());
+
     const pendingPayments = member.payments.filter(p => p.status === 'pending');
     const pendingSchedules = member.payment_schedules.filter(s => s.status === 'pending');
     const recentPayments = member.payments
-        .filter(p => p.status === 'paid')
-        .sort((a, b) => new Date(b.paid_date).getTime() - new Date(a.paid_date).getTime())
-        .slice(0, 5);
+        .filter(p => p.status === 'paid' || p.status === 'verified')
+        .sort((a, b) => new Date(b.paid_date || b.created_at).getTime() - new Date(a.paid_date || a.created_at).getTime())
+        .slice(0, 10);
+
+    const togglePaymentExpansion = (paymentId: string) => {
+        setExpandedPayments(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(paymentId)) {
+                newSet.delete(paymentId);
+            } else {
+                newSet.add(paymentId);
+            }
+            return newSet;
+        });
+    };
+
+    const getPaymentMethodIcon = (method: string | null) => {
+        switch (method) {
+            case 'cash':
+                return <Banknote className="h-3.5 w-3.5" />;
+            case 'online':
+                return <Smartphone className="h-3.5 w-3.5" />;
+            case 'bank_transfer':
+                return <Building2 className="h-3.5 w-3.5" />;
+            default:
+                return <CreditCard className="h-3.5 w-3.5" />;
+        }
+    };
+
+    const formatDate = (date: string) => {
+        return new Date(date).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+    };
+
+    const isOverdue = (dueDate: string) => {
+        return new Date(dueDate) < new Date();
+    };
 
     return (
         <Card>
@@ -26,6 +79,7 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
                 </CardTitle>
                 {member.status === 'active' && (
                     <Button size="sm" onClick={onRecordPayment}>
+                        <DollarSign className="h-4 w-4 mr-2" />
                         Record Payment
                     </Button>
                 )}
@@ -33,98 +87,337 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
             <CardContent className="space-y-6">
                 {/* Upcoming Due Payments */}
                 <div>
-                    <h4 className="font-semibold text-sm mb-3">Upcoming Due Payments</h4>
+                    <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-semibold text-sm flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-amber-500" />
+                            Upcoming Due Payments
+                        </h4>
+                        {(pendingSchedules.length > 0 || pendingPayments.length > 0) && (
+                            <Badge variant="secondary" className="text-xs">
+                                {pendingSchedules.length + pendingPayments.length} pending
+                            </Badge>
+                        )}
+                    </div>
+
                     {(pendingSchedules.length > 0 || pendingPayments.length > 0) ? (
-                        <div className="border rounded-lg overflow-hidden">
-                            <table className="w-full text-sm text-left">
-                                <thead className="bg-muted/50 text-muted-foreground font-medium">
-                                    <tr>
-                                        <th className="p-3 font-medium">Description</th>
-                                        <th className="p-3 font-medium">Sport</th>
-                                        <th className="p-3 font-medium text-right">Amount</th>
-                                        <th className="p-3 font-medium">Due Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                    {pendingPayments.map(payment => (
-                                        <tr key={payment.id} className="hover:bg-muted/50 transition-colors bg-amber-50/50">
-                                            <td className="p-3 font-medium">
-                                                <div className="flex flex-col">
-                                                    <span className="capitalize">{payment.type}</span>
-                                                    {payment.notes && <span className="text-xs text-muted-foreground">{payment.notes}</span>}
+                        <div className="space-y-3">
+                            {/* Pending Payments (Admission/Initial) */}
+                            {pendingPayments.map(payment => {
+                                const isExpanded = expandedPayments.has(payment.id);
+                                const hasItems = payment.items && payment.items.length > 0;
+                                const overdue = payment.due_date && isOverdue(payment.due_date);
+
+                                return (
+                                    <div
+                                        key={payment.id}
+                                        className={`border rounded-lg overflow-hidden transition-all ${overdue ? 'border-red-200 bg-red-50/50' : 'border-amber-200 bg-amber-50/50'
+                                            }`}
+                                    >
+                                        <div className="p-4">
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <Badge variant={overdue ? "destructive" : "secondary"} className="text-xs">
+                                                            {payment.type.toUpperCase()}
+                                                        </Badge>
+                                                        {payment.receipt_number && (
+                                                            <span className="text-xs font-mono text-muted-foreground flex items-center gap-1">
+                                                                <Receipt className="h-3 w-3" />
+                                                                {payment.receipt_number}
+                                                            </span>
+                                                        )}
+                                                        {overdue && (
+                                                            <Badge variant="destructive" className="text-xs">
+                                                                <AlertCircle className="h-3 w-3 mr-1" />
+                                                                Overdue
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+
+                                                    {payment.notes && (
+                                                        <p className="text-sm text-muted-foreground mb-2">{payment.notes}</p>
+                                                    )}
+
+                                                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                                                        {payment.due_date && (
+                                                            <span className="flex items-center gap-1">
+                                                                <Calendar className="h-3 w-3" />
+                                                                Due: {formatDate(payment.due_date)}
+                                                            </span>
+                                                        )}
+                                                        {hasItems && (
+                                                            <Badge variant="outline" className="text-xs">
+                                                                {payment.items.length} {payment.items.length === 1 ? 'item' : 'items'}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </td>
-                                            <td className="p-3">
-                                                <Badge variant="outline" className="font-normal">
-                                                    {payment.sport?.name || 'General'}
-                                                </Badge>
-                                            </td>
-                                            <td className="p-3 text-right font-mono">Rs. {Number(payment.amount).toFixed(2)}</td>
-                                            <td className="p-3 text-muted-foreground">{new Date(payment.due_date).toLocaleDateString()}</td>
-                                        </tr>
-                                    ))}
-                                    {pendingSchedules.map(schedule => (
-                                        <tr key={schedule.id} className="hover:bg-muted/50 transition-colors">
-                                            <td className="p-3 font-medium">{schedule.month_year}</td>
-                                            <td className="p-3">
-                                                <Badge variant="outline" className="font-normal">
-                                                    {schedule.sport?.name || 'General'}
-                                                </Badge>
-                                            </td>
-                                            <td className="p-3 text-right font-mono">Rs. {Number(schedule.amount).toFixed(2)}</td>
-                                            <td className="p-3 text-muted-foreground">{new Date(schedule.due_date).toLocaleDateString()}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+
+                                                <div className="flex flex-col items-end gap-2">
+                                                    <div className="text-right">
+                                                        <div className="text-2xl font-bold text-amber-600">
+                                                            Rs. {Number(payment.amount).toLocaleString()}
+                                                        </div>
+                                                    </div>
+
+                                                    {hasItems && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => togglePaymentExpansion(payment.id)}
+                                                            className="h-7 text-xs"
+                                                        >
+                                                            {isExpanded ? (
+                                                                <>
+                                                                    <ChevronUp className="h-3 w-3 mr-1" />
+                                                                    Hide Details
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <ChevronDown className="h-3 w-3 mr-1" />
+                                                                    View Details
+                                                                </>
+                                                            )}
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Expandable Payment Items */}
+                                        {hasItems && isExpanded && (
+                                            <div className="border-t bg-white/50">
+                                                <div className="p-4 space-y-2">
+                                                    <div className="text-xs font-semibold text-muted-foreground mb-3">Payment Breakdown:</div>
+                                                    {payment.items.map(item => (
+                                                        <div key={item.id} className="flex items-center justify-between py-2 px-3 rounded bg-muted/30">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                                                                <div>
+                                                                    <div className="text-sm font-medium">
+                                                                        {item.description || `${item.type} - ${item.sport?.name}`}
+                                                                    </div>
+                                                                    {item.month_year && (
+                                                                        <div className="text-xs text-muted-foreground">{item.month_year}</div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-3">
+                                                                <Badge variant="secondary" className="text-xs">
+                                                                    {item.sport?.name || 'General'}
+                                                                </Badge>
+                                                                <div className="font-mono text-sm font-medium">
+                                                                    Rs. {Number(item.amount).toLocaleString()}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+
+                            {/* Pending Schedules (Monthly) */}
+                            {pendingSchedules.map(schedule => {
+                                const overdue = isOverdue(schedule.due_date);
+                                return (
+                                    <div
+                                        key={schedule.id}
+                                        className={`border rounded-lg p-4 transition-all ${overdue ? 'border-red-200 bg-red-50/30' : 'border-border bg-card'
+                                            }`}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <Badge variant="outline" className="text-xs">
+                                                        MONTHLY
+                                                    </Badge>
+                                                    <Badge variant="secondary" className="text-xs">
+                                                        {schedule.sport?.name || 'General'}
+                                                    </Badge>
+                                                    {overdue && (
+                                                        <Badge variant="destructive" className="text-xs">
+                                                            <AlertCircle className="h-3 w-3 mr-1" />
+                                                            Overdue
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                                    <span className="flex items-center gap-1">
+                                                        <Calendar className="h-3 w-3" />
+                                                        {schedule.month_year}
+                                                    </span>
+                                                    <span className="flex items-center gap-1">
+                                                        Due: {formatDate(schedule.due_date)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-xl font-bold">
+                                                    Rs. {Number(schedule.amount).toLocaleString()}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     ) : (
-                        <div className="text-center py-8 text-muted-foreground border rounded-lg">
-                            <CreditCard className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                            <p>No pending payments</p>
+                        <div className="text-center py-12 border rounded-lg bg-muted/20">
+                            <CheckCircle2 className="h-12 w-12 mx-auto mb-3 text-green-500 opacity-50" />
+                            <p className="text-sm font-medium text-muted-foreground">All caught up!</p>
+                            <p className="text-xs text-muted-foreground mt-1">No pending payments</p>
                         </div>
                     )}
                 </div>
 
                 {/* Recent Payment History */}
                 <div>
-                    <h4 className="font-semibold text-sm mb-3">Recent Payment History</h4>
+                    <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-semibold text-sm flex items-center gap-2">
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            Recent Payment History
+                        </h4>
+                        {recentPayments.length > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                                {recentPayments.length} payments
+                            </Badge>
+                        )}
+                    </div>
+
                     {recentPayments.length > 0 ? (
-                        <div className="border rounded-lg overflow-hidden">
-                            <table className="w-full text-sm text-left">
-                                <thead className="bg-muted/50 text-muted-foreground font-medium">
-                                    <tr>
-                                        <th className="p-3 font-medium">Date</th>
-                                        <th className="p-3 font-medium">Description</th>
-                                        <th className="p-3 font-medium">Sport</th>
-                                        <th className="p-3 font-medium text-right">Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                    {recentPayments.map(payment => (
-                                        <tr key={payment.id} className="hover:bg-muted/50 transition-colors">
-                                            <td className="p-3 text-muted-foreground">{new Date(payment.paid_date).toLocaleDateString()}</td>
-                                            <td className="p-3 font-medium">
-                                                <div className="flex flex-col">
-                                                    <span className="capitalize">{payment.type}</span>
-                                                    {payment.month_year && <span className="text-xs text-muted-foreground">{payment.month_year}</span>}
+                        <div className="space-y-3">
+                            {recentPayments.map(payment => {
+                                const isExpanded = expandedPayments.has(payment.id);
+                                const hasItems = payment.items && payment.items.length > 0;
+
+                                return (
+                                    <div
+                                        key={payment.id}
+                                        className="border rounded-lg overflow-hidden bg-card hover:shadow-sm transition-all"
+                                    >
+                                        <div className="p-4">
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                                        <Badge
+                                                            variant={payment.status === 'verified' ? 'default' : 'secondary'}
+                                                            className="text-xs"
+                                                        >
+                                                            {payment.status === 'verified' ? (
+                                                                <><CheckCircle2 className="h-3 w-3 mr-1" />VERIFIED</>
+                                                            ) : (
+                                                                'PAID'
+                                                            )}
+                                                        </Badge>
+                                                        <Badge variant="outline" className="text-xs">
+                                                            {payment.type.toUpperCase()}
+                                                        </Badge>
+                                                        {payment.receipt_number && (
+                                                            <span className="text-xs font-mono text-muted-foreground flex items-center gap-1">
+                                                                <Receipt className="h-3 w-3" />
+                                                                {payment.receipt_number}
+                                                            </span>
+                                                        )}
+                                                        {payment.reference_number && (
+                                                            <span className="text-xs font-mono text-muted-foreground">
+                                                                Ref: {payment.reference_number}
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                                                        <span className="flex items-center gap-1">
+                                                            <Calendar className="h-3 w-3" />
+                                                            {formatDate(payment.paid_date || payment.created_at)}
+                                                        </span>
+                                                        {payment.payment_method && (
+                                                            <span className="flex items-center gap-1 capitalize">
+                                                                {getPaymentMethodIcon(payment.payment_method)}
+                                                                {payment.payment_method.replace('_', ' ')}
+                                                            </span>
+                                                        )}
+                                                        {hasItems && (
+                                                            <Badge variant="outline" className="text-xs">
+                                                                {payment.items.length} {payment.items.length === 1 ? 'item' : 'items'}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </td>
-                                            <td className="p-3">
-                                                <Badge variant="outline" className="font-normal">
-                                                    {payment.sport?.name || 'General'}
-                                                </Badge>
-                                            </td>
-                                            <td className="p-3 text-right font-mono text-green-600">Rs. {Number(payment.amount).toFixed(2)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+
+                                                <div className="flex flex-col items-end gap-2">
+                                                    <div className="text-right">
+                                                        <div className="text-2xl font-bold text-green-600">
+                                                            Rs. {Number(payment.amount).toLocaleString()}
+                                                        </div>
+                                                    </div>
+
+                                                    {hasItems && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => togglePaymentExpansion(payment.id)}
+                                                            className="h-7 text-xs"
+                                                        >
+                                                            {isExpanded ? (
+                                                                <>
+                                                                    <ChevronUp className="h-3 w-3 mr-1" />
+                                                                    Hide
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <ChevronDown className="h-3 w-3 mr-1" />
+                                                                    Details
+                                                                </>
+                                                            )}
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Expandable Payment Items */}
+                                        {hasItems && isExpanded && (
+                                            <div className="border-t bg-muted/20">
+                                                <div className="p-4 space-y-2">
+                                                    <div className="text-xs font-semibold text-muted-foreground mb-3">Payment Breakdown:</div>
+                                                    {payment.items.map(item => (
+                                                        <div key={item.id} className="flex items-center justify-between py-2 px-3 rounded bg-card">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                                                                <div>
+                                                                    <div className="text-sm font-medium">
+                                                                        {item.description || `${item.type} - ${item.sport?.name}`}
+                                                                    </div>
+                                                                    {item.month_year && (
+                                                                        <div className="text-xs text-muted-foreground">{item.month_year}</div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-3">
+                                                                <Badge variant="secondary" className="text-xs">
+                                                                    {item.sport?.name || 'General'}
+                                                                </Badge>
+                                                                <div className="font-mono text-sm font-medium text-green-600">
+                                                                    Rs. {Number(item.amount).toLocaleString()}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     ) : (
-                        <div className="text-center py-8 text-muted-foreground border rounded-lg">
-                            <CreditCard className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                            <p>No payment history</p>
+                        <div className="text-center py-12 border rounded-lg bg-muted/20">
+                            <CreditCard className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                            <p className="text-sm font-medium text-muted-foreground">No payment history yet</p>
+                            <p className="text-xs text-muted-foreground mt-1">Payments will appear here once recorded</p>
                         </div>
                     )}
                 </div>
