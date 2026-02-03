@@ -55,6 +55,8 @@ class Member extends Model
         'terms_accepted_at',
         'photo_consent',
         'photo_consent_at',
+        'nfc_tag_id',
+        'rfid_card_id',
     ];
 
     protected $casts = [

@@ -34,6 +34,8 @@ import { MedicalInfoCard } from '@/components/members/MedicalInfoCard';
 import { SportsEnrollmentCard } from '@/components/members/SportsEnrollmentCard';
 import { PaymentsCard } from '@/components/members/PaymentsCard';
 import MemberQRCode from '@/components/QRCode/MemberQRCode';
+import MemberNFCCard from '@/components/NFC/MemberNFCCard';
+import MemberRFIDCard from '@/components/RFID/MemberRFIDCard';
 
 // Import dialogs
 import { ApproveDialog } from '@/components/members/dialogs/ApproveDialog';
@@ -433,6 +435,22 @@ export default function Show({ member, stats, availableSports }: Props) {
                                     />
                                 </CardContent>
                             </Card>
+
+                            {/* NFC Tag Card */}
+                            <MemberNFCCard
+                                memberId={member.id}
+                                nfcTagId={member.nfc_tag_id ?? null}
+                                memberName={member.calling_name}
+                                onUpdate={() => router.reload()}
+                            />
+
+                            {/* RFID Card */}
+                            <MemberRFIDCard
+                                memberId={member.id}
+                                rfidCardId={member.rfid_card_id ?? null}
+                                memberName={member.calling_name}
+                                onUpdate={() => router.reload()}
+                            />
                         </div>
 
                         {/* Right Content Area with Tabs */}

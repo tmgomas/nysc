@@ -113,46 +113,72 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'date' => 'required|date',
-            'sport_id' => 'required|exists:sports,id',
+            'sport_id' => 'nullable|exists:sports,id', // Made optional
             'member_number' => 'required|string',
+            'method' => 'nullable|in:qr_code,nfc,rfid', // Added method parameter
         ]);
 
         $date = $validated['date'];
-        $sportId = $validated['sport_id'];
-        $memberNumber = $validated['member_number'];
+        $sportId = $validated['sport_id'] ?? null;
+        $scanData = $validated['member_number']; // This contains the scanned string (Member No, RFID ID, or NFC ID)
+        $method = $validated['method'] ?? 'qr_code';
 
-        $member = Member::where('member_number', $memberNumber)->first();
+        $member = null;
+
+        if ($method === 'rfid') {
+            $member = Member::where('rfid_card_id', $scanData)->first();
+        } elseif ($method === 'nfc') {
+            $member = Member::where('nfc_tag_id', $scanData)->first();
+        } else {
+            // QR Code or Manual - usually member_number
+            $member = Member::where('member_number', $scanData)->first();
+        }
+
+        if (!$member) {
+            // Fallback: Try searching member_number even if method is set, just in case
+            $member = Member::where('member_number', $scanData)->first();
+        }
 
         if (!$member) {
             return response()->json([
                 'success' => false,
-                'message' => 'Member not found.',
+                'message' => "Member not found for {$method} scan: {$scanData}",
             ], 404);
         }
 
-        // Check if member is assigned to this sport
-        $hasSport = $member->sports()->where('sports.id', $sportId)->exists();
-        
-        if (!$hasSport) {
-            // Check if we should allow them anyway? For now, strict check.
-            return response()->json([
-                'success' => false,
-                'message' => "Member {$member->full_name} is not registered for this sport.",
-            ], 400);
+        // Check if member is assigned to this sport (only if sport_id is provided)
+        if ($sportId) {
+            $hasSport = $member->sports()->where('sports.id', $sportId)->exists();
+            
+            if (!$hasSport) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Member {$member->full_name} is not registered for this sport.",
+                ], 400);
+            }
         }
 
-        if (!in_array($member->status, ['active', 'pending'])) {
+        // Check status (handle Enum object)
+        $statusValue = $member->status instanceof \UnitEnum ? $member->status->value : $member->status;
+
+        if (!in_array($statusValue, ['active', 'pending'])) {
              return response()->json([
                 'success' => false,
-                'message' => "Member {$member->full_name} is {$member->status}.",
+                'message' => "Member {$member->full_name} is {$statusValue}.",
             ], 400);
         }
 
-        // Check for existing attendance on this day for this sport
-        $attendance = Attendance::where('member_id', $member->id)
-            ->where('sport_id', $sportId)
-            ->whereDate('check_in_time', $date)
-            ->first();
+        // Check for existing attendance on this day (and sport if provided)
+        $attendanceQuery = Attendance::where('member_id', $member->id)
+            ->whereDate('check_in_time', $date);
+        
+        if ($sportId) {
+            $attendanceQuery->where('sport_id', $sportId);
+        } else {
+            $attendanceQuery->whereNull('sport_id');
+        }
+        
+        $attendance = $attendanceQuery->first();
 
         if ($attendance) {
             // Already checked in. Check if checked out?
@@ -160,7 +186,8 @@ class AttendanceController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => "Already Checked Out: {$member->full_name} at " . $attendance->check_out_time->format('H:i'),
-                    'member' => $member,
+                    'member' => $member->load(['sports']),
+                    'attendance' => $attendance,
                     'status' => 'checked_out'
                 ]);
             } else {
@@ -172,25 +199,27 @@ class AttendanceController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => "Checked Out: {$member->full_name}",
-                    'member' => $member,
+                    'member' => $member->load(['sports']),
+                    'attendance' => $attendance->fresh(),
                     'status' => 'checked_out'
                 ]);
             }
         }
 
         // Check In
-        Attendance::create([
+        $attendance = Attendance::create([
             'member_id' => $member->id,
             'sport_id' => $sportId,
-            'check_in_time' => Carbon::now()->setDateFrom($date), // Use current time but selected date
+            'check_in_time' => Carbon::now()->setDateFrom($date),
             'marked_by' => Auth::id(),
-            'method' => 'qr_code',
+            'method' => $method,
         ]);
 
         return response()->json([
             'success' => true,
             'message' => "Checked In: {$member->full_name}",
-            'member' => $member,
+            'member' => $member->load(['sports']),
+            'attendance' => $attendance,
             'status' => 'checked_in'
         ]);
     }

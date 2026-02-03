@@ -14,10 +14,13 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Save, Calendar as CalendarIcon, Filter, Search, QrCode, XCircle, CheckCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import NFCReader from '@/components/NFC/NFCReader';
+import RFIDReader from '@/components/RFID/RFIDReader';
+import { Loader2, Save, Calendar as CalendarIcon, Filter, Search, QrCode, XCircle, CheckCircle, Nfc, CreditCard } from 'lucide-react';
 import { debounce } from 'lodash';
 import QrScanner from '@/components/RefactoredQrScanner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import axios from 'axios';
 import { route } from 'ziggy-js';
 
@@ -81,6 +84,7 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
     // QR Scanning State
     const [isScanning, setIsScanning] = useState(false);
     const [lastScanned, setLastScanned] = useState<string | null>(null);
+    const [activeScanTab, setActiveScanTab] = useState<'qr' | 'nfc' | 'rfid'>('qr');
     const [scanResult, setScanResult] = useState<{ success: boolean; message: string; member?: any } | null>(null);
 
     // Initialize state from props
@@ -163,58 +167,62 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
         });
     };
 
-    // QR Scan Handler
-    const handleQrScan = (decodedText: string) => {
-        if (!selectedSportId || decodedText === lastScanned) return;
+    // Generic Scan Handler
+    const handleScan = (data: string, method: 'qr' | 'nfc' | 'rfid') => {
+        if (!selectedSportId) return;
 
-        setLastScanned(decodedText);
+        // For QR, avoid duplicate scans of same code immediately
+        if (method === 'qr' && data === lastScanned) return;
+        if (method === 'qr') setLastScanned(data);
 
-        // Play a beep sound (optional, but good for UX)
-        // const audio = new Audio('/beep.mp3'); audio.play().catch(e => {});
+        // Handle JSON data parsing if needed (for QR/NFC that returns JSON)
+        let memberIdentifier = data;
+        try {
+            const parsed = JSON.parse(data);
+            if (parsed.member_number) memberIdentifier = parsed.member_number;
+        } catch (e) {
+            // Raw string (RFID or simple QR)
+        }
 
         apiPost('/admin/attendance/scan', {
             date: selectedDate,
             sport_id: selectedSportId,
-            member_number: decodedText
+            member_number: memberIdentifier,
+            method: method === 'qr' ? 'qr_code' : method
         }).then(data => {
             if (data.success) {
                 setScanResult({ success: true, message: data.message, member: data.member });
 
-                // Update local list if member is found in the current list
                 if (data.member) {
                     setAttendanceData(prev => prev.map(item => {
                         if (item.id !== data.member.id) return item;
 
-                        // If checking out (based on response or logic) update check out
+                        const timeString = new Date().toLocaleTimeString('en-US', { hour12: false, hour: "2-digit", minute: "2-digit" });
+
                         if (data.status === 'checked_out') {
-                            return { ...item, present: true, check_out: new Date().toLocaleTimeString('en-US', { hour12: false, hour: "2-digit", minute: "2-digit" }) };
+                            return { ...item, present: true, check_out: timeString };
                         }
-                        // Default Check in
-                        return { ...item, present: true, check_in: new Date().toLocaleTimeString('en-US', { hour12: false, hour: "2-digit", minute: "2-digit" }) };
+                        return { ...item, present: true, check_in: timeString };
                     }));
-                    // Also silently refresh the full list from server to ensure sync
+                    // Silently refresh
                     router.reload({ only: ['members'] });
                 }
             } else {
                 setScanResult({ success: false, message: data.message });
             }
-
-            // Clear result message after delay
             setTimeout(() => setScanResult(null), 3000);
-
-            // Allow re-scanning the same code after delay
-            setTimeout(() => setLastScanned(null), 4000);
+            if (method === 'qr') setTimeout(() => setLastScanned(null), 4000);
         }).catch(err => {
             console.error(err);
-            setScanResult({ success: false, message: "Network error or invalid response." });
+            setScanResult({ success: false, message: "Scan failed or member not found." });
             setLastScanned(null);
         });
     };
 
     // Derived states
-    const filteredMembers = members.filter(m =>
-        m.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.member_number.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredMembers = (members || []).filter(m =>
+        (m.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (m.member_number || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const presentCount = attendanceData.filter(a => a.present).length;
@@ -269,7 +277,7 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                                 disabled={!selectedSportId}
                             >
                                 <QrCode className="mr-2 h-4 w-4" />
-                                Scan QR
+                                Scan Member
                             </Button>
                         </div>
                     </div>
@@ -392,40 +400,74 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                 </div>
             </div>
 
-            {/* QR Scanner Modal */}
+            {/* Scanning Modal */}
             <Dialog open={isScanning} onOpenChange={setIsScanning}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Scan Member QR</DialogTitle>
+                        <DialogTitle>Scan Member</DialogTitle>
                         <DialogDescription>
-                            Point camera at the member's QR code card.
+                            Use one of the methods below to mark attendance.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="py-4 space-y-4">
-                        {isScanning && (
-                            <QrScanner
-                                fps={10}
-                                qrbox={250}
-                                disableFlip={false}
-                                qrCodeSuccessCallback={handleQrScan}
-                            />
-                        )}
+                    <Tabs defaultValue="qr" value={activeScanTab} onValueChange={(v) => setActiveScanTab(v as any)} className="w-full">
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="qr" className="flex items-center gap-2">
+                                <QrCode className="h-4 w-4" /> QR Code
+                            </TabsTrigger>
+                            <TabsTrigger value="nfc" className="flex items-center gap-2">
+                                <Nfc className="h-4 w-4" /> NFC
+                            </TabsTrigger>
+                            <TabsTrigger value="rfid" className="flex items-center gap-2">
+                                <CreditCard className="h-4 w-4" /> RFID
+                            </TabsTrigger>
+                        </TabsList>
 
-                        {scanResult && (
-                            <div className={`p-4 rounded-md flex items-start gap-3 ${scanResult.success ? 'bg-green-50 text-green-900 border border-green-200' : 'bg-red-50 text-red-900 border border-red-200'}`}>
-                                {scanResult.success ? <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" /> : <XCircle className="h-5 w-5 text-red-600 mt-0.5" />}
-                                <div>
-                                    <h4 className="font-semibold text-sm">{scanResult.success ? 'Success' : 'Error'}</h4>
-                                    <p className="text-sm opacity-90">{scanResult.message}</p>
+                        <div className="py-4 space-y-4">
+                            <TabsContent value="qr" className="mt-0">
+                                {isScanning && activeScanTab === 'qr' && (
+                                    <QrScanner
+                                        fps={10}
+                                        qrbox={250}
+                                        disableFlip={false}
+                                        qrCodeSuccessCallback={(text) => handleScan(text, 'qr')}
+                                    />
+                                )}
+                            </TabsContent>
+
+                            <TabsContent value="nfc" className="mt-0">
+                                {isScanning && activeScanTab === 'nfc' && (
+                                    <NFCReader
+                                        onRead={(data) => handleScan(data, 'nfc')}
+                                        autoVerify={false}
+                                    />
+                                )}
+                            </TabsContent>
+
+                            <TabsContent value="rfid" className="mt-0">
+                                {isScanning && activeScanTab === 'rfid' && (
+                                    <RFIDReader
+                                        onRead={(data) => handleScan(data, 'rfid')}
+                                        autoVerify={false}
+                                    />
+                                )}
+                            </TabsContent>
+
+                            {scanResult && (
+                                <div className={`p-4 rounded-md flex items-start gap-3 ${scanResult.success ? 'bg-green-50 text-green-900 border border-green-200' : 'bg-red-50 text-red-900 border border-red-200'}`}>
+                                    {scanResult.success ? <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" /> : <XCircle className="h-5 w-5 text-red-600 mt-0.5" />}
+                                    <div>
+                                        <h4 className="font-semibold text-sm">{scanResult.success ? 'Success' : 'Error'}</h4>
+                                        <p className="text-sm opacity-90">{scanResult.message}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        <div className="text-xs text-center text-muted-foreground">
-                            Scanning for: <span className="font-semibold text-gray-900">{sports.find(s => s.id == selectedSportId)?.name}</span>
+                            <div className="text-xs text-center text-muted-foreground">
+                                Marking attendance for: <span className="font-semibold text-gray-900">{sports.find(s => s.id == selectedSportId)?.name}</span>
+                            </div>
                         </div>
-                    </div>
+                    </Tabs>
                 </DialogContent>
             </Dialog>
 

@@ -69,8 +69,12 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
         return inertia('Admin/Attendance/QRScanner');
     })->name('attendance.qr-scanner');
     Route::post('attendance/scan', [AdminAttendanceController::class, 'scan'])->name('attendance.scan');
-    Route::post('attendance/mark', [AdminAttendanceController::class, 'mark'])->name('attendance.mark');
+    Route::post('attendance/mark', [AdminAttendanceController::class, 'markAttendance'])->name('attendance.mark');
+    Route::post('attendance/check-out', [AdminAttendanceController::class, 'checkOut'])->name('attendance.check-out');
     Route::post('attendance/bulk', [AdminAttendanceController::class, 'bulkMark'])->name('attendance.bulk');
+    Route::get('attendance/today', [AdminAttendanceController::class, 'getTodayAttendance'])->name('attendance.today');
+    Route::post('attendance/quick-scan', [AdminAttendanceController::class, 'quickScan'])->name('attendance.quick-scan');
+    Route::get('members/{member}/attendance', [AdminAttendanceController::class, 'getMemberAttendance'])->name('members.attendance');
     
     // Sports
     Route::resource('sports', AdminSportController::class);
@@ -96,6 +100,26 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
         Route::post('scan-checkin', [AdminQRCodeController::class, 'scanCheckIn'])->name('scan-checkin');
         Route::post('bulk-generate', [AdminQRCodeController::class, 'bulkGenerateQRCodes'])->name('bulk-generate');
     });
+
+    // NFC
+    Route::prefix('nfc')->name('nfc.')->group(function () {
+        Route::post('verify', [App\Http\Controllers\Admin\NFCController::class, 'verify'])->name('verify');
+        Route::post('associate', [App\Http\Controllers\Admin\NFCController::class, 'associate'])->name('associate');
+        Route::post('disassociate', [App\Http\Controllers\Admin\NFCController::class, 'disassociate'])->name('disassociate');
+    });
+
+    // RFID
+    Route::prefix('rfid')->name('rfid.')->group(function () {
+        Route::post('verify', [App\Http\Controllers\Admin\RFIDController::class, 'verify'])->name('verify');
+        Route::post('associate', [App\Http\Controllers\Admin\RFIDController::class, 'associate'])->name('associate');
+        Route::post('disassociate', [App\Http\Controllers\Admin\RFIDController::class, 'disassociate'])->name('disassociate');
+        Route::post('scan-checkin', [App\Http\Controllers\Admin\RFIDController::class, 'scanCheckIn'])->name('scan-checkin');
+    });
+
+    // Unified Scanner Page
+    Route::get('attendance/unified-scanner', function () {
+        return inertia('Admin/Attendance/UnifiedScanner');
+    })->name('attendance.unified-scanner');
 });
 
 // Member Routes

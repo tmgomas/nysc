@@ -93,6 +93,10 @@ export interface Member {
     status: 'pending' | 'active' | 'suspended' | 'inactive';
     registration_date: string;
 
+    // Identification
+    nfc_tag_id?: string | null;
+    rfid_card_id?: string | null;
+
     // Relations
     user?: User;
     sports: Sport[];
