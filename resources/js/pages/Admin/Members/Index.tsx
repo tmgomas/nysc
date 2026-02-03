@@ -30,18 +30,19 @@ import {
     Phone,
     Mail,
     Calendar,
-    Hash
+    Hash,
+    Upload
 } from 'lucide-react';
 
 interface Member {
     id: string;
     member_number: string;
+    full_name: string;
+    calling_name: string;
     nic_passport: string;
     contact_number: string;
     status: string;
     registration_date: string;
-    first_name?: string;
-    last_name?: string;
     email?: string;
     user?: {
         name: string;
@@ -105,12 +106,20 @@ export default function Index({ members, filters }: Props) {
                                     Manage and view all club members
                                 </p>
                             </div>
-                            <Button asChild>
-                                <Link href="/admin/members/create">
-                                    <UserPlus className="mr-2 h-4 w-4" />
-                                    Add Member
-                                </Link>
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button variant="outline" asChild>
+                                    <Link href="/admin/members/import/create">
+                                        <Upload className="mr-2 h-4 w-4" />
+                                        Bulk Import
+                                    </Link>
+                                </Button>
+                                <Button asChild>
+                                    <Link href="/admin/members/create">
+                                        <UserPlus className="mr-2 h-4 w-4" />
+                                        Add Member
+                                    </Link>
+                                </Button>
+                            </div>
                         </div>
 
                         {/* Filters Card */}
@@ -172,7 +181,7 @@ export default function Index({ members, filters }: Props) {
                                         <div className="flex items-start justify-between">
                                             <div className="space-y-1">
                                                 <CardTitle className="text-lg">
-                                                    {member.first_name ? `${member.first_name} ${member.last_name}` : (member.user?.name || 'N/A')}
+                                                    {member.calling_name || member.full_name || member.user?.name || 'N/A'}
                                                 </CardTitle>
                                                 <CardDescription className="flex items-center gap-1">
                                                     <Hash className="h-3 w-3" />
@@ -267,7 +276,7 @@ export default function Index({ members, filters }: Props) {
                                                 <td className="px-6 py-4">
                                                     <div className="space-y-1">
                                                         <div className="text-sm font-medium">
-                                                            {member.first_name ? `${member.first_name} ${member.last_name}` : (member.user?.name || 'N/A')}
+                                                            {member.calling_name || member.full_name || member.user?.name || 'N/A'}
                                                         </div>
                                                         <div className="text-sm text-muted-foreground">
                                                             {member.nic_passport}

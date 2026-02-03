@@ -23,7 +23,7 @@ class CreateMemberAccountAction
 
         // Create user account
         $user = User::create([
-            'name' => $member->nic_passport, // Will be updated by member
+            'name' => $member->full_name, // Use full name from member registration
             'email' => $email,
             'password' => Hash::make($temporaryPassword),
             'email_verified_at' => null, // Require email verification

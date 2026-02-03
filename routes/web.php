@@ -7,6 +7,7 @@ use App\Http\Controllers\PublicRegistrationController;
 use App\Http\Controllers\Admin\{
     DashboardController as AdminDashboardController,
     MemberController as AdminMemberController,
+    MemberImportController as AdminMemberImportController,
     PaymentController as AdminPaymentController,
     AttendanceController as AdminAttendanceController,
     SportController as AdminSportController,
@@ -46,6 +47,13 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
     Route::post('members/{member}/suspend', [AdminMemberController::class, 'suspend'])->name('members.suspend');
     Route::post('members/{member}/reactivate', [AdminMemberController::class, 'reactivate'])->name('members.reactivate');
     Route::put('members/{member}/sports', [AdminMemberController::class, 'updateSports'])->name('members.update-sports');
+    
+    // Member Import
+    Route::get('members/import/create', [AdminMemberImportController::class, 'create'])->name('members.import.create');
+    Route::get('members/import/template', [AdminMemberImportController::class, 'downloadTemplate'])->name('members.import.template');
+    Route::post('members/import/preview', [AdminMemberImportController::class, 'preview'])->name('members.import.preview');
+    Route::post('members/import', [AdminMemberImportController::class, 'import'])->name('members.import');
+    Route::get('members/import/history', [AdminMemberImportController::class, 'history'])->name('members.import.history');
     
     Route::put('payments/{payment}/mark-as-paid', [AdminPaymentController::class, 'markAsPaid'])->name('payments.mark-as-paid');
     

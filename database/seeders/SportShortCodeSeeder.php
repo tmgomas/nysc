@@ -15,6 +15,9 @@ class SportShortCodeSeeder extends Seeder
         $sportCodes = [
             'Swimming' => 'SW',
             'Cricket' => 'CR',
+            'Martial Arts' => 'MA',
+            'Gym/Fitness' => 'GY',
+            'Yoga' => 'YO',
             'Football' => 'FB',
             'Basketball' => 'BB',
             'Volleyball' => 'VB',

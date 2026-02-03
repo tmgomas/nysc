@@ -174,7 +174,7 @@ export default function Create({ sports }: Props) {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="nic_passport">NIC/Passport Number <span className="text-red-500">*</span></Label>
+                                        <Label htmlFor="nic_passport">NIC/Passport Number</Label>
                                         <Input
                                             id="nic_passport"
                                             value={data.nic_passport}

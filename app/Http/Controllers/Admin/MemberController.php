@@ -52,7 +52,7 @@ class MemberController extends Controller
             'full_name' => 'required|string|max:255',
             'calling_name' => 'required|string|max:255',
             'email' => 'nullable|email|unique:members|max:255',
-            'nic_passport' => 'required|string|unique:members',
+            'nic_passport' => 'nullable|string|unique:members',
             'date_of_birth' => 'required|date',
             'gender' => 'required|in:male,female,other',
             'contact_number' => 'required|string',
@@ -81,7 +81,7 @@ class MemberController extends Controller
             'previous_club_experience' => 'nullable|string',
 
             // Sports & Legal
-            'sport_ids' => 'required|array|min:1',
+            'sport_ids' => 'nullable|array',
             'terms_accepted' => 'accepted',
             'photo_consent' => 'boolean',
         ]);
