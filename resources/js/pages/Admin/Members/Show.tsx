@@ -22,7 +22,8 @@ import {
     TrendingUp,
     DollarSign,
     Heart,
-    Bookmark
+    Bookmark,
+    QrCode
 } from 'lucide-react';
 import { showConfirm, showInput, showLoading, closeLoading } from '@/utils/sweetalert';
 
@@ -32,6 +33,7 @@ import { ContactInfoCard } from '@/components/members/ContactInfoCard';
 import { MedicalInfoCard } from '@/components/members/MedicalInfoCard';
 import { SportsEnrollmentCard } from '@/components/members/SportsEnrollmentCard';
 import { PaymentsCard } from '@/components/members/PaymentsCard';
+import MemberQRCode from '@/components/QRCode/MemberQRCode';
 
 // Import dialogs
 import { ApproveDialog } from '@/components/members/dialogs/ApproveDialog';
@@ -410,6 +412,25 @@ export default function Show({ member, stats, availableSports }: Props) {
                                         <div className="text-muted-foreground">Fitness Level:</div>
                                         <div className="font-medium capitalize">{member.fitness_level}</div>
                                     </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* QR Code Card */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                        <QrCode className="h-4 w-4" />
+                                        MEMBER QR CODE
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <MemberQRCode
+                                        memberId={member.id}
+                                        registrationNumber={member.member_number}
+                                        callingName={member.calling_name}
+                                        showDownload={true}
+                                        size="md"
+                                    />
                                 </CardContent>
                             </Card>
                         </div>

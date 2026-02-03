@@ -12,7 +12,8 @@ use App\Http\Controllers\Admin\{
     AttendanceController as AdminAttendanceController,
     SportController as AdminSportController,
     ReportController as AdminReportController,
-    SettingController as AdminSettingController
+    SettingController as AdminSettingController,
+    QRCodeController as AdminQRCodeController
 };
 
 // Public Routes
@@ -64,6 +65,9 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
     
     // Attendance
     Route::get('attendance', [AdminAttendanceController::class, 'index'])->name('attendance.index');
+    Route::get('attendance/qr-scanner', function () {
+        return inertia('Admin/Attendance/QRScanner');
+    })->name('attendance.qr-scanner');
     Route::post('attendance/scan', [AdminAttendanceController::class, 'scan'])->name('attendance.scan');
     Route::post('attendance/mark', [AdminAttendanceController::class, 'mark'])->name('attendance.mark');
     Route::post('attendance/bulk', [AdminAttendanceController::class, 'bulkMark'])->name('attendance.bulk');
@@ -82,6 +86,16 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
     Route::post('settings', [AdminSettingController::class, 'update'])->name('settings.update');
     Route::get('settings/{key}', [AdminSettingController::class, 'show'])->name('settings.show');
     Route::put('settings/{key}', [AdminSettingController::class, 'updateSingle'])->name('settings.update-single');
+    
+    // QR Codes
+    Route::prefix('qr-codes')->name('qr-codes.')->group(function () {
+        Route::get('members/{member}', [AdminQRCodeController::class, 'getMemberQRCode'])->name('members.get');
+        Route::post('members/{member}/generate', [AdminQRCodeController::class, 'generateMemberQRCode'])->name('members.generate');
+        Route::get('members/{member}/download', [AdminQRCodeController::class, 'downloadMemberQRCode'])->name('members.download');
+        Route::post('verify', [AdminQRCodeController::class, 'verifyQRCode'])->name('verify');
+        Route::post('scan-checkin', [AdminQRCodeController::class, 'scanCheckIn'])->name('scan-checkin');
+        Route::post('bulk-generate', [AdminQRCodeController::class, 'bulkGenerateQRCodes'])->name('bulk-generate');
+    });
 });
 
 // Member Routes
