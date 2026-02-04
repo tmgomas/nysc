@@ -31,6 +31,9 @@ import {
     DollarSign,
     MapPin,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useConfirm } from '@/components/ui/confirm-dialog';
+
 interface Sport {
     id: string;
     name: string;
@@ -67,20 +70,42 @@ interface Props {
 export default function Index({ sports, filters }: Props) {
     const [search, setSearch] = React.useState(filters.search || '');
     const [status, setStatus] = React.useState(filters.status || '');
+    const { confirm, ConfirmDialog } = useConfirm();
 
     const handleFilter = () => {
         router.get('/admin/sports', { search, status }, { preserveState: true });
     };
 
-    const handleDelete = (sport: Sport) => {
-        if (window.confirm(`Are you sure you want to delete "${sport.name}"? This action cannot be undone.`)) {
-            router.delete(`/admin/sports/${sport.id}`);
+    const handleDelete = async (sport: Sport) => {
+        const confirmed = await confirm({
+            title: 'Delete Sport',
+            description: `Are you sure you want to delete "${sport.name}"? This action cannot be undone.`,
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            variant: 'destructive',
+        });
+
+        if (confirmed) {
+            toast.promise(
+                new Promise((resolve, reject) => {
+                    router.delete(`/admin/sports/${sport.id}`, {
+                        onSuccess: () => resolve(sport.name),
+                        onError: () => reject()
+                    });
+                }),
+                {
+                    loading: 'Deleting sport...',
+                    success: (name) => `${name} has been deleted successfully!`,
+                    error: 'Failed to delete sport',
+                }
+            );
         }
     };
 
     return (
         <AppLayout breadcrumbs={[{ title: 'Sports', href: '/admin/sports' }]}>
             <Head title="Sports Management" />
+            <ConfirmDialog />
             <div className="py-12">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="space-y-6">

@@ -6,6 +6,7 @@ import { createRoot } from 'react-dom/client';
 import '../css/app.css';
 import { initializeTheme } from './hooks/use-appearance';
 import ErrorBoundary from './components/ErrorBoundary';
+import { Toaster } from 'sonner';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -23,6 +24,7 @@ createInertiaApp({
             <StrictMode>
                 <ErrorBoundary>
                     <App {...props} />
+                    <Toaster position="top-right" richColors closeButton expand={false} />
                 </ErrorBoundary>
             </StrictMode>,
         );

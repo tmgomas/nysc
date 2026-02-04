@@ -48,6 +48,7 @@ export interface Payment {
         name: string;
     };
     items?: PaymentItem[];
+    schedules?: PaymentSchedule[];
 }
 
 export interface PaymentSchedule {

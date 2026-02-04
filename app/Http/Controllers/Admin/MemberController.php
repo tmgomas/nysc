@@ -132,6 +132,14 @@ class MemberController extends Controller
             ->with('success', 'Member suspended');
     }
 
+    public function reactivate(Member $member)
+    {
+        $this->memberService->reactivate($member);
+
+        return redirect()->back()
+            ->with('success', 'Member reactivated successfully');
+    }
+
     public function updateSports(Request $request, Member $member)
     {
         $validated = $request->validate([

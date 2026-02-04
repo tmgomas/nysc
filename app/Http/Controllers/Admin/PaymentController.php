@@ -29,6 +29,15 @@ class PaymentController extends Controller
         ]);
     }
 
+    public function show(Payment $payment)
+    {
+        $payment->load(['member.user', 'member.sports']);
+
+        return Inertia::render('Admin/Payments/Show', [
+            'payment' => $payment,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([

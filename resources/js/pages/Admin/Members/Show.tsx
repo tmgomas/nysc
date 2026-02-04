@@ -25,6 +25,9 @@ import {
     Bookmark,
     QrCode
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useConfirm } from '@/components/ui/confirm-dialog';
+import { useInput } from '@/components/ui/input-dialog';
 
 
 // Import member components
@@ -63,6 +66,8 @@ export default function Show({ member, stats, availableSports }: Props) {
     const [selectedScheduleIds, setSelectedScheduleIds] = useState<string[]>([]);
     const [selectedAmount, setSelectedAmount] = useState<number>(0);
     const [paymentMethod, setPaymentMethod] = useState('cash');
+    const { confirm, ConfirmDialog } = useConfirm();
+    const { prompt, InputDialog } = useInput();
 
 
 
@@ -102,32 +107,107 @@ export default function Show({ member, stats, availableSports }: Props) {
     // Handlers
     const handleApprove = () => {
         setIsApproveOpen(false);
-        router.post(route('admin.members.approve', member.id));
+        toast.promise(
+            new Promise((resolve, reject) => {
+                router.post(route('admin.members.approve', member.id), {}, {
+                    onSuccess: () => resolve(member.full_name),
+                    onError: () => reject()
+                });
+            }),
+            {
+                loading: 'Approving member...',
+                success: (name) => `${name} has been approved successfully!`,
+                error: 'Failed to approve member',
+            }
+        );
     };
 
-    const handleSuspend = () => {
-        const reason = window.prompt('Enter reason for suspension:');
+    const handleSuspend = async () => {
+        const reason = await prompt({
+            title: 'Suspend Member',
+            description: 'Please provide a reason for suspending this member.',
+            label: 'Reason',
+            placeholder: 'Enter reason for suspension...',
+            type: 'textarea',
+            confirmText: 'Suspend',
+        });
 
         if (reason) {
-            router.post(route('admin.members.suspend', member.id), {
-                reason: reason
-            });
+            toast.promise(
+                new Promise((resolve, reject) => {
+                    router.post(route('admin.members.suspend', member.id), {
+                        reason: reason
+                    }, {
+                        onSuccess: () => resolve(member.full_name),
+                        onError: () => reject()
+                    });
+                }),
+                {
+                    loading: 'Suspending member...',
+                    success: (name) => `${name} has been suspended`,
+                    error: 'Failed to suspend member',
+                }
+            );
         }
     };
 
-    const handleUpdateSports = () => {
+    const handleReactivate = async () => {
+        const confirmed = await confirm({
+            title: 'Reactivate Member',
+            description: `Are you sure you want to reactivate ${member.full_name}? This will restore their active status.`,
+            confirmText: 'Reactivate',
+            cancelText: 'Cancel',
+        });
+
+        if (confirmed) {
+            toast.promise(
+                new Promise((resolve, reject) => {
+                    router.post(route('admin.members.reactivate', member.id), {}, {
+                        onSuccess: () => resolve(member.full_name),
+                        onError: () => reject()
+                    });
+                }),
+                {
+                    loading: 'Reactivating member...',
+                    success: (name) => `${name} has been reactivated successfully!`,
+                    error: 'Failed to reactivate member',
+                }
+            );
+        }
+    };
+
+    const handleUpdateSports = async () => {
         setIsEditSportsOpen(false);
 
-        if (window.confirm('Update Sports? This will update the member\'s enrolled sports and generate new payment schedules if needed.')) {
-            router.put(route('admin.members.update-sports', member.id), {
-                sport_ids: selectedSports
-            });
+        const confirmed = await confirm({
+            title: 'Update Sports',
+            description: "This will update the member's enrolled sports and generate new payment schedules if needed.",
+            confirmText: 'Update',
+            cancelText: 'Cancel',
+        });
+
+        if (confirmed) {
+            toast.promise(
+                new Promise((resolve, reject) => {
+                    router.put(route('admin.members.update-sports', member.id), {
+                        sport_ids: selectedSports
+                    }, {
+                        onSuccess: () => resolve(member.full_name),
+                        onError: () => reject()
+                    });
+                }),
+                {
+                    loading: 'Updating sports...',
+                    success: 'Sports updated successfully!',
+                    error: 'Failed to update sports',
+                }
+            );
         } else {
             setIsEditSportsOpen(true);
         }
     };
 
-    const handlePayment = () => {
+    const handlePayment = async () => {
         // Check if bulk mode or single mode
         const isBulkMode = selectedScheduleIds && selectedScheduleIds.length > 0;
 
@@ -139,60 +219,111 @@ export default function Show({ member, stats, availableSports }: Props) {
             ? `Do you want to record payment for ${selectedScheduleIds.length} selected schedule${selectedScheduleIds.length > 1 ? 's' : ''}?`
             : 'Do you want to record this payment?';
 
-        if (!window.confirm(confirmMessage)) {
+        const confirmed = await confirm({
+            title: 'Record Payment',
+            description: confirmMessage,
+            confirmText: 'Record Payment',
+            cancelText: 'Cancel',
+        });
+
+        if (!confirmed) {
             setIsPaymentOpen(true);
             return;
         }
 
         if (isBulkMode) {
             // Bulk payment mode - process multiple schedules
-            router.post(`/admin/payments/bulk`, {
-                member_id: member.id,
-                schedule_ids: selectedScheduleIds,
-                payment_method: paymentMethod,
-            }, {
-                onSuccess: () => {
-                    setSelectedScheduleIds([]);
-                    setSelectedScheduleId('');
+            toast.promise(
+                new Promise((resolve, reject) => {
+                    router.post(`/admin/payments/bulk`, {
+                        member_id: member.id,
+                        schedule_ids: selectedScheduleIds,
+                        payment_method: paymentMethod,
+                    }, {
+                        onSuccess: () => {
+                            setSelectedScheduleIds([]);
+                            setSelectedScheduleId('');
+                            resolve(selectedScheduleIds.length);
+                        },
+                        onError: () => reject()
+                    });
+                }),
+                {
+                    loading: 'Recording bulk payment...',
+                    success: (count) => `${count} payment(s) recorded successfully!`,
+                    error: 'Failed to record payments',
                 }
-            });
+            );
         } else if (selectedScheduleId.startsWith('ALL:')) {
             const [_, monthYear] = selectedScheduleId.split(':');
-            router.post(`/admin/payments`, {
-                member_id: member.id,
-                type: 'monthly',
-                payment_method: paymentMethod,
-                month_year: monthYear,
-                sport_id: null,
-            }, {
-                onSuccess: () => {
-                    setSelectedScheduleId('');
+            toast.promise(
+                new Promise((resolve, reject) => {
+                    router.post(`/admin/payments`, {
+                        member_id: member.id,
+                        type: 'monthly',
+                        payment_method: paymentMethod,
+                        month_year: monthYear,
+                        sport_id: null,
+                    }, {
+                        onSuccess: () => {
+                            setSelectedScheduleId('');
+                            resolve(monthYear);
+                        },
+                        onError: () => reject()
+                    });
+                }),
+                {
+                    loading: 'Recording payment...',
+                    success: (month) => `Payment for ${month} recorded successfully!`,
+                    error: 'Failed to record payment',
                 }
-            });
+            );
         } else if (selectedScheduleId.startsWith('PAYMENT:')) {
             const paymentId = selectedScheduleId.split(':')[1];
-            router.put(route('admin.payments.mark-as-paid', paymentId), {
-                payment_method: paymentMethod
-            }, {
-                onSuccess: () => {
-                    setSelectedScheduleId('');
+            toast.promise(
+                new Promise((resolve, reject) => {
+                    router.put(route('admin.payments.mark-as-paid', paymentId), {
+                        payment_method: paymentMethod
+                    }, {
+                        onSuccess: () => {
+                            setSelectedScheduleId('');
+                            resolve(true);
+                        },
+                        onError: () => reject()
+                    });
+                }),
+                {
+                    loading: 'Marking payment as paid...',
+                    success: 'Payment marked as paid successfully!',
+                    error: 'Failed to mark payment as paid',
                 }
-            });
+            );
         } else {
             const schedule = member.payment_schedules.find(s => s.id === selectedScheduleId);
             if (!schedule) return;
 
-            router.post(`/admin/payments`, {
-                member_id: member.id,
-                type: 'monthly',
-                payment_method: paymentMethod,
-                month_year: schedule.month_year,
-                sport_id: schedule.sport_id,
-            }, {
-                onSuccess: () => {
-                    setSelectedScheduleId('');
+            toast.promise(
+                new Promise((resolve, reject) => {
+                    router.post(`/admin/payments`, {
+                        member_id: member.id,
+                        type: 'monthly',
+                        payment_method: paymentMethod,
+                        month_year: schedule.month_year,
+                        sport_id: schedule.sport_id,
+                    }, {
+                        onSuccess: () => {
+                            setSelectedScheduleId('');
+                            resolve(schedule.month_year);
+                        },
+                        onError: () => reject()
+                    });
+                }),
+                {
+                    loading: 'Recording payment...',
+                    success: (month) => `Payment for ${month} recorded successfully!`,
+                    error: 'Failed to record payment',
                 }
-            });
+            );
         }
     };
 
@@ -222,6 +353,8 @@ export default function Show({ member, stats, availableSports }: Props) {
             ]}
         >
             <Head title={`Member - ${member.member_number}`} />
+            <ConfirmDialog />
+            <InputDialog />
 
             <div className="py-8">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -276,6 +409,12 @@ export default function Show({ member, stats, availableSports }: Props) {
                                                 <Button variant="destructive" size="sm" onClick={handleSuspend}>
                                                     <XCircle className="h-4 w-4 mr-2" />
                                                     Suspend
+                                                </Button>
+                                            )}
+                                            {member.status === 'suspended' && (
+                                                <Button variant="default" size="sm" onClick={handleReactivate}>
+                                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                                    Reactivate
                                                 </Button>
                                             )}
                                         </div>
