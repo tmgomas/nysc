@@ -31,8 +31,6 @@ import {
     DollarSign,
     MapPin,
 } from 'lucide-react';
-import { showDeleteConfirm } from '@/utils/sweetalert';
-
 interface Sport {
     id: string;
     name: string;
@@ -74,10 +72,8 @@ export default function Index({ sports, filters }: Props) {
         router.get('/admin/sports', { search, status }, { preserveState: true });
     };
 
-    const handleDelete = async (sport: Sport) => {
-        const result = await showDeleteConfirm(sport.name);
-
-        if (result.isConfirmed) {
+    const handleDelete = (sport: Sport) => {
+        if (window.confirm(`Are you sure you want to delete "${sport.name}"? This action cannot be undone.`)) {
             router.delete(`/admin/sports/${sport.id}`);
         }
     };
@@ -185,7 +181,7 @@ export default function Index({ sports, filters }: Props) {
                                                         </Link>
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
-                                                        onClick={() => handleDelete(sport.id)}
+                                                        onClick={() => handleDelete(sport)}
                                                         className="text-destructive focus:text-destructive"
                                                     >
                                                         <Trash2 className="mr-2 h-4 w-4" />

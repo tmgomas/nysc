@@ -25,8 +25,7 @@ import {
     Bookmark,
     QrCode
 } from 'lucide-react';
-import { showConfirm, showInput, showLoading, closeLoading, showSuccess } from '@/utils/sweetalert';
-import { useFlashMessages } from '@/hooks/use-flash-messages';
+
 
 // Import member components
 import { PersonalInfoCard } from '@/components/members/PersonalInfoCard';
@@ -65,8 +64,7 @@ export default function Show({ member, stats, availableSports }: Props) {
     const [selectedAmount, setSelectedAmount] = useState<number>(0);
     const [paymentMethod, setPaymentMethod] = useState('cash');
 
-    // Handle flash messages from backend
-    useFlashMessages();
+
 
     // Initialize selected sports when dialog opens
     React.useEffect(() => {
@@ -104,75 +102,50 @@ export default function Show({ member, stats, availableSports }: Props) {
     // Handlers
     const handleApprove = () => {
         setIsApproveOpen(false);
-        showLoading('Approving member...', 'Please wait');
-        router.post(route('admin.members.approve', member.id), {}, {
-            onFinish: () => closeLoading()
-        });
+        router.post(route('admin.members.approve', member.id));
     };
 
-    const handleSuspend = async () => {
-        const result = await showInput(
-            'Suspend Member',
-            'textarea',
-            'Enter reason for suspension...'
-        );
+    const handleSuspend = () => {
+        const reason = window.prompt('Enter reason for suspension:');
 
-        if (result.isConfirmed && result.value) {
-            showLoading('Suspending member...', 'Please wait');
+        if (reason) {
             router.post(route('admin.members.suspend', member.id), {
-                reason: result.value
-            }, {
-                onFinish: () => closeLoading()
+                reason: reason
             });
         }
     };
 
-    const handleUpdateSports = async () => {
+    const handleUpdateSports = () => {
         setIsEditSportsOpen(false);
-        await new Promise(resolve => setTimeout(resolve, 100));
 
-        const result = await showConfirm(
-            'Update Sports?',
-            'This will update the member\'s enrolled sports and generate new payment schedules if needed.'
-        );
-
-        if (result.isConfirmed) {
-            showLoading('Updating sports...', 'Please wait');
+        if (window.confirm('Update Sports? This will update the member\'s enrolled sports and generate new payment schedules if needed.')) {
             router.put(route('admin.members.update-sports', member.id), {
                 sport_ids: selectedSports
-            }, {
-                onSuccess: () => closeLoading(),
-                onFinish: () => closeLoading()
             });
         } else {
             setIsEditSportsOpen(true);
         }
     };
 
-    const handlePayment = async () => {
+    const handlePayment = () => {
         // Check if bulk mode or single mode
         const isBulkMode = selectedScheduleIds && selectedScheduleIds.length > 0;
 
         if (!isBulkMode && !selectedScheduleId) return;
 
         setIsPaymentOpen(false);
-        await new Promise(resolve => setTimeout(resolve, 100));
 
-        const confirmed = await showConfirm(
-            'Record Payment?',
-            isBulkMode
-                ? `Do you want to record payment for ${selectedScheduleIds.length} selected schedule${selectedScheduleIds.length > 1 ? 's' : ''}?`
-                : 'Do you want to record this payment?'
-        );
+        const confirmMessage = isBulkMode
+            ? `Do you want to record payment for ${selectedScheduleIds.length} selected schedule${selectedScheduleIds.length > 1 ? 's' : ''}?`
+            : 'Do you want to record this payment?';
 
-        if (!confirmed.isConfirmed) {
+        if (!window.confirm(confirmMessage)) {
             setIsPaymentOpen(true);
             return;
         }
 
         if (isBulkMode) {
             // Bulk payment mode - process multiple schedules
-            showLoading('Recording bulk payment...', 'Please wait');
             router.post(`/admin/payments/bulk`, {
                 member_id: member.id,
                 schedule_ids: selectedScheduleIds,
@@ -181,12 +154,10 @@ export default function Show({ member, stats, availableSports }: Props) {
                 onSuccess: () => {
                     setSelectedScheduleIds([]);
                     setSelectedScheduleId('');
-                },
-                onFinish: () => closeLoading()
+                }
             });
         } else if (selectedScheduleId.startsWith('ALL:')) {
             const [_, monthYear] = selectedScheduleId.split(':');
-            showLoading('Recording payment...', 'Please wait');
             router.post(`/admin/payments`, {
                 member_id: member.id,
                 type: 'monthly',
@@ -195,30 +166,22 @@ export default function Show({ member, stats, availableSports }: Props) {
                 sport_id: null,
             }, {
                 onSuccess: () => {
-                    closeLoading();
-                    showSuccess('Payment Successful!', 'Payment has been recorded successfully.');
                     setSelectedScheduleId('');
-                },
-                onFinish: () => closeLoading()
+                }
             });
         } else if (selectedScheduleId.startsWith('PAYMENT:')) {
             const paymentId = selectedScheduleId.split(':')[1];
-            showLoading('Recording payment...', 'Please wait');
             router.put(route('admin.payments.mark-as-paid', paymentId), {
                 payment_method: paymentMethod
             }, {
                 onSuccess: () => {
-                    closeLoading();
-                    showSuccess('Payment Marked as Paid!', 'Payment has been successfully marked as received.');
                     setSelectedScheduleId('');
-                },
-                onFinish: () => closeLoading()
+                }
             });
         } else {
             const schedule = member.payment_schedules.find(s => s.id === selectedScheduleId);
             if (!schedule) return;
 
-            showLoading('Recording payment...', 'Please wait');
             router.post(`/admin/payments`, {
                 member_id: member.id,
                 type: 'monthly',
@@ -227,11 +190,8 @@ export default function Show({ member, stats, availableSports }: Props) {
                 sport_id: schedule.sport_id,
             }, {
                 onSuccess: () => {
-                    closeLoading();
-                    showSuccess('Payment Successful!', 'Payment has been recorded successfully.');
                     setSelectedScheduleId('');
-                },
-                onFinish: () => closeLoading()
+                }
             });
         }
     };
