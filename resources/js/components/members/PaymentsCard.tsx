@@ -290,7 +290,7 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
                                                                 )}
                                                                 {hasItems && (
                                                                     <Badge variant="outline" className="text-xs">
-                                                                        {payment.items.length} {payment.items.length === 1 ? 'item' : 'items'}
+                                                                        {payment.items?.length} {payment.items?.length === 1 ? 'item' : 'items'}
                                                                     </Badge>
                                                                 )}
                                                             </div>
@@ -332,7 +332,7 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
                                                     <div className="border-t bg-white/50">
                                                         <div className="p-4 space-y-2">
                                                             <div className="text-xs font-semibold text-muted-foreground mb-3">Payment Breakdown:</div>
-                                                            {payment.items.map(item => (
+                                                            {payment.items?.map(item => (
                                                                 <div key={item.id} className="flex items-center justify-between py-2 px-3 rounded bg-muted/30">
                                                                     <div className="flex items-center gap-3">
                                                                         <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
@@ -659,7 +659,7 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
                                                             )}
                                                             {hasItems && (
                                                                 <Badge variant="outline" className="text-xs">
-                                                                    {payment.items.length} {payment.items.length === 1 ? 'item' : 'items'}
+                                                                    {payment.items?.length} {payment.items?.length === 1 ? 'item' : 'items'}
                                                                 </Badge>
                                                             )}
                                                         </div>
@@ -701,7 +701,7 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
                                                 <div className="border-t bg-muted/20">
                                                     <div className="p-4 space-y-2">
                                                         <div className="text-xs font-semibold text-muted-foreground mb-3">Payment Breakdown:</div>
-                                                        {payment.items.map(item => (
+                                                        {payment.items?.map(item => (
                                                             <div key={item.id} className="flex items-center justify-between py-2 px-3 rounded bg-card">
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
