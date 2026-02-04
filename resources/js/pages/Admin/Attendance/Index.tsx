@@ -13,16 +13,31 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import NFCReader from '@/components/NFC/NFCReader';
 import RFIDReader from '@/components/RFID/RFIDReader';
-import { Loader2, Save, Calendar as CalendarIcon, Filter, Search, QrCode, XCircle, CheckCircle, Nfc, CreditCard } from 'lucide-react';
+import {
+    Loader2,
+    Save,
+    Calendar as CalendarIcon,
+    Filter,
+    Search,
+    QrCode,
+    XCircle,
+    CheckCircle,
+    Nfc,
+    CreditCard,
+    User,
+    Clock,
+    ScanLine
+} from 'lucide-react';
 import { debounce } from 'lodash';
 import QrScanner from '@/components/RefactoredQrScanner';
 import axios from 'axios';
 import { route } from 'ziggy-js';
+import { cn } from '@/lib/utils';
 
 interface Sport {
     id: string;
@@ -105,9 +120,7 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
 
     // Handle Filters Change
     const applyFilters = (date: string, sportId: string) => {
-        router.get('/admin/attendance', { date, sport_id: sportId }, { preserveState: true, preserveScroll: true }
-        );
-
+        router.get('/admin/attendance', { date, sport_id: sportId }, { preserveState: true, preserveScroll: true });
     };
 
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,7 +176,7 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                 setProcessing(false);
                 setIsDirty(false);
             },
-            onError: () => setProcessing(false) // Keep dirty state on error
+            onError: () => setProcessing(false)
         });
     };
 
@@ -171,18 +184,14 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
     const handleScan = (data: string, method: 'qr' | 'nfc' | 'rfid') => {
         if (!selectedSportId) return;
 
-        // For QR, avoid duplicate scans of same code immediately
         if (method === 'qr' && data === lastScanned) return;
         if (method === 'qr') setLastScanned(data);
 
-        // Handle JSON data parsing if needed (for QR/NFC that returns JSON)
         let memberIdentifier = data;
         try {
             const parsed = JSON.parse(data);
             if (parsed.member_number) memberIdentifier = parsed.member_number;
-        } catch (e) {
-            // Raw string (RFID or simple QR)
-        }
+        } catch (e) { }
 
         apiPost('/admin/attendance/scan', {
             date: selectedDate,
@@ -204,7 +213,6 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                         }
                         return { ...item, present: true, check_in: timeString };
                     }));
-                    // Silently refresh
                     router.reload({ only: ['members'] });
                 }
             } else {
@@ -219,7 +227,6 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
         });
     };
 
-    // Derived states
     const filteredMembers = (members || []).filter(m =>
         (m.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (m.member_number || '').toLowerCase().includes(searchTerm.toLowerCase())
@@ -229,248 +236,276 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
 
     return (
         <AppLayout breadcrumbs={[{ title: 'Attendance', href: '/admin/attendance' }]}>
-            <Head title="Attendance Management" />
+            <Head title="Attendance" />
 
-            <div className="py-12">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
-
-                    {/* Header & Controls */}
-                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                        <div>
-                            <h2 className="text-2xl font-bold tracking-tight text-gray-900">
-                                Attendance Management
-                            </h2>
-                            <p className="text-muted-foreground">
-                                Mark daily attendance for sports activities.
-                            </p>
-                        </div>
-                        <div className="flex flex-col md:flex-row items-center gap-3 bg-white p-2 rounded-lg shadow-sm border">
-                            <div className="flex w-full md:w-auto gap-2">
-                                <div className="flex items-center gap-2 flex-1 md:flex-none">
-                                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        type="date"
-                                        value={selectedDate}
-                                        onChange={handleDateChange}
-                                        className="w-full md:w-40 border-0 shadow-none focus-visible:ring-0 px-0 h-9"
-                                    />
-                                </div>
-                                <div className="hidden md:block h-6 w-px bg-border" />
-                            </div>
-                            <Select value={selectedSportId} onValueChange={handleSportChange}>
-                                <SelectTrigger className="w-full md:w-[200px] border-0 shadow-none focus:ring-0 h-9">
-                                    <SelectValue placeholder="Select Sport" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {sports.map(sport => (
-                                        <SelectItem key={sport.id} value={sport.id}>{sport.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
-                            <div className="hidden md:block h-6 w-px bg-border" />
-
-                            <Button
-                                variant="secondary"
-                                className="w-full md:w-auto bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border-indigo-200"
-                                onClick={() => setIsScanning(true)}
-                                disabled={!selectedSportId}
-                            >
-                                <QrCode className="mr-2 h-4 w-4" />
-                                Scan Member
-                            </Button>
-                        </div>
-                    </div>
-
-                    {/* Main Content */}
-                    <Card>
-                        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between pb-4 gap-4">
-                            <div>
-                                <CardTitle>Mark Attendance</CardTitle>
-                                <CardDescription>
-                                    {selectedSportId
-                                        ? `${members.length} active members found. ${presentCount} marked present.`
-                                        : "Select a sport to load members list."}
-                                </CardDescription>
-                            </div>
+            {/* Mobile-Optimized Header */}
+            <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b">
+                <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-gray-900">Attendance</h2>
                             {selectedSportId && (
-                                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4">
-                                    <div className="relative">
-                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            type="search"
-                                            placeholder="Search members..."
-                                            className="pl-9 w-full md:w-[250px]"
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                        />
+                                <div className="flex items-center gap-2">
+                                    <div className="hidden sm:block text-sm text-muted-foreground mr-2">
+                                        <span className="font-medium text-foreground">{presentCount}</span> / {members.length} Present
                                     </div>
-                                    {/* Save button moved below CardContent */}
-                                </div>
-                            )}
-                        </CardHeader>
-
-                        <CardContent>
-                            {!selectedSportId ? (
-                                <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
-                                    <Filter className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                                    <h3 className="text-lg font-medium">No Sport Selected</h3>
-                                    <p>Please select a sport from the dropdown above to view members.</p>
-                                </div>
-                            ) : members.length === 0 ? (
-                                <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
-                                    <p>No active members found for this sport.</p>
-                                </div>
-                            ) : (
-                                <div className="relative overflow-x-auto rounded-md border text-left">
-                                    <table className="w-full text-sm text-left">
-                                        <thead className="bg-muted/50 text-muted-foreground font-medium">
-                                            <tr>
-                                                <th className="p-4 w-[50px]">
-                                                    {/* Explicit "Presence" column */}
-                                                </th>
-                                                <th className="p-4">Member Info</th>
-                                                <th className="p-4">Check-in Time</th>
-                                                <th className="p-4">Check-out Time</th>
-                                                <th className="p-4 text-right">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y">
-                                            {filteredMembers.map((member) => {
-                                                const state = attendanceData.find(a => a.id === member.id) || { present: false, check_in: '08:00', check_out: '', id: member.id };
-
-                                                return (
-                                                    <tr key={member.id} className={state.present ? "bg-green-50/50 hover:bg-green-50" : "hover:bg-muted/50"}>
-                                                        <td className="p-4">
-                                                            <Checkbox
-                                                                checked={state.present}
-                                                                onCheckedChange={(checked) => togglePresent(member.id, checked as boolean)}
-                                                                id={`check-${member.id}`}
-                                                            />
-                                                        </td>
-                                                        <td className="p-4">
-                                                            <Label htmlFor={`check-${member.id}`} className="cursor-pointer">
-                                                                <div className="font-medium text-gray-900">{member.full_name}</div>
-                                                                <div className="text-muted-foreground text-xs">{member.member_number}</div>
-                                                            </Label>
-                                                        </td>
-                                                        <td className="p-4">
-                                                            <Input
-                                                                type="time"
-                                                                value={state.check_in}
-                                                                onChange={(e) => updateCheckInTime(member.id, e.target.value)}
-                                                                disabled={!state.present}
-                                                                className={`w-[120px] h-8 ${!state.present ? 'opacity-50' : ''}`}
-                                                            />
-                                                        </td>
-                                                        <td className="p-4">
-                                                            <Input
-                                                                type="time"
-                                                                value={state.check_out}
-                                                                onChange={(e) => updateCheckOutTime(member.id, e.target.value)}
-                                                                disabled={!state.present}
-                                                                className={`w-[120px] h-8 ${!state.present ? 'opacity-50' : ''}`}
-                                                            />
-                                                        </td>
-                                                        <td className="p-4 text-right">
-                                                            {state.present ? (
-                                                                <Badge className="bg-green-600 hover:bg-green-700">Present</Badge>
-                                                            ) : (
-                                                                <Badge variant="outline" className="text-muted-foreground border-dashed">Absent</Badge>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                            {selectedSportId && members.length > 0 && (
-                                <div className="mt-4 flex justify-end">
-                                    <Button onClick={handleSave} disabled={processing || !isDirty || members.length === 0}>
-                                        {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        <Save className="mr-2 h-4 w-4" />
+                                    <Button
+                                        size="sm"
+                                        onClick={handleSave}
+                                        disabled={processing || !isDirty}
+                                        className={cn(
+                                            "transition-all shadow-sm",
+                                            isDirty ? "animate-pulse ring-2 ring-primary/20" : ""
+                                        )}
+                                    >
+                                        {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
                                         Save Changes
                                     </Button>
                                 </div>
                             )}
-                        </CardContent>
-                    </Card>
+                        </div>
+
+                        {/* Controls Bar */}
+                        <div className="flex flex-col sm:flex-row gap-3 sm:items-center pt-2">
+                            <div className="flex flex-1 gap-3 items-center overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+                                <div className="flex-shrink-0 w-36 sm:w-44">
+                                    <Input
+                                        type="date"
+                                        value={selectedDate}
+                                        onChange={handleDateChange}
+                                        className="h-9 text-sm bg-white/50 border-gray-200"
+                                    />
+                                </div>
+                                <div className="flex-shrink-0 w-40 sm:w-56">
+                                    <Select value={selectedSportId} onValueChange={handleSportChange}>
+                                        <SelectTrigger className="h-9 bg-white/50 border-gray-200">
+                                            <SelectValue placeholder="Select Sport" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {sports.map(sport => (
+                                                <SelectItem key={sport.id} value={sport.id}>{sport.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <span className="flex-1"></span>
+
+                                {selectedSportId && (
+                                    <div className="relative w-full sm:w-64 hidden sm:block">
+                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            type="search"
+                                            placeholder="Search members..."
+                                            className="pl-9 h-9 w-full bg-white/50 border-gray-200"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                        />
+                                    </div>
+                                )}
+
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex-shrink-0 gap-2 h-9 bg-white/80 hover:bg-white shadow-sm border-gray-200 text-gray-700"
+                                    onClick={() => setIsScanning(true)}
+                                    disabled={!selectedSportId}
+                                >
+                                    <ScanLine className="h-4 w-4 text-primary" />
+                                    <span className="hidden sm:inline">Quick Scan</span>
+                                    <span className="sm:hidden">Scan</span>
+                                </Button>
+                            </div>
+
+                            {/* Mobile Search - Only visible on small screens */}
+                            {selectedSportId && (
+                                <div className="relative w-full sm:hidden">
+                                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        type="search"
+                                        placeholder="Search members..."
+                                        className="pl-9 h-9 w-full bg-white/50"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* Scanning Modal */}
+            <div className="py-6 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
+
+                {/* Content Area */}
+                {!selectedSportId ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground bg-white rounded-xl border border-dashed p-8">
+                        <div className="rounded-full bg-gray-100 p-4 mb-4">
+                            <Filter className="h-8 w-8 opacity-50" />
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-900">No Sport Selected</h3>
+                        <p className="mt-1 text-sm">Select a sport from the toolbar to load members.</p>
+                    </div>
+                ) : filteredMembers.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground bg-white rounded-xl border border-dashed p-8">
+                        <p>No members found.</p>
+                    </div>
+                ) : (
+
+                    <div className="space-y-4">
+                        {/* Stats Banner for Mobile (hidden on desktop as it's in header) */}
+                        <div className="flex sm:hidden justify-between items-center px-1 text-sm text-muted-foreground">
+                            <span>Total Members: {members.length}</span>
+                            <span>Present: <span className="font-bold text-green-600">{presentCount}</span></span>
+                        </div>
+
+                        {/* Member Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {filteredMembers.map((member) => {
+                                const state = attendanceData.find(a => a.id === member.id) || { present: false, check_in: '08:00', check_out: '', id: member.id };
+
+                                return (
+                                    <div
+                                        key={member.id}
+                                        className={cn(
+                                            "group relative flex flex-col gap-3 rounded-xl border p-4 bg-white transition-all duration-200",
+                                            "hover:shadow-md hover:border-gray-300",
+                                            state.present
+                                                ? "border-green-200 bg-green-50/40 shadow-sm ring-1 ring-green-500/10"
+                                                : "border-gray-200 shadow-sm"
+                                        )}
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex items-center gap-3 overflow-hidden">
+                                                <div className={cn(
+                                                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold transition-colors shadow-sm",
+                                                    state.present
+                                                        ? "bg-gradient-to-br from-green-100 to-green-200 text-green-700 ring-2 ring-white"
+                                                        : "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600 ring-2 ring-white"
+                                                )}>
+                                                    {(member.full_name || '?').charAt(0)}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <h3 className="font-semibold text-gray-900 leading-tight truncate text-sm sm:text-base" title={member.full_name}>
+                                                        {member.full_name || 'Unknown Member'}
+                                                    </h3>
+                                                    <p className="text-xs text-muted-foreground truncate">{member.member_number}</p>
+                                                </div>
+                                            </div>
+
+                                            <Switch
+                                                checked={state.present}
+                                                onCheckedChange={(checked: boolean) => togglePresent(member.id, checked)}
+                                                className={cn(
+                                                    "data-[state=checked]:bg-green-600",
+                                                    "shrink-0"
+                                                )}
+                                            />
+                                        </div>
+
+                                        {/* Expanded Time Controls */}
+                                        {state.present && (
+                                            <div className="grid grid-cols-2 gap-3 mt-1 pt-3 border-t border-black/5 animate-in slide-in-from-top-2 fade-in duration-200">
+                                                <div className="space-y-1.5">
+                                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
+                                                        <Clock className="h-3 w-3" /> Check In
+                                                    </Label>
+                                                    <Input
+                                                        type="time"
+                                                        value={state.check_in}
+                                                        onChange={(e) => updateCheckInTime(member.id, e.target.value)}
+                                                        className="h-8 text-xs font-medium bg-white/80 border-gray-200 focus:border-green-500 transition-colors"
+                                                    />
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
+                                                        <Clock className="h-3 w-3" /> Check Out
+                                                    </Label>
+                                                    <Input
+                                                        type="time"
+                                                        value={state.check_out}
+                                                        onChange={(e) => updateCheckOutTime(member.id, e.target.value)}
+                                                        className="h-8 text-xs font-medium bg-white/80 border-gray-200 focus:border-green-500 transition-colors"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Scan Modal */}
             <Dialog open={isScanning} onOpenChange={setIsScanning}>
-                <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-md w-full bottom-0 sm:bottom-auto mb-0 sm:mb-auto rounded-b-none sm:rounded-xl">
                     <DialogHeader>
-                        <DialogTitle>Scan Member</DialogTitle>
+                        <DialogTitle>Quick Scan</DialogTitle>
                         <DialogDescription>
-                            Use one of the methods below to mark attendance.
+                            Mark attendance via scan.
                         </DialogDescription>
                     </DialogHeader>
 
                     <Tabs defaultValue="qr" value={activeScanTab} onValueChange={(v) => setActiveScanTab(v as any)} className="w-full">
                         <TabsList className="grid w-full grid-cols-3">
                             <TabsTrigger value="qr" className="flex items-center gap-2">
-                                <QrCode className="h-4 w-4" /> QR Code
-                            </TabsTrigger>
-                            <TabsTrigger value="nfc" className="flex items-center gap-2">
-                                <Nfc className="h-4 w-4" /> NFC
+                                <QrCode className="h-4 w-4" /> QR
                             </TabsTrigger>
                             <TabsTrigger value="rfid" className="flex items-center gap-2">
                                 <CreditCard className="h-4 w-4" /> RFID
                             </TabsTrigger>
+                            {/* Assuming NFC is less common on desktop/web but kept for consistency */}
+                            <TabsTrigger value="nfc" className="flex items-center gap-2">
+                                <Nfc className="h-4 w-4" /> NFC
+                            </TabsTrigger>
                         </TabsList>
 
-                        <div className="py-4 space-y-4">
+                        <div className="py-4 min-h-[300px] flex flex-col justify-center">
                             <TabsContent value="qr" className="mt-0">
                                 {isScanning && activeScanTab === 'qr' && (
-                                    <QrScanner
-                                        fps={10}
-                                        qrbox={250}
-                                        disableFlip={false}
-                                        qrCodeSuccessCallback={(text) => handleScan(text, 'qr')}
-                                    />
-                                )}
-                            </TabsContent>
-
-                            <TabsContent value="nfc" className="mt-0">
-                                {isScanning && activeScanTab === 'nfc' && (
-                                    <NFCReader
-                                        onRead={(data) => handleScan(data, 'nfc')}
-                                        autoVerify={false}
-                                    />
+                                    <div className="rounded-xl overflow-hidden shadow-sm border bg-black">
+                                        <QrScanner
+                                            fps={10}
+                                            qrbox={window.innerWidth < 640 ? 200 : 250}
+                                            disableFlip={false}
+                                            qrCodeSuccessCallback={(text) => handleScan(text, 'qr')}
+                                        />
+                                    </div>
                                 )}
                             </TabsContent>
 
                             <TabsContent value="rfid" className="mt-0">
                                 {isScanning && activeScanTab === 'rfid' && (
-                                    <RFIDReader
-                                        onRead={(data) => handleScan(data, 'rfid')}
-                                        autoVerify={false}
-                                    />
+                                    <RFIDReader onRead={(data) => handleScan(data, 'rfid')} autoVerify={false} />
                                 )}
                             </TabsContent>
 
+                            <TabsContent value="nfc" className="mt-0">
+                                {isScanning && activeScanTab === 'nfc' && (
+                                    <NFCReader onRead={(data) => handleScan(data, 'nfc')} autoVerify={false} />
+                                )}
+                            </TabsContent>
+
+                            {/* Scan Result Feedback */}
                             {scanResult && (
-                                <div className={`p-4 rounded-md flex items-start gap-3 ${scanResult.success ? 'bg-green-50 text-green-900 border border-green-200' : 'bg-red-50 text-red-900 border border-red-200'}`}>
-                                    {scanResult.success ? <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" /> : <XCircle className="h-5 w-5 text-red-600 mt-0.5" />}
+                                <div className={cn(
+                                    "mt-4 p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-bottom-2 fade-in",
+                                    scanResult.success ? "bg-green-100 text-green-900" : "bg-red-100 text-red-900"
+                                )}>
+                                    {scanResult.success ? <CheckCircle className="h-6 w-6 text-green-700" /> : <XCircle className="h-6 w-6 text-red-700" />}
                                     <div>
-                                        <h4 className="font-semibold text-sm">{scanResult.success ? 'Success' : 'Error'}</h4>
-                                        <p className="text-sm opacity-90">{scanResult.message}</p>
+                                        <h4 className="font-semibold text-sm">{scanResult.success ? 'Confirmed' : 'Error'}</h4>
+                                        <p className="text-xs opacity-90">{scanResult.message}</p>
                                     </div>
                                 </div>
                             )}
-
-                            <div className="text-xs text-center text-muted-foreground">
-                                Marking attendance for: <span className="font-semibold text-gray-900">{sports.find(s => s.id == selectedSportId)?.name}</span>
-                            </div>
                         </div>
                     </Tabs>
                 </DialogContent>
             </Dialog>
-
         </AppLayout>
     );
 }

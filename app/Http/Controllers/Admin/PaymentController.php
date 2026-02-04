@@ -71,7 +71,7 @@ class PaymentController extends Controller
             ),
         };
 
-        return redirect()->route('admin.payments.show', $payment)
+        return redirect()->back()
             ->with('success', 'Payment processed successfully');
     }
 
@@ -116,5 +116,50 @@ class PaymentController extends Controller
 
         return redirect()->back()
             ->with('success', 'Payment marked as received');
+    }
+
+    public function bulkSchedulePayment(Request $request)
+    {
+        $validated = $request->validate([
+            'member_id' => 'required|exists:members,id',
+            'schedule_ids' => 'required|array|min:1',
+            'schedule_ids.*' => 'required|exists:member_payment_schedules,id',
+            'payment_method' => 'required|in:cash,bank_transfer,online',
+        ]);
+
+        $member = Member::findOrFail($validated['member_id']);
+        $method = PaymentMethod::from($validated['payment_method']);
+
+        // Process all schedules in a transaction
+        $processedCount = 0;
+        
+        \DB::transaction(function () use ($member, $validated, $method, &$processedCount) {
+            foreach ($validated['schedule_ids'] as $scheduleId) {
+                $schedule = \App\Models\MemberPaymentSchedule::where('id', $scheduleId)
+                    ->where('member_id', $member->id)
+                    ->where('status', 'pending')
+                    ->first();
+                
+                if ($schedule) {
+                    // Process the payment for this specific schedule
+                    $this->paymentService->processMonthlyPayment(
+                        $member,
+                        $schedule->month_year,
+                        $method->value,
+                        null,
+                        null,
+                        $schedule->sport_id
+                    );
+                    $processedCount++;
+                }
+            }
+        });
+
+        if ($processedCount === 0) {
+            return redirect()->back()->with('error', 'No pending schedules were found to process.');
+        }
+
+        return redirect()->back()
+            ->with('success', "Successfully processed {$processedCount} payment" . ($processedCount !== 1 ? 's' : ''));
     }
 }

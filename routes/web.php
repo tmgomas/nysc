@@ -57,6 +57,7 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
     Route::get('members/import/history', [AdminMemberImportController::class, 'history'])->name('members.import.history');
     
     Route::put('payments/{payment}/mark-as-paid', [AdminPaymentController::class, 'markAsPaid'])->name('payments.mark-as-paid');
+    Route::post('payments/bulk', [AdminPaymentController::class, 'bulkSchedulePayment'])->name('payments.bulk');
     
     // Payments
     Route::resource('payments', AdminPaymentController::class)->except(['edit', 'update', 'destroy']);

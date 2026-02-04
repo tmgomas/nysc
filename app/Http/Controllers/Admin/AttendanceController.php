@@ -191,6 +191,18 @@ class AttendanceController extends Controller
                     'status' => 'checked_out'
                 ]);
             } else {
+                // Prevent double-punch (checking out immediately after checking in)
+                // If check-in was less than 2 minutes ago, ignore this scan
+                if ($attendance->check_in_time->diffInMinutes(Carbon::now()) < 5) { // 5 Minute cooldown
+                    return response()->json([
+                        'success' => true,
+                        'message' => "Already Checked In (Duplicate scan ignored) - Wait 5m to checkout",
+                        'member' => $member->load(['sports']),
+                        'attendance' => $attendance,
+                        'status' => 'checked_in'
+                    ]);
+                }
+
                 // Perform Check-out
                 $attendance->update([
                     'check_out_time' => Carbon::now(),

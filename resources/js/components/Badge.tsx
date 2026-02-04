@@ -2,11 +2,12 @@ import React from 'react';
 
 interface BadgeProps {
     children: React.ReactNode;
-    variant?: 'success' | 'warning' | 'danger' | 'info' | 'default' | 'secondary';
+    variant?: 'success' | 'warning' | 'danger' | 'info' | 'default' | 'secondary' | 'outline';
     size?: 'sm' | 'md' | 'lg';
+    className?: string;
 }
 
-export default function Badge({ children, variant = 'default', size = 'md' }: BadgeProps) {
+export default function Badge({ children, variant = 'default', size = 'md', className = '' }: BadgeProps) {
     const variantClasses = {
         success: 'bg-green-100 text-green-800',
         warning: 'bg-yellow-100 text-yellow-800',
@@ -14,6 +15,7 @@ export default function Badge({ children, variant = 'default', size = 'md' }: Ba
         info: 'bg-blue-100 text-blue-800',
         default: 'bg-gray-100 text-gray-800',
         secondary: 'bg-slate-100 text-slate-700',
+        outline: 'border border-slate-200 text-slate-700 bg-transparent',
     };
 
     const sizeClasses = {
@@ -23,7 +25,7 @@ export default function Badge({ children, variant = 'default', size = 'md' }: Ba
     };
 
     return (
-        <span className={`inline-flex items-center rounded-full font-semibold ${variantClasses[variant]} ${sizeClasses[size]}`}>
+        <span className={`inline-flex items-center rounded-full font-semibold ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}>
             {children}
         </span>
     );

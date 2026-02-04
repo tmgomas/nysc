@@ -25,7 +25,8 @@ import {
     Bookmark,
     QrCode
 } from 'lucide-react';
-import { showConfirm, showInput, showLoading, closeLoading } from '@/utils/sweetalert';
+import { showConfirm, showInput, showLoading, closeLoading, showSuccess } from '@/utils/sweetalert';
+import { useFlashMessages } from '@/hooks/use-flash-messages';
 
 // Import member components
 import { PersonalInfoCard } from '@/components/members/PersonalInfoCard';
@@ -60,8 +61,12 @@ export default function Show({ member, stats, availableSports }: Props) {
     // Form states
     const [selectedSports, setSelectedSports] = useState<string[]>([]);
     const [selectedScheduleId, setSelectedScheduleId] = useState('');
+    const [selectedScheduleIds, setSelectedScheduleIds] = useState<string[]>([]);
     const [selectedAmount, setSelectedAmount] = useState<number>(0);
     const [paymentMethod, setPaymentMethod] = useState('cash');
+
+    // Handle flash messages from backend
+    useFlashMessages();
 
     // Initialize selected sports when dialog opens
     React.useEffect(() => {
@@ -145,14 +150,19 @@ export default function Show({ member, stats, availableSports }: Props) {
     };
 
     const handlePayment = async () => {
-        if (!selectedScheduleId) return;
+        // Check if bulk mode or single mode
+        const isBulkMode = selectedScheduleIds && selectedScheduleIds.length > 0;
+
+        if (!isBulkMode && !selectedScheduleId) return;
 
         setIsPaymentOpen(false);
         await new Promise(resolve => setTimeout(resolve, 100));
 
         const confirmed = await showConfirm(
             'Record Payment?',
-            'Do you want to record this payment?'
+            isBulkMode
+                ? `Do you want to record payment for ${selectedScheduleIds.length} selected schedule${selectedScheduleIds.length > 1 ? 's' : ''}?`
+                : 'Do you want to record this payment?'
         );
 
         if (!confirmed.isConfirmed) {
@@ -160,7 +170,21 @@ export default function Show({ member, stats, availableSports }: Props) {
             return;
         }
 
-        if (selectedScheduleId.startsWith('ALL:')) {
+        if (isBulkMode) {
+            // Bulk payment mode - process multiple schedules
+            showLoading('Recording bulk payment...', 'Please wait');
+            router.post(`/admin/payments/bulk`, {
+                member_id: member.id,
+                schedule_ids: selectedScheduleIds,
+                payment_method: paymentMethod,
+            }, {
+                onSuccess: () => {
+                    setSelectedScheduleIds([]);
+                    setSelectedScheduleId('');
+                },
+                onFinish: () => closeLoading()
+            });
+        } else if (selectedScheduleId.startsWith('ALL:')) {
             const [_, monthYear] = selectedScheduleId.split(':');
             showLoading('Recording payment...', 'Please wait');
             router.post(`/admin/payments`, {
@@ -170,7 +194,11 @@ export default function Show({ member, stats, availableSports }: Props) {
                 month_year: monthYear,
                 sport_id: null,
             }, {
-                onSuccess: () => setSelectedScheduleId(''),
+                onSuccess: () => {
+                    closeLoading();
+                    showSuccess('Payment Successful!', 'Payment has been recorded successfully.');
+                    setSelectedScheduleId('');
+                },
                 onFinish: () => closeLoading()
             });
         } else if (selectedScheduleId.startsWith('PAYMENT:')) {
@@ -179,7 +207,11 @@ export default function Show({ member, stats, availableSports }: Props) {
             router.put(route('admin.payments.mark-as-paid', paymentId), {
                 payment_method: paymentMethod
             }, {
-                onSuccess: () => setSelectedScheduleId(''),
+                onSuccess: () => {
+                    closeLoading();
+                    showSuccess('Payment Marked as Paid!', 'Payment has been successfully marked as received.');
+                    setSelectedScheduleId('');
+                },
                 onFinish: () => closeLoading()
             });
         } else {
@@ -194,7 +226,11 @@ export default function Show({ member, stats, availableSports }: Props) {
                 month_year: schedule.month_year,
                 sport_id: schedule.sport_id,
             }, {
-                onSuccess: () => setSelectedScheduleId(''),
+                onSuccess: () => {
+                    closeLoading();
+                    showSuccess('Payment Successful!', 'Payment has been recorded successfully.');
+                    setSelectedScheduleId('');
+                },
                 onFinish: () => closeLoading()
             });
         }
@@ -578,7 +614,24 @@ export default function Show({ member, stats, availableSports }: Props) {
                                 <TabsContent value="payments" className="mt-6">
                                     <PaymentsCard
                                         member={member}
-                                        onRecordPayment={() => setIsPaymentOpen(true)}
+                                        onRecordPayment={(selectedIds) => {
+                                            if (selectedIds && selectedIds.length > 0) {
+                                                // Bulk payment mode
+                                                setSelectedScheduleIds(selectedIds);
+                                                // Calculate total amount for selected schedules
+                                                const total = member.payment_schedules
+                                                    .filter(s => selectedIds.includes(s.id))
+                                                    .reduce((sum, s) => sum + Number(s.amount), 0);
+                                                setSelectedAmount(total);
+                                                setSelectedScheduleId(''); // Clear single selection
+                                            } else {
+                                                // Normal payment mode
+                                                setSelectedScheduleIds([]);
+                                                setSelectedScheduleId('');
+                                                setSelectedAmount(stats.total_monthly_fee);
+                                            }
+                                            setIsPaymentOpen(true);
+                                        }}
                                     />
                                 </TabsContent>
 
@@ -616,6 +669,8 @@ export default function Show({ member, stats, availableSports }: Props) {
                         member={member}
                         selectedScheduleId={selectedScheduleId}
                         setSelectedScheduleId={setSelectedScheduleId}
+                        selectedScheduleIds={selectedScheduleIds}
+                        setSelectedScheduleIds={setSelectedScheduleIds}
                         paymentMethod={paymentMethod}
                         setPaymentMethod={setPaymentMethod}
                         selectedAmount={selectedAmount}

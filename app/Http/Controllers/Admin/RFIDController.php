@@ -29,7 +29,7 @@ class RFIDController extends Controller
                     'valid' => true,
                     'type' => 'member',
                     'data' => [
-                        'member' => $member->load(['batch', 'district']),
+                        'member' => $member,
                         'rfid_data' => $rfidData,
                     ],
                     'message' => "Valid RFID card for {$member->calling_name}",

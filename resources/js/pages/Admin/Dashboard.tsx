@@ -1,8 +1,12 @@
-import React from 'react';
-import { Head } from '@inertiajs/react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import Badge from '@/components/Badge';
+import { Scan, Search, Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 interface DashboardStats {
     members: {
@@ -31,12 +35,93 @@ interface Props {
 }
 
 export default function Dashboard({ stats }: Props) {
+    const [rfid, setRfid] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        searchInputRef.current?.focus();
+    }, []);
+
+    const handleSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            const scanValue = searchInputRef.current?.value.trim();
+            if (!scanValue) return;
+
+            setIsSearching(true);
+            try {
+                const response = await axios.post(route('admin.rfid.verify'), { rfid_data: scanValue });
+
+                if (response.data.valid && response.data.data.member) {
+                    router.visit(route('admin.members.show', response.data.data.member.id));
+                }
+            } catch (error: any) {
+                console.error('RFID Verify Error:', error);
+                setRfid('');
+
+                if (error.response && error.response.data) {
+                    const message = error.response.data.message || 'Validation Failed';
+                    const scannedData = error.response.data.data?.rfid_data;
+                    alert(`${message}\nScanned Code: ${scannedData || 'N/A'}`);
+                } else {
+                    alert('An unexpected error occurred. Please check the console.');
+                }
+
+                searchInputRef.current?.focus();
+            } finally {
+                setIsSearching(false);
+            }
+        }
+    };
+
     return (
         <AppLayout breadcrumbs={[{ title: 'Dashboard', href: '/admin/dashboard' }]}>
             <Head title="Admin Dashboard" />
 
             <div className="py-12">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                    {/* RFID Search Section */}
+                    <Card className="mb-8 border-primary/20 bg-primary/5">
+                        <CardHeader>
+                            <div className="flex items-center gap-3">
+                                <div className="rounded-full bg-primary/10 p-2.5">
+                                    <Scan className="h-6 w-6 text-primary" />
+                                </div>
+                                <div>
+                                    <CardTitle>RFID Quick Access</CardTitle>
+                                    <CardDescription>Scan a member's RFID card to instantly view their profile.</CardDescription>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="relative max-w-xl">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    {isSearching ? (
+                                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                                    ) : (
+                                        <Search className="h-5 w-5 text-muted-foreground" />
+                                    )}
+                                </div>
+                                <Input
+                                    ref={searchInputRef}
+                                    type="text"
+                                    placeholder="Scan RFID card or type ID..."
+                                    className="pl-10 h-12 text-lg"
+                                    value={rfid}
+                                    onChange={(e) => setRfid(e.target.value)}
+                                    onKeyDown={handleSearch}
+                                    disabled={isSearching}
+                                    autoFocus
+                                />
+                                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <Badge variant="outline" className="text-xs text-muted-foreground">
+                                        Press Enter
+                                    </Badge>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     {/* Stats Grid */}
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                         {/* Members Card */}

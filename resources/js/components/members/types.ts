@@ -32,17 +32,18 @@ export interface PaymentItem {
 }
 
 export interface Payment {
-    due_date: string | number | Date;
-    notes: string;
     id: string;
     amount: number;
     type: string;
     status: string;
     month_year: string | null;
     created_at: string;
-    paid_date: string;
+    paid_date: string | null;
+    due_date: string | null;
+    notes: string | null;
     receipt_number?: string;
     reference_number?: string;
+    payment_method?: 'cash' | 'online' | 'bank_transfer' | null;
     sport?: {
         name: string;
     };
