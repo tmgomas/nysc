@@ -22,6 +22,8 @@ class Sport extends Model
         'capacity',
         'location',
         'schedule',
+        'schedule_type',
+        'weekly_limit',
         'is_active',
     ];
 
@@ -30,6 +32,7 @@ class Sport extends Model
         'monthly_fee' => 'decimal:2',
         'capacity' => 'integer',
         'schedule' => 'array',
+        'weekly_limit' => 'integer',
         'is_active' => 'boolean',
     ];
 
@@ -51,6 +54,11 @@ class Sport extends Model
     public function attendances()
     {
         return $this->hasMany(Attendance::class);
+    }
+
+    public function classes()
+    {
+        return $this->hasMany(SportClass::class);
     }
 
     // Scopes

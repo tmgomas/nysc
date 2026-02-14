@@ -79,7 +79,9 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
     
     // Sports
     Route::resource('sports', AdminSportController::class);
-    
+    Route::resource('sports.classes', \App\Http\Controllers\Admin\SportClassController::class)
+        ->only(['store', 'update', 'destroy'])
+        ->parameters(['classes' => 'class']);
     // Reports
     Route::get('reports/members', [AdminReportController::class, 'members'])->name('reports.members');
     Route::get('reports/payments', [AdminReportController::class, 'payments'])->name('reports.payments');

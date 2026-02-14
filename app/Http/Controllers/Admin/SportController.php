@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Coach;
 use Illuminate\Http\Request;
 
 class SportController extends Controller
@@ -27,6 +28,9 @@ class SportController extends Controller
             })
             ->withCount(['members' => function ($query) {
                 $query->where('member_sports.status', 'active');
+            }, 'classes'])
+            ->with(['classes' => function ($query) {
+                $query->where('is_active', true)->orderByRaw("FIELD(day_of_week, 'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')")->orderBy('start_time');
             }])
             ->latest()
             ->paginate(10)
@@ -43,7 +47,11 @@ class SportController extends Controller
      */
     public function create()
     {
-        return \Inertia\Inertia::render('Admin/Sports/Create');
+        $coaches = Coach::active()->select('id', 'name', 'specialization')->get();
+
+        return \Inertia\Inertia::render('Admin/Sports/Create', [
+            'coaches' => $coaches,
+        ]);
     }
 
     /**
@@ -59,11 +67,19 @@ class SportController extends Controller
             'monthly_fee' => 'required|numeric|min:0',
             'capacity' => 'nullable|integer|min:1',
             'location' => 'nullable|string|max:255',
-            'schedule' => 'nullable|array', // Structure: ['Monday' => ['start' => '10:00', 'end' => '12:00'], ...]
+            'schedule' => 'nullable|array',
+            'schedule_type' => 'required|in:class_based,practice_days',
+            'weekly_limit' => 'nullable|integer|min:1',
             'is_active' => 'boolean',
         ]);
 
-        \App\Models\Sport::create($validated);
+        $sport = \App\Models\Sport::create($validated);
+
+        // For class-based sports, redirect to edit page so they can add classes immediately
+        if ($validated['schedule_type'] === 'class_based') {
+            return redirect()->route('admin.sports.edit', $sport)
+                ->with('success', 'Sport created successfully. Now add class time slots below.');
+        }
 
         return redirect()->route('admin.sports.index')
             ->with('success', 'Sport created successfully.');
@@ -82,8 +98,15 @@ class SportController extends Controller
      */
     public function edit(\App\Models\Sport $sport)
     {
+        $sport->load(['classes' => function ($query) {
+            $query->with('coach:id,name')->orderByRaw("FIELD(day_of_week, 'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')")->orderBy('start_time');
+        }]);
+
+        $coaches = Coach::active()->select('id', 'name', 'specialization')->get();
+
         return \Inertia\Inertia::render('Admin/Sports/Edit', [
             'sport' => $sport,
+            'coaches' => $coaches,
         ]);
     }
 
@@ -101,8 +124,10 @@ class SportController extends Controller
             'capacity' => 'nullable|integer|min:1',
             'location' => 'nullable|string|max:255',
             'schedule' => 'nullable|array',
+            'schedule_type' => 'required|in:class_based,practice_days',
+            'weekly_limit' => 'nullable|integer|min:1',
             'is_active' => 'boolean',
-            'update_existing_schedules' => 'boolean', // Checkbox value to confirm bulk update
+            'update_existing_schedules' => 'boolean',
         ]);
 
         $oldMonthlyFee = $sport->monthly_fee;

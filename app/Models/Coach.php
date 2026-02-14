@@ -40,6 +40,11 @@ class Coach extends Model
             ->withTimestamps();
     }
 
+    public function sportClasses()
+    {
+        return $this->hasMany(SportClass::class);
+    }
+
     // Scopes
     public function scopeActive($query)
     {

@@ -34,16 +34,30 @@ import {
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 
+interface SportClassItem {
+    id: string;
+    day_of_week: string;
+    start_time: string;
+    end_time: string;
+    label: string | null;
+}
+
 interface Sport {
     id: string;
     name: string;
+    short_code: string;
     description: string;
     admission_fee: number;
     monthly_fee: number;
     capacity: number | null;
     location: string;
+    schedule_type: string;
+    weekly_limit: number | null;
+    schedule: Record<string, { start: string; end: string }> | null;
     is_active: boolean;
     members_count: number;
+    classes_count: number;
+    classes: SportClassItem[];
 }
 
 interface PaginatedSports {
@@ -252,6 +266,34 @@ export default function Index({ sports, filters }: Props) {
                                                 {sport.description}
                                             </div>
                                         )}
+
+                                        {/* Schedule Summary */}
+                                        <div className="pt-2 border-t space-y-2">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <Badge variant="outline" className="text-xs">
+                                                    {sport.schedule_type === 'class_based' ? '📚 Class-Based' : '🏃 Practice Days'}
+                                                </Badge>
+                                                {sport.weekly_limit && (
+                                                    <Badge variant="secondary" className="text-xs">
+                                                        Max {sport.weekly_limit}x/week
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            {sport.schedule_type === 'practice_days' && sport.schedule && Object.keys(sport.schedule).length > 0 && (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {Object.keys(sport.schedule).map((day) => (
+                                                        <Badge key={day} variant="secondary" className="text-xs font-normal">
+                                                            {day.substring(0, 3)}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            {sport.schedule_type === 'class_based' && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    {sport.classes_count || 0} class slot{(sport.classes_count || 0) !== 1 ? 's' : ''} configured
+                                                </p>
+                                            )}
+                                        </div>
                                     </CardContent>
                                 </Card>
                             ))}
