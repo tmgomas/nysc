@@ -82,6 +82,27 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
     Route::resource('sports.classes', \App\Http\Controllers\Admin\SportClassController::class)
         ->only(['store', 'update', 'destroy'])
         ->parameters(['classes' => 'class']);
+    Route::post('sports/{sport}/classes/{class}/toggle', [\App\Http\Controllers\Admin\SportClassController::class, 'toggleActive'])->name('sports.classes.toggle');
+    Route::post('sports/{sport}/classes/{class}/cancel-date', [\App\Http\Controllers\Admin\SportClassController::class, 'cancelDate'])->name('sports.classes.cancel-date');
+    Route::delete('sports/{sport}/classes/{class}/cancellations/{cancellation}', [\App\Http\Controllers\Admin\SportClassController::class, 'restoreDate'])->name('sports.classes.restore-date');
+
+    // Locations
+    Route::resource('locations', \App\Http\Controllers\Admin\LocationController::class)->except(['show', 'create', 'edit']);
+
+    // Schedule
+    Route::get('schedule', [\App\Http\Controllers\Admin\ScheduleController::class, 'index'])->name('schedule.index');
+    Route::get('schedule/events', [\App\Http\Controllers\Admin\ScheduleController::class, 'events'])->name('schedule.events');
+    Route::get('schedule/today', [\App\Http\Controllers\Admin\ScheduleController::class, 'today'])->name('schedule.today');
+
+    // Holidays
+    Route::get('holidays', [\App\Http\Controllers\Admin\HolidayController::class, 'index'])->name('holidays.index');
+    Route::post('holidays', [\App\Http\Controllers\Admin\HolidayController::class, 'store'])->name('holidays.store');
+    Route::delete('holidays/{holiday}', [\App\Http\Controllers\Admin\HolidayController::class, 'destroy'])->name('holidays.destroy');
+
+    // Special Bookings
+    Route::get('special-bookings', [\App\Http\Controllers\Admin\SpecialBookingController::class, 'index'])->name('special-bookings.index');
+    Route::post('special-bookings', [\App\Http\Controllers\Admin\SpecialBookingController::class, 'store'])->name('special-bookings.store');
+    Route::delete('special-bookings/{specialBooking}', [\App\Http\Controllers\Admin\SpecialBookingController::class, 'destroy'])->name('special-bookings.destroy');
     // Reports
     Route::get('reports/members', [AdminReportController::class, 'members'])->name('reports.members');
     Route::get('reports/payments', [AdminReportController::class, 'payments'])->name('reports.payments');

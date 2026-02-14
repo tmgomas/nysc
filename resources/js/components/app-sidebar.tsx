@@ -23,7 +23,8 @@ import {
     Trophy,
     FileText,
     UserCircle,
-    Calendar
+    Calendar,
+    MapPin
 } from 'lucide-react';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -61,6 +62,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: 'Sports',
             href: '/admin/sports',
             icon: Trophy,
+        },
+        {
+            title: 'Schedule',
+            href: '/admin/schedule',
+            icon: Calendar,
+        },
+        {
+            title: 'Locations',
+            href: '/admin/locations',
+            icon: MapPin,
         },
         {
             title: 'Reports',

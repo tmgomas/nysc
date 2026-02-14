@@ -141,3 +141,53 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* FullCalendar Custom Styles */
+.fc-custom .fc {
+    --fc-border-color: var(--border);
+    --fc-today-bg-color: oklch(0.97 0.01 250 / 0.3);
+    --fc-now-indicator-color: oklch(0.637 0.237 25.331);
+    font-family: inherit;
+}
+
+.fc-custom .fc .fc-col-header-cell {
+    padding: 0.5rem 0;
+    font-weight: 600;
+    font-size: 0.875rem;
+    background-color: var(--muted);
+}
+
+.fc-custom .fc .fc-timegrid-slot-label {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+}
+
+.fc-custom .fc .fc-event {
+    border-radius: 0.375rem;
+    padding: 2px 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    border-width: 0;
+    border-left-width: 3px;
+}
+
+.fc-custom .fc .fc-event:hover {
+    opacity: 0.85;
+    filter: brightness(1.1);
+}
+
+.fc-custom .fc .fc-daygrid-event {
+    border-radius: 0.375rem;
+    padding: 2px 6px;
+}
+
+.dark .fc-custom .fc {
+    --fc-today-bg-color: oklch(0.269 0.01 250 / 0.3);
+    --fc-page-bg-color: transparent;
+    color: var(--foreground);
+}
+
+.dark .fc-custom .fc .fc-col-header-cell {
+    background-color: var(--muted);
+    color: var(--foreground);
+}

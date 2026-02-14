@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Sport;
 use App\Models\SportClass;
+use App\Models\ClassCancellation;
 use Illuminate\Http\Request;
 
 class SportClassController extends Controller
@@ -77,5 +78,44 @@ class SportClassController extends Controller
         $class->delete();
 
         return back()->with('success', 'Class slot deleted successfully.');
+    }
+
+    /**
+     * Toggle active/inactive status.
+     */
+    public function toggleActive(Sport $sport, SportClass $class)
+    {
+        $class->update(['is_active' => !$class->is_active]);
+
+        $status = $class->is_active ? 'activated' : 'deactivated';
+        return back()->with('success', "Class slot {$status} successfully.");
+    }
+
+    /**
+     * Cancel a specific date occurrence.
+     */
+    public function cancelDate(Request $request, Sport $sport, SportClass $class)
+    {
+        $validated = $request->validate([
+            'cancelled_date' => 'required|date',
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        $class->cancellations()->firstOrCreate(
+            ['cancelled_date' => $validated['cancelled_date']],
+            ['reason' => $validated['reason'] ?? null]
+        );
+
+        return back()->with('success', 'Date cancelled successfully.');
+    }
+
+    /**
+     * Restore a cancelled date.
+     */
+    public function restoreDate(Sport $sport, SportClass $class, ClassCancellation $cancellation)
+    {
+        $cancellation->delete();
+
+        return back()->with('success', 'Date restored successfully.');
     }
 }

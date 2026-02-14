@@ -30,16 +30,17 @@ interface ScheduleDay {
 
 interface Props {
     coaches: { id: string; name: string; specialization: string }[];
+    locations: { id: string; name: string }[];
 }
 
-export default function Create({ coaches }: Props) {
+export default function Create({ coaches, locations }: Props) {
     const { data, setData, post, processing, errors } = useForm<{
         name: string;
         description: string;
         admission_fee: string;
         monthly_fee: string;
         capacity: string;
-        location: string;
+        location_id: string;
         schedule_type: string;
         weekly_limit: string;
         schedule: Record<string, ScheduleDay>;
@@ -50,7 +51,7 @@ export default function Create({ coaches }: Props) {
         admission_fee: '',
         monthly_fee: '',
         capacity: '',
-        location: '',
+        location_id: '',
         schedule_type: 'practice_days',
         weekly_limit: '',
         schedule: {},
@@ -191,15 +192,22 @@ export default function Create({ coaches }: Props) {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="location">Location / Venues</Label>
-                                        <Input
-                                            id="location"
-                                            value={data.location}
-                                            onChange={(e) => setData('location', e.target.value)}
-                                            placeholder="e.g. Main Hall, Pool Complex"
-                                            className={errors.location ? 'border-red-500' : ''}
-                                        />
-                                        {errors.location && <p className="text-sm text-red-500">{errors.location}</p>}
+                                        <Label htmlFor="location_id">Location / Venue</Label>
+                                        <Select
+                                            value={data.location_id}
+                                            onValueChange={(val) => setData('location_id', val)}
+                                        >
+                                            <SelectTrigger id="location_id" className={errors.location_id ? 'border-red-500' : ''}>
+                                                <SelectValue placeholder="Select a location" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {locations.map((loc) => (
+                                                    <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs text-muted-foreground">Manage locations from Admin → Locations.</p>
+                                        {errors.location_id && <p className="text-sm text-red-500">{errors.location_id}</p>}
                                     </div>
                                 </div>
 

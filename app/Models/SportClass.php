@@ -47,6 +47,11 @@ class SportClass extends Model
         return $this->belongsTo(Coach::class);
     }
 
+    public function cancellations()
+    {
+        return $this->hasMany(ClassCancellation::class);
+    }
+
     // Scopes
     public function scopeActive($query)
     {

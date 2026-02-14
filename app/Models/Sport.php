@@ -20,7 +20,7 @@ class Sport extends Model
         'admission_fee',
         'monthly_fee',
         'capacity',
-        'location',
+        'location_id',
         'schedule',
         'schedule_type',
         'weekly_limit',
@@ -59,6 +59,11 @@ class Sport extends Model
     public function classes()
     {
         return $this->hasMany(SportClass::class);
+    }
+
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
     }
 
     // Scopes

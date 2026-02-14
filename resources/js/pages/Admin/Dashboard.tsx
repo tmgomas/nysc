@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Badge from '@/components/Badge';
-import { Scan, Search, Loader2 } from 'lucide-react';
+import { Scan, Search, Loader2, Clock, Calendar } from 'lucide-react';
 import axios from 'axios';
 
 interface DashboardStats {
@@ -30,11 +30,33 @@ interface DashboardStats {
     };
 }
 
-interface Props {
-    stats: DashboardStats;
+interface ScheduleItem {
+    sport_name: string;
+    label?: string | null;
+    start_time: string | null;
+    end_time: string | null;
+    coach?: string | null;
+    capacity?: number | null;
+    members_count?: number;
+    type: 'class' | 'practice';
 }
 
-export default function Dashboard({ stats }: Props) {
+interface Props {
+    stats: DashboardStats;
+    todaySchedule: ScheduleItem[];
+    todayName: string;
+}
+
+function formatTime(time: string | null): string {
+    if (!time) return '';
+    const [h, m] = time.split(':');
+    const hour = parseInt(h);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${m} ${ampm}`;
+}
+
+export default function Dashboard({ stats, todaySchedule, todayName }: Props) {
     const [rfid, setRfid] = useState('');
     const [isSearching, setIsSearching] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -213,6 +235,73 @@ export default function Dashboard({ stats }: Props) {
                         </Card>
                     </div>
 
+                    {/* Today's Schedule Widget */}
+                    <Card className="mt-8">
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="rounded-full bg-indigo-100 p-2">
+                                        <Calendar className="h-5 w-5 text-indigo-600" />
+                                    </div>
+                                    <div>
+                                        <CardTitle>Today's Schedule</CardTitle>
+                                        <CardDescription>{todayName}</CardDescription>
+                                    </div>
+                                </div>
+                                <a
+                                    href="/admin/schedule"
+                                    className="text-sm font-medium text-primary hover:underline"
+                                >
+                                    View Full Calendar →
+                                </a>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            {todaySchedule && todaySchedule.length > 0 ? (
+                                <div className="space-y-3">
+                                    {todaySchedule.map((item, idx) => (
+                                        <div
+                                            key={idx}
+                                            className="flex items-center gap-4 rounded-lg border bg-muted/20 p-3 transition-colors hover:bg-muted/40"
+                                        >
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <Clock className="h-4 w-4 text-muted-foreground" />
+                                                <span className="text-sm font-mono font-medium min-w-[110px]">
+                                                    {formatTime(item.start_time)} - {formatTime(item.end_time)}
+                                                </span>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="font-medium text-sm">{item.sport_name}</span>
+                                                    {item.label && (
+                                                        <Badge variant="outline" className="text-xs">{item.label}</Badge>
+                                                    )}
+                                                    <Badge
+                                                        variant={item.type === 'class' ? 'info' : 'success'}
+                                                        className="text-xs"
+                                                    >
+                                                        {item.type === 'class' ? 'Class' : 'Practice'}
+                                                    </Badge>
+                                                </div>
+                                                {item.coach && (
+                                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                                        Coach: {item.coach}
+                                                        {item.capacity ? ` • Max ${item.capacity} students` : ''}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-6">
+                                    <Calendar className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                                    <p className="text-sm text-muted-foreground">No sessions scheduled for today</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
                     {/* Quick Actions */}
                     <Card className="mt-8">
                         <CardHeader>
@@ -257,15 +346,13 @@ export default function Dashboard({ stats }: Props) {
                                 </a>
 
                                 <a
-                                    href="/admin/reports/members"
+                                    href="/admin/schedule"
                                     className="flex items-center gap-3 rounded-lg border border-gray-200 p-4 hover:bg-gray-50 transition"
                                 >
-                                    <div className="rounded-full bg-orange-100 p-2">
-                                        <svg className="h-5 w-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
+                                    <div className="rounded-full bg-indigo-100 p-2">
+                                        <Calendar className="h-5 w-5 text-indigo-600" />
                                     </div>
-                                    <span className="font-medium text-gray-700">View Reports</span>
+                                    <span className="font-medium text-gray-700">View Schedule</span>
                                 </a>
                             </div>
                         </CardContent>

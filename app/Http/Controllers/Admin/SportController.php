@@ -48,9 +48,11 @@ class SportController extends Controller
     public function create()
     {
         $coaches = Coach::active()->select('id', 'name', 'specialization')->get();
+        $locations = \App\Models\Location::active()->orderBy('name')->get(['id', 'name']);
 
         return \Inertia\Inertia::render('Admin/Sports/Create', [
             'coaches' => $coaches,
+            'locations' => $locations,
         ]);
     }
 
@@ -66,7 +68,7 @@ class SportController extends Controller
             'admission_fee' => 'required|numeric|min:0',
             'monthly_fee' => 'required|numeric|min:0',
             'capacity' => 'nullable|integer|min:1',
-            'location' => 'nullable|string|max:255',
+            'location_id' => 'nullable|exists:locations,id',
             'schedule' => 'nullable|array',
             'schedule_type' => 'required|in:class_based,practice_days',
             'weekly_limit' => 'nullable|integer|min:1',
@@ -99,14 +101,16 @@ class SportController extends Controller
     public function edit(\App\Models\Sport $sport)
     {
         $sport->load(['classes' => function ($query) {
-            $query->with('coach:id,name')->orderByRaw("FIELD(day_of_week, 'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')")->orderBy('start_time');
-        }]);
+            $query->with('coach:id,name', 'cancellations')->orderByRaw("FIELD(day_of_week, 'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')")->orderBy('start_time');
+        }, 'location:id,name']);
 
         $coaches = Coach::active()->select('id', 'name', 'specialization')->get();
+        $locations = \App\Models\Location::active()->orderBy('name')->get(['id', 'name']);
 
         return \Inertia\Inertia::render('Admin/Sports/Edit', [
             'sport' => $sport,
             'coaches' => $coaches,
+            'locations' => $locations,
         ]);
     }
 
@@ -122,7 +126,7 @@ class SportController extends Controller
             'admission_fee' => 'required|numeric|min:0',
             'monthly_fee' => 'required|numeric|min:0',
             'capacity' => 'nullable|integer|min:1',
-            'location' => 'nullable|string|max:255',
+            'location_id' => 'nullable|exists:locations,id',
             'schedule' => 'nullable|array',
             'schedule_type' => 'required|in:class_based,practice_days',
             'weekly_limit' => 'nullable|integer|min:1',
