@@ -3,24 +3,24 @@ import { Head } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-interface Sport {
+interface Program {
     id: string;
     name: string;
 }
 
 interface CoachStats {
-    assigned_sports_count: number;
-    assigned_sports: string[];
+    assigned_programs_count: number;
+    assigned_programs: string[];
     total_members: number;
     monthly_attendance: number;
 }
 
 interface Props {
     stats: CoachStats;
-    sports: Sport[];
+    programs: Program[];
 }
 
-export default function Dashboard({ stats, sports }: Props) {
+export default function Dashboard({ stats, programs }: Props) {
     return (
         <AppLayout breadcrumbs={[{ title: 'Dashboard', href: '/coach/dashboard' }]}>
             <Head title="Coach Dashboard" />
@@ -37,9 +37,9 @@ export default function Dashboard({ stats, sports }: Props) {
                             <CardHeader>
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <CardDescription>Assigned Sports</CardDescription>
+                                        <CardDescription>Assigned Programs</CardDescription>
                                         <CardTitle className="text-3xl text-blue-600">
-                                            {stats.assigned_sports_count}
+                                            {stats.assigned_programs_count}
                                         </CardTitle>
                                     </div>
                                     <div className="rounded-full bg-blue-100 p-3">
@@ -88,22 +88,22 @@ export default function Dashboard({ stats, sports }: Props) {
                         </Card>
                     </div>
 
-                    {/* Assigned Sports */}
+                    {/* Assigned Programs */}
                     <Card className="mt-6">
                         <CardHeader>
-                            <CardTitle>My Assigned Sports</CardTitle>
+                            <CardTitle>My Assigned Programs</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {sports.map((sport) => (
+                                {programs.map((program) => (
                                     <div
-                                        key={sport.id}
+                                        key={program.id}
                                         className="rounded-lg border-2 border-blue-200 bg-blue-50 p-4"
                                     >
-                                        <h4 className="font-semibold text-gray-900">{sport.name}</h4>
+                                        <h4 className="font-semibold text-gray-900">{program.name}</h4>
                                         <div className="mt-3 flex gap-2">
                                             <a
-                                                href={`/coach/attendance?sport_id=${sport.id}`}
+                                                href={`/coach/attendance?program_id=${program.id}`}
                                                 className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-center text-sm font-semibold text-white hover:bg-blue-700"
                                             >
                                                 Mark Attendance

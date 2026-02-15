@@ -11,7 +11,7 @@ class LocationController extends Controller
 {
     public function index()
     {
-        $locations = Location::withCount(['sports', 'specialBookings'])
+        $locations = Location::withCount(['programs', 'specialBookings'])
             ->orderBy('name')
             ->get();
 
@@ -47,7 +47,7 @@ class LocationController extends Controller
 
     public function destroy(Location $location)
     {
-        if ($location->sports()->count() > 0) {
+        if ($location->programs()->count() > 0) {
             return back()->with('error', 'Cannot delete location with assigned sports.');
         }
 

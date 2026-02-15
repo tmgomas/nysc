@@ -39,7 +39,7 @@ interface Member {
     member_number: string;
     full_name: string;
     calling_name: string;
-    nic_passport: string;
+    nic_pasprogram: string;
     contact_number: string;
     status: string;
     registration_date: string;
@@ -48,7 +48,7 @@ interface Member {
         name: string;
         email: string;
     };
-    sports: Array<{
+    programs: Array<{
         id: string;
         name: string;
     }>;
@@ -225,9 +225,9 @@ export default function Index({ members, filters }: Props) {
                                             NIC: {member.nic_passport}
                                         </div>
                                         <div className="flex flex-wrap gap-2">
-                                            {member.sports.map((sport) => (
-                                                <Badge key={sport.id} variant="secondary">
-                                                    {sport.name}
+                                            {member.programs.map((program) => (
+                                                <Badge key={program.id} variant="secondary">
+                                                    {program.name}
                                                 </Badge>
                                             ))}
                                         </div>
@@ -257,7 +257,7 @@ export default function Index({ members, filters }: Props) {
                                                 Contact
                                             </th>
                                             <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
-                                                Sports
+                                                Programs
                                             </th>
                                             <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
                                                 Status
@@ -297,9 +297,9 @@ export default function Index({ members, filters }: Props) {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex flex-wrap gap-1">
-                                                        {member.sports.map((sport) => (
-                                                            <Badge key={sport.id} variant="secondary">
-                                                                {sport.name}
+                                                        {member.programs.map((program) => (
+                                                            <Badge key={program.id} variant="secondary">
+                                                                {program.name}
                                                             </Badge>
                                                         ))}
                                                     </div>

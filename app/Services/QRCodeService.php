@@ -137,7 +137,7 @@ class QRCodeService
             'valid' => true,
             'type' => 'member',
             'data' => [
-                'member' => $member->load(['batch', 'district', 'sports']),
+                'member' => $member->load(['batch', 'district', 'programs']),
                 'qr_data' => $data,
             ],
             'message' => 'Valid member QR code',

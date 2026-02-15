@@ -16,7 +16,7 @@ class PaymentItem extends Model
 
     protected $fillable = [
         'payment_id',
-        'sport_id',
+        'program_id',
         'type',
         'amount',
         'month_year',
@@ -34,9 +34,9 @@ class PaymentItem extends Model
         return $this->belongsTo(Payment::class);
     }
 
-    public function sport()
+    public function program()
     {
-        return $this->belongsTo(Sport::class);
+        return $this->belongsTo(Program::class);
     }
 
     // Accessors

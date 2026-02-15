@@ -18,12 +18,12 @@ class MemberImportController extends Controller
      */
     public function create()
     {
-        $sports = \App\Models\Sport::where('is_active', true)
+        $programs = \App\Models\Program::where('is_active', true)
             ->select('id', 'name', 'admission_fee', 'monthly_fee')
             ->get();
 
         return Inertia::render('Admin/Members/Import', [
-            'sports' => $sports,
+            'programs' => $programs,
         ]);
     }
 
@@ -62,7 +62,7 @@ class MemberImportController extends Controller
             'referral_source',
             'preferred_training_days',
             'previous_club_experience',
-            'sport_ids',
+            'program_ids',
         ];
 
         $callback = function() use ($columns) {
@@ -97,7 +97,7 @@ class MemberImportController extends Controller
                 'Friend',                            // referral_source
                 'Monday,Wednesday,Friday',           // preferred_training_days (comma-separated)
                 'None',                              // previous_club_experience
-                '1,2',                               // sport_ids (comma-separated sport IDs)
+                '1,2',                               // program_ids (comma-separated program IDs)
             ]);
             
             fclose($file);

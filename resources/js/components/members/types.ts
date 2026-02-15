@@ -1,4 +1,4 @@
-export interface Sport {
+export interface Program {
     id: string;
     name: string;
     admission_fee: number;
@@ -6,7 +6,7 @@ export interface Sport {
     pivot: {
         status: string;
         enrolled_at: string;
-        sport_reference?: string;
+        program_reference?: string;
     };
 }
 
@@ -20,12 +20,12 @@ export interface User {
 export interface PaymentItem {
     id: string;
     payment_id: string;
-    sport_id: string | null;
+    program_id: string | null;
     type: 'admission' | 'monthly';
     amount: number;
     month_year: string | null;
     description: string | null;
-    sport?: {
+    program?: {
         name: string;
         short_code?: string;
     };
@@ -44,7 +44,7 @@ export interface Payment {
     receipt_number?: string;
     reference_number?: string;
     payment_method?: 'cash' | 'online' | 'bank_transfer' | null;
-    sport?: {
+    program?: {
         name: string;
     };
     items?: PaymentItem[];
@@ -57,8 +57,8 @@ export interface PaymentSchedule {
     amount: number;
     status: string;
     due_date: string;
-    sport_id?: string;
-    sport?: {
+    program_id?: string;
+    program?: {
         name: string;
     };
 }
@@ -68,7 +68,7 @@ export interface Member {
     member_number: string;
     full_name: string;
     calling_name: string;
-    nic_passport: string;
+    nic_pasprogram: string;
     date_of_birth: string;
     gender: 'male' | 'female' | 'other';
     contact_number: string;
@@ -101,7 +101,7 @@ export interface Member {
 
     // Relations
     user?: User;
-    sports: Sport[];
+    programs: Program[];
 
     // Meta
     created_at: string;
@@ -116,14 +116,14 @@ export interface MemberStatsData {
     has_overdue: boolean;
     monthly_attendance_count: number;
     total_attendance_count: number;
-    active_sports_count: number;
+    active_programs_count: number;
     total_monthly_fee: number;
     last_payment: string | null;
     next_due_payment: string | null;
     last_attendance: string | null;
 }
 
-export interface AvailableSport {
+export interface AvailableProgram {
     id: string;
     name: string;
     monthly_fee: number;

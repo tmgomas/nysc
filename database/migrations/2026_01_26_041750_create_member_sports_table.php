@@ -11,15 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('member_sports', function (Blueprint $table) {
+        Schema::create('member_programs', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('member_id')->constrained('members')->onDelete('cascade');
-            $table->foreignUuid('sport_id')->constrained('sports')->onDelete('cascade');
+            $table->foreignUuid('program_id')->constrained('programs')->onDelete('cascade');
             $table->timestamp('enrolled_at')->useCurrent();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
             
-            $table->unique(['member_id', 'sport_id']);
+            $table->unique(['member_id', 'program_id']);
         });
     }
 
@@ -28,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('member_sports');
+        Schema::dropIfExists('member_programs');
     }
 };

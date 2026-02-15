@@ -15,7 +15,7 @@ class MarkAttendanceRequest extends FormRequest
     {
         return [
             'member_id' => 'required|exists:members,id',
-            'sport_id' => 'required|exists:sports,id',
+            'program_id' => 'required|exists:sports,id',
             'method' => 'required|in:qr_code,manual,bulk',
             'check_in_time' => 'nullable|date|before_or_equal:now',
             'notes' => 'nullable|string|max:500',
@@ -26,7 +26,7 @@ class MarkAttendanceRequest extends FormRequest
     {
         return [
             'member_id.exists' => 'Selected member does not exist.',
-            'sport_id.exists' => 'Selected sport does not exist.',
+            'program_id.exists' => 'Selected program does not exist.',
             'check_in_time.before_or_equal' => 'Check-in time cannot be in the future.',
         ];
     }

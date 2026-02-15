@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CheckCircle2, ChevronLeft, Loader2, Save } from 'lucide-react';
 
-interface Sport {
+interface Program {
     id: string;
     name: string;
     admission_fee: number;
@@ -18,16 +18,16 @@ interface Sport {
 }
 
 interface Props {
-    sports: Sport[];
+    programs: Program[];
 }
 
-export default function Create({ sports }: Props) {
+export default function Create({ programs }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         // Personal Information
         full_name: '',
         calling_name: '',
         email: '',
-        nic_passport: '',
+        nic_pasprogram: '',
         date_of_birth: '',
         gender: 'male',
         contact_number: '',
@@ -55,8 +55,8 @@ export default function Create({ sports }: Props) {
         preferred_contact_method: 'email',
         referral_source: '',
 
-        // Sports
-        sport_ids: [] as string[],
+        // Programs
+        program_ids: [] as string[],
 
         // Legal
         terms_accepted: false,
@@ -83,11 +83,11 @@ export default function Create({ sports }: Props) {
         post('/admin/members');
     };
 
-    const toggleSport = (sportId: string) => {
-        setData('sport_ids',
-            data.sport_ids.includes(sportId)
-                ? data.sport_ids.filter(id => id !== sportId)
-                : [...data.sport_ids, sportId]
+    const toggleProgram = (sportId: string) => {
+        setData('program_ids',
+            data.program_ids.includes(sportId)
+                ? data.program_ids.filter(id => id !== sportId)
+                : [...data.program_ids, sportId]
         );
     };
 
@@ -456,35 +456,35 @@ export default function Create({ sports }: Props) {
                                     </div>
 
                                     <div className="space-y-2 md:col-span-2">
-                                        <Label htmlFor="previous_club_experience">Previous Sports Club Experience</Label>
+                                        <Label htmlFor="previous_club_experience">Previous Programs Club Experience</Label>
                                         <textarea
                                             id="previous_club_experience"
                                             value={data.previous_club_experience}
                                             onChange={(e) => setData('previous_club_experience', e.target.value)}
                                             rows={2}
-                                            placeholder="Any previous experience with sports clubs or teams"
+                                            placeholder="Any previous experience with programs clubs or teams"
                                             className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                         />
                                     </div>
                                 </CardContent>
                             </Card>
 
-                            {/* Sports Selection */}
+                            {/* Programs Selection */}
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Sports Enrollment</CardTitle>
+                                    <CardTitle>Programs Enrollment</CardTitle>
                                     <CardDescription>
-                                        Select the sports the member wishes to join. At least one must be selected.
+                                        Select the programs the member wishes to join. At least one must be selected.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                        {sports.map((sport) => {
-                                            const isSelected = data.sport_ids.includes(sport.id);
+                                        {programs.map((program) => {
+                                            const isSelected = data.program_ids.includes(program.id);
                                             return (
                                                 <div
-                                                    key={sport.id}
-                                                    onClick={() => toggleSport(sport.id)}
+                                                    key={program.id}
+                                                    onClick={() => toggleProgram(program.id)}
                                                     className={`
                                                         relative cursor-pointer rounded-xl border-2 p-4 transition-all duration-200
                                                         ${isSelected
@@ -496,14 +496,14 @@ export default function Create({ sports }: Props) {
                                                     <div className="flex items-start justify-between gap-2">
                                                         <div className="space-y-1">
                                                             <h4 className="font-semibold leading-none tracking-tight">
-                                                                {sport.name}
+                                                                {program.name}
                                                             </h4>
                                                             <div className="flex flex-wrap gap-2 pt-2">
                                                                 <Badge variant="outline" className="bg-background">
-                                                                    Adm: Rs. {sport.admission_fee}
+                                                                    Adm: Rs. {program.admission_fee}
                                                                 </Badge>
                                                                 <Badge variant="secondary">
-                                                                    Mo: Rs. {sport.monthly_fee}
+                                                                    Mo: Rs. {program.monthly_fee}
                                                                 </Badge>
                                                             </div>
                                                         </div>
@@ -523,8 +523,8 @@ export default function Create({ sports }: Props) {
                                             );
                                         })}
                                     </div>
-                                    {errors.sport_ids && (
-                                        <p className="mt-2 text-sm text-red-500">{errors.sport_ids}</p>
+                                    {errors.program_ids && (
+                                        <p className="mt-2 text-sm text-red-500">{errors.program_ids}</p>
                                     )}
                                 </CardContent>
                             </Card>
@@ -553,7 +553,7 @@ export default function Create({ sports }: Props) {
                                                 Accept Terms and Conditions
                                             </Label>
                                             <p className="text-sm text-muted-foreground">
-                                                I agree to abide by the rules and regulations of the New Young Christian Sports Club.
+                                                I agree to abide by the rules and regulations of the New Young Christian Programs Club.
                                             </p>
                                         </div>
                                     </div>

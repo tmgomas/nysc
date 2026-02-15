@@ -18,32 +18,32 @@ class ApproveMemberRegistrationAction
         }
 
         // Get all enrolled sports
-        $enrolledSports = $member->sports;
+        $enrolledPrograms = $member->programs;
         
-        if ($enrolledSports->isEmpty()) {
-            throw new \Exception('Member must have at least one sport enrolled to be approved.');
+        if ($enrolledPrograms->isEmpty()) {
+            throw new \Exception('Member must have at least one program enrolled to be approved.');
         }
 
         // Generate sport-specific references for all enrolled sports
         $registrationReferenceGenerator = new GenerateRegistrationReferenceAction();
-        $sportReferences = [];
+        $programReferences = [];
 
-        foreach ($enrolledSports as $sport) {
-            $sportReference = $registrationReferenceGenerator->execute(
-                $sport->id, 
+        foreach ($enrolledPrograms as $program) {
+            $programReference = $registrationReferenceGenerator->execute(
+                $program->id, 
                 $member->registration_date
             );
             
-            // Update the member_sport pivot with the sport reference
-            $member->sports()->updateExistingPivot($sport->id, [
-                'sport_reference' => $sportReference
+            // Update the member_sport pivot with the program reference
+            $member->programs()->updateExistingPivot($program->id, [
+                'program_reference' => $programReference
             ]);
             
-            $sportReferences[] = "{$sport->name}: {$sportReference}";
+            $programReferences[] = "{$program->name}: {$programReference}";
         }
 
-        // Use first sport reference as primary registration reference
-        $primaryReference = $member->sports()->first()->pivot->sport_reference;
+        // Use first program reference as primary registration reference
+        $primaryReference = $member->programs()->first()->pivot->program_reference;
 
         $member->update([
             'status' => MemberStatus::ACTIVE,
@@ -56,9 +56,9 @@ class ApproveMemberRegistrationAction
         $createPendingPayment = new CreatePendingAdmissionPaymentAction();
         $pendingPayment = $createPendingPayment->execute($member);
 
-        // Log the approval with all sport references
-        $referencesText = implode(', ', $sportReferences);
-        $member->log('approved', 'Member registration approved by ' . Auth::user()->name . '. Sport References: ' . $referencesText . '. Pending payment created: ' . $pendingPayment->receipt_number);
+        // Log the approval with all program references
+        $referencesText = implode(', ', $programReferences);
+        $member->log('approved', 'Member registration approved by ' . Auth::user()->name . '. Program References: ' . $referencesText . '. Pending payment created: ' . $pendingPayment->receipt_number);
 
         return $member->fresh();
     }

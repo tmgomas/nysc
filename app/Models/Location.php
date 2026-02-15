@@ -24,9 +24,9 @@ class Location extends Model
     ];
 
     // Relationships
-    public function sports()
+    public function programs()
     {
-        return $this->hasMany(Sport::class);
+        return $this->hasMany(Program::class);
     }
 
     public function specialBookings()

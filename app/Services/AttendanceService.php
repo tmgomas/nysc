@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\{Member, Sport, Attendance};
+use App\Models\{Member, Program, Attendance};
 use App\Actions\{MarkAttendanceAction, GenerateQRCodeAction};
 use App\Enums\AttendanceMethod;
 use Carbon\Carbon;
@@ -17,7 +17,7 @@ class AttendanceService
     /**
      * Mark attendance via QR code scan
      */
-    public function markViaQRCode(string $qrData, Sport $sport): Attendance
+    public function markViaQRCode(string $qrData, Program $program): Attendance
     {
         $member = $this->generateQRCode->verify($qrData);
 
@@ -27,7 +27,7 @@ class AttendanceService
 
         return $this->markAttendance->execute(
             $member,
-            $sport,
+            $program,
             AttendanceMethod::QR_CODE
         );
     }
@@ -35,11 +35,11 @@ class AttendanceService
     /**
      * Mark attendance manually
      */
-    public function markManually(Member $member, Sport $sport, ?string $notes = null): Attendance
+    public function markManually(Member $member, Program $program, ?string $notes = null): Attendance
     {
         return $this->markAttendance->execute(
             $member,
-            $sport,
+            $program,
             AttendanceMethod::MANUAL,
             null,
             $notes
@@ -49,9 +49,9 @@ class AttendanceService
     /**
      * Bulk mark attendance
      */
-    public function bulkMark(array $memberIds, Sport $sport, ?Carbon $checkInTime = null): array
+    public function bulkMark(array $memberIds, Program $program, ?Carbon $checkInTime = null): array
     {
-        return $this->markAttendance->bulkMark($memberIds, $sport, $checkInTime);
+        return $this->markAttendance->bulkMark($memberIds, $program, $checkInTime);
     }
 
     /**
@@ -74,9 +74,9 @@ class AttendanceService
 
         return [
             'total_count' => $attendances->count(),
-            'by_sport' => $attendances->groupBy('sport_id')->map(function ($group) {
+            'by_program' => $attendances->groupBy('program_id')->map(function ($group) {
                 return [
-                    'sport' => $group->first()->sport->name,
+                    'program' => $group->first()->program->name,
                     'count' => $group->count(),
                 ];
             })->values(),
@@ -92,14 +92,14 @@ class AttendanceService
     }
 
     /**
-     * Get attendance statistics for sport
+     * Get attendance statistics for program
      */
-    public function getSportStatistics(Sport $sport, ?Carbon $startDate = null, ?Carbon $endDate = null): array
+    public function getProgramStatistics(Program $program, ?Carbon $startDate = null, ?Carbon $endDate = null): array
     {
         $startDate = $startDate ?? now()->startOfMonth();
         $endDate = $endDate ?? now()->endOfMonth();
 
-        $attendances = $sport->attendances()
+        $attendances = $program->attendances()
             ->whereBetween('check_in_time', [$startDate, $endDate])
             ->get();
 
@@ -123,11 +123,11 @@ class AttendanceService
     }
 
     /**
-     * Get today's attendance for a sport
+     * Get today's attendance for a program
      */
-    public function getTodayAttendance(Sport $sport): array
+    public function getTodayAttendance(Program $program): array
     {
-        $attendances = $sport->attendances()
+        $attendances = $program->attendances()
             ->whereDate('check_in_time', today())
             ->with('member')
             ->get();

@@ -2,7 +2,7 @@
 
 namespace App\DTOs;
 
-class SportData
+class ProgramData
 {
     public function __construct(
         public readonly string $name,

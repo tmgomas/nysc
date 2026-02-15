@@ -33,16 +33,16 @@ class Coach extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function sports()
+    public function programs()
     {
-        return $this->belongsToMany(Sport::class, 'coach_sports')
+        return $this->belongsToMany(Program::class, 'coach_programs')
             ->withPivot('assigned_at')
             ->withTimestamps();
     }
 
-    public function sportClasses()
+    public function programClasses()
     {
-        return $this->hasMany(SportClass::class);
+        return $this->hasMany(ProgramClass::class);
     }
 
     // Scopes
@@ -51,10 +51,10 @@ class Coach extends Model
         return $query->where('is_active', true);
     }
 
-    public function scopeForSport($query, $sportId)
+    public function scopeForProgram($query, $programId)
     {
-        return $query->whereHas('sports', function ($q) use ($sportId) {
-            $q->where('sports.id', $sportId);
+        return $query->whereHas('programs', function ($q) use ($programId) {
+            $q->where('programs.id', $programId);
         });
     }
 }

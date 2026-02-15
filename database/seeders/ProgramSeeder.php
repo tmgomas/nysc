@@ -6,11 +6,11 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-class SportSeeder extends Seeder
+class ProgramSeeder extends Seeder
 {
     public function run(): void
     {
-        $sports = [
+        $programs = [
             [
                 'name' => 'Cricket',
                 'description' => 'Outdoor cricket training and matches',
@@ -112,15 +112,33 @@ class SportSeeder extends Seeder
             ],
         ];
 
-        foreach ($sports as $sport) {
-            DB::table('sports')->insert(array_merge([
+        foreach ($programs as $program) {
+            $locationName = $program['location'];
+            unset($program['location']);
+            
+            // Find or create location
+            $locationId = DB::table('locations')->where('name', $locationName)->value('id');
+            
+            if (!$locationId) {
+                $locationId = Str::uuid()->toString();
+                DB::table('locations')->insert([
+                    'id' => $locationId,
+                    'name' => $locationName,
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            DB::table('programs')->insert(array_merge([
                 'id' => Str::uuid()->toString(),
-            ], $sport, [
+                'location_id' => $locationId,
+            ], $program, [
                 'created_at' => now(),
                 'updated_at' => now(),
             ]));
         }
 
-        $this->command->info('Sports seeded successfully!');
+        $this->command->info('Programs seeded successfully!');
     }
 }

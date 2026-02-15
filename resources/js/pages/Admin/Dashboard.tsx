@@ -24,7 +24,7 @@ interface DashboardStats {
         today: number;
         this_month: number;
     };
-    sports: {
+    programs: {
         total: number;
         active: number;
     };
@@ -214,13 +214,13 @@ export default function Dashboard({ stats, todaySchedule, todayName }: Props) {
                             </CardContent>
                         </Card>
 
-                        {/* Sports Card */}
+                        {/* Programs Card */}
                         <Card>
                             <CardHeader>
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <CardDescription>Active Sports</CardDescription>
-                                        <CardTitle className="text-3xl">{stats.sports.active}</CardTitle>
+                                        <CardDescription>Active Programs</CardDescription>
+                                        <CardTitle className="text-3xl">{stats.programs.active}</CardTitle>
                                     </div>
                                     <div className="rounded-full bg-orange-100 p-3">
                                         <svg className="h-8 w-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -230,7 +230,7 @@ export default function Dashboard({ stats, todaySchedule, todayName }: Props) {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <CardDescription>Total: {stats.sports.total}</CardDescription>
+                                <CardDescription>Total: {stats.programs.total}</CardDescription>
                             </CardContent>
                         </Card>
                     </div>
@@ -272,7 +272,7 @@ export default function Dashboard({ stats, todaySchedule, todayName }: Props) {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 flex-wrap">
-                                                    <span className="font-medium text-sm">{item.sport_name}</span>
+                                                    <span className="font-medium text-sm">{item.program_name}</span>
                                                     {item.label && (
                                                         <Badge variant="outline" className="text-xs">{item.label}</Badge>
                                                     )}

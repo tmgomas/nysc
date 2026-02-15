@@ -37,11 +37,11 @@ class MarkPaymentAsPaidAction
                 $referenceGenerator = new GeneratePaymentReferenceAction();
                 
                 // If payment has multiple sports, use multi-sport reference
-                $sportIds = $payment->items->pluck('sport_id')->unique()->filter();
-                if ($sportIds->count() > 1) {
-                    $referenceNumber = $referenceGenerator->executeForMultipleSports(now());
-                } elseif ($sportIds->count() === 1) {
-                    $referenceNumber = $referenceGenerator->execute($sportIds->first(), now());
+                $programIds = $payment->items->pluck('program_id')->unique()->filter();
+                if ($programIds->count() > 1) {
+                    $referenceNumber = $referenceGenerator->executeForMultiplePrograms(now());
+                } elseif ($programIds->count() === 1) {
+                    $referenceNumber = $referenceGenerator->execute($programIds->first(), now());
                 }
             }
 
@@ -58,7 +58,7 @@ class MarkPaymentAsPaidAction
                 if ($item->type->value === 'monthly' && $item->month_year) {
                     // Find and update the corresponding schedule
                     $schedule = MemberPaymentSchedule::where('member_id', $payment->member_id)
-                        ->where('sport_id', $item->sport_id)
+                        ->where('program_id', $item->program_id)
                         ->where('month_year', $item->month_year)
                         ->first();
 
@@ -71,7 +71,7 @@ class MarkPaymentAsPaidAction
                         // Create schedule if it doesn't exist
                         MemberPaymentSchedule::create([
                             'member_id' => $payment->member_id,
-                            'sport_id' => $item->sport_id,
+                            'program_id' => $item->program_id,
                             'month_year' => $item->month_year,
                             'amount' => $item->amount,
                             'status' => ScheduleStatus::PAID,

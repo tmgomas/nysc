@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('coach_sports', function (Blueprint $table) {
+        Schema::create('coach_programs', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('coach_id')->constrained('coaches')->onDelete('cascade');
-            $table->foreignUuid('sport_id')->constrained('sports')->onDelete('cascade');
+            $table->foreignUuid('program_id')->constrained('programs')->onDelete('cascade');
             $table->timestamp('assigned_at')->useCurrent();
             $table->timestamps();
             
-            $table->unique(['coach_id', 'sport_id']);
+            $table->unique(['coach_id', 'program_id']);
         });
     }
 
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('coach_sports');
+        Schema::dropIfExists('coach_programs');
     }
 };

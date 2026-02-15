@@ -34,7 +34,7 @@ import { useInput } from '@/components/ui/input-dialog';
 import { PersonalInfoCard } from '@/components/members/PersonalInfoCard';
 import { ContactInfoCard } from '@/components/members/ContactInfoCard';
 import { MedicalInfoCard } from '@/components/members/MedicalInfoCard';
-import { SportsEnrollmentCard } from '@/components/members/SportsEnrollmentCard';
+import { ProgramsEnrollmentCard } from '@/components/members/ProgramsEnrollmentCard';
 import { PaymentsCard } from '@/components/members/PaymentsCard';
 import MemberQRCode from '@/components/QRCode/MemberQRCode';
 import MemberNFCCard from '@/components/NFC/MemberNFCCard';
@@ -42,26 +42,26 @@ import MemberRFIDCard from '@/components/RFID/MemberRFIDCard';
 
 // Import dialogs
 import { ApproveDialog } from '@/components/members/dialogs/ApproveDialog';
-import { ManageSportsDialog } from '@/components/members/dialogs/ManageSportsDialog';
+import { ManageProgramsDialog } from '@/components/members/dialogs/ManageProgramsDialog';
 import { PaymentDialog } from '@/components/members/dialogs/PaymentDialog';
 
 // Import types
-import type { Member, MemberStatsData as Stats, AvailableSport } from '@/components/members/types';
+import type { Member, MemberStatsData as Stats, AvailableProgram } from '@/components/members/types';
 
 interface Props {
     member: Member;
     stats: Stats;
-    availableSports: AvailableSport[];
+    availablePrograms: AvailableProgram[];
 }
 
-export default function Show({ member, stats, availableSports }: Props) {
+export default function Show({ member, stats, availablePrograms }: Props) {
     // Dialog states
     const [isApproveOpen, setIsApproveOpen] = useState(false);
-    const [isEditSportsOpen, setIsEditSportsOpen] = useState(false);
+    const [isEditProgramsOpen, setIsEditProgramsOpen] = useState(false);
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
 
     // Form states
-    const [selectedSports, setSelectedSports] = useState<string[]>([]);
+    const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
     const [selectedScheduleId, setSelectedScheduleId] = useState('');
     const [selectedScheduleIds, setSelectedScheduleIds] = useState<string[]>([]);
     const [selectedAmount, setSelectedAmount] = useState<number>(0);
@@ -71,12 +71,12 @@ export default function Show({ member, stats, availableSports }: Props) {
 
 
 
-    // Initialize selected sports when dialog opens
+    // Initialize selected programs when dialog opens
     React.useEffect(() => {
-        if (isEditSportsOpen) {
-            setSelectedSports(member.sports.map(s => s.id));
+        if (isEditProgramsOpen) {
+            setSelectedPrograms(member.programs.map(s => s.id));
         }
-    }, [isEditSportsOpen, member]);
+    }, [isEditProgramsOpen, member]);
 
     // Update selected amount when schedule changes
     React.useEffect(() => {
@@ -176,12 +176,12 @@ export default function Show({ member, stats, availableSports }: Props) {
         }
     };
 
-    const handleUpdateSports = async () => {
-        setIsEditSportsOpen(false);
+    const handleUpdatePrograms = async () => {
+        setIsEditProgramsOpen(false);
 
         const confirmed = await confirm({
-            title: 'Update Sports',
-            description: "This will update the member's enrolled sports and generate new payment schedules if needed.",
+            title: 'Update Programs',
+            description: "This will update the member's enrolled programs and generate new payment schedules if needed.",
             confirmText: 'Update',
             cancelText: 'Cancel',
         });
@@ -189,21 +189,21 @@ export default function Show({ member, stats, availableSports }: Props) {
         if (confirmed) {
             toast.promise(
                 new Promise((resolve, reject) => {
-                    router.put(route('admin.members.update-sports', member.id), {
-                        sport_ids: selectedSports
+                    router.put(route('admin.members.update-programs', member.id), {
+                        program_ids: selectedPrograms
                     }, {
                         onSuccess: () => resolve(member.full_name),
                         onError: () => reject()
                     });
                 }),
                 {
-                    loading: 'Updating sports...',
-                    success: 'Sports updated successfully!',
-                    error: 'Failed to update sports',
+                    loading: 'Updating programs...',
+                    success: 'Programs updated successfully!',
+                    error: 'Failed to update programs',
                 }
             );
         } else {
-            setIsEditSportsOpen(true);
+            setIsEditProgramsOpen(true);
         }
     };
 
@@ -263,7 +263,7 @@ export default function Show({ member, stats, availableSports }: Props) {
                         type: 'monthly',
                         payment_method: paymentMethod,
                         month_year: monthYear,
-                        sport_id: null,
+                        program_id: null,
                     }, {
                         onSuccess: () => {
                             setSelectedScheduleId('');
@@ -309,7 +309,7 @@ export default function Show({ member, stats, availableSports }: Props) {
                         type: 'monthly',
                         payment_method: paymentMethod,
                         month_year: schedule.month_year,
-                        sport_id: schedule.sport_id,
+                        program_id: schedule.program_id,
                     }, {
                         onSuccess: () => {
                             setSelectedScheduleId('');
@@ -327,8 +327,8 @@ export default function Show({ member, stats, availableSports }: Props) {
         }
     };
 
-    const toggleSport = (sportId: string) => {
-        setSelectedSports(current =>
+    const toggleProgram = (sportId: string) => {
+        setSelectedPrograms(current =>
             current.includes(sportId)
                 ? current.filter(id => id !== sportId)
                 : [...current, sportId]
@@ -446,9 +446,9 @@ export default function Show({ member, stats, availableSports }: Props) {
                                         <div className="bg-muted/50 rounded-lg p-3">
                                             <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
                                                 <Dumbbell className="h-3 w-3" />
-                                                <span>Sports</span>
+                                                <span>Programs</span>
                                             </div>
-                                            <div className="text-lg font-bold">{stats.active_sports_count}</div>
+                                            <div className="text-lg font-bold">{stats.active_programs_count}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -490,27 +490,27 @@ export default function Show({ member, stats, availableSports }: Props) {
                                 </CardContent>
                             </Card>
 
-                            {/* Sports Enrollment Sidebar */}
+                            {/* Programs Enrollment Sidebar */}
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-sm font-medium text-muted-foreground">SPORTS</CardTitle>
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">PROGRAMS</CardTitle>
                                     <Badge variant="secondary" className="text-xs">
-                                        {member.sports.filter(s => s.pivot.status === 'active').length}
+                                        {member.programs.filter(s => s.pivot.status === 'active').length}
                                     </Badge>
                                 </CardHeader>
                                 <CardContent className="space-y-2">
-                                    {member.sports.map((sport) => (
-                                        <div key={sport.id} className="p-3 rounded-md bg-muted/50 space-y-2">
+                                    {member.programs.map((program) => (
+                                        <div key={program.id} className="p-3 rounded-md bg-muted/50 space-y-2">
                                             <div className="flex items-center justify-between">
-                                                <span className="text-sm font-medium">{sport.name}</span>
-                                                <Badge variant={sport.pivot.status === 'active' ? 'default' : 'secondary'} className="text-xs">
-                                                    {sport.pivot.status}
+                                                <span className="text-sm font-medium">{program.name}</span>
+                                                <Badge variant={program.pivot.status === 'active' ? 'default' : 'secondary'} className="text-xs">
+                                                    {program.pivot.status}
                                                 </Badge>
                                             </div>
-                                            {sport.pivot.sport_reference && (
+                                            {program.pivot.program_reference && (
                                                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                                     <span className="font-mono bg-background px-2 py-0.5 rounded border">
-                                                        {sport.pivot.sport_reference}
+                                                        {program.pivot.program_reference}
                                                     </span>
                                                 </div>
                                             )}
@@ -520,9 +520,9 @@ export default function Show({ member, stats, availableSports }: Props) {
                                         variant="outline"
                                         size="sm"
                                         className="w-full mt-2"
-                                        onClick={() => setIsEditSportsOpen(true)}
+                                        onClick={() => setIsEditProgramsOpen(true)}
                                     >
-                                        Manage Sports
+                                        Manage Programs
                                     </Button>
                                 </CardContent>
                             </Card>
@@ -614,11 +614,11 @@ export default function Show({ member, stats, availableSports }: Props) {
                                         Payments
                                     </TabsTrigger>
                                     <TabsTrigger
-                                        value="sports"
+                                        value="programs"
                                         className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
                                     >
                                         <Dumbbell className="h-4 w-4 mr-2" />
-                                        Sports
+                                        Programs
                                     </TabsTrigger>
                                 </TabsList>
 
@@ -694,9 +694,9 @@ export default function Show({ member, stats, availableSports }: Props) {
                                                 <CreditCard className="h-4 w-4 mr-2" />
                                                 Record Payment
                                             </Button>
-                                            <Button variant="outline" onClick={() => setIsEditSportsOpen(true)}>
+                                            <Button variant="outline" onClick={() => setIsEditProgramsOpen(true)}>
                                                 <Dumbbell className="h-4 w-4 mr-2" />
-                                                Manage Sports
+                                                Manage Programs
                                             </Button>
                                         </CardContent>
                                     </Card>
@@ -734,11 +734,11 @@ export default function Show({ member, stats, availableSports }: Props) {
                                     />
                                 </TabsContent>
 
-                                {/* Sports Tab */}
-                                <TabsContent value="sports" className="mt-6">
-                                    <SportsEnrollmentCard
+                                {/* Programs Tab */}
+                                <TabsContent value="programs" className="mt-6">
+                                    <ProgramsEnrollmentCard
                                         member={member}
-                                        onManageClick={() => setIsEditSportsOpen(true)}
+                                        onManageClick={() => setIsEditProgramsOpen(true)}
                                     />
                                 </TabsContent>
                             </Tabs>
@@ -753,13 +753,13 @@ export default function Show({ member, stats, availableSports }: Props) {
                         onApprove={handleApprove}
                     />
 
-                    <ManageSportsDialog
-                        open={isEditSportsOpen}
-                        onOpenChange={setIsEditSportsOpen}
-                        availableSports={availableSports}
-                        selectedSports={selectedSports}
-                        onToggleSport={toggleSport}
-                        onUpdate={handleUpdateSports}
+                    <ManageProgramsDialog
+                        open={isEditProgramsOpen}
+                        onOpenChange={setIsEditProgramsOpen}
+                        availablePrograms={availablePrograms}
+                        selectedPrograms={selectedPrograms}
+                        onToggleProgram={toggleProgram}
+                        onUpdate={handleUpdatePrograms}
                     />
 
                     <PaymentDialog

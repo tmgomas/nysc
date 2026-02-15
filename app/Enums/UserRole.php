@@ -27,7 +27,7 @@ enum UserRole: string
             self::SUPER_ADMIN => 'Full system access',
             self::ADMIN => 'Club management',
             self::STAFF => 'Operational tasks',
-            self::COACH => 'Sport-specific access',
+            self::COACH => 'Program-specific access',
             self::MEMBER => 'Self-service portal',
         };
     }
@@ -40,7 +40,7 @@ enum UserRole: string
                 'view_members', 'create_members', 'edit_members', 'delete_members', 'approve_members', 'suspend_members',
                 'view_payments', 'create_payments', 'edit_payments', 'delete_payments', 'verify_payments', 'approve_payments',
                 'view_attendance', 'mark_attendance', 'edit_attendance',
-                'view_sports', 'create_sports', 'edit_sports', 'delete_sports',
+                'view_sports', 'create_programs', 'edit_programs', 'delete_programs',
                 'view_coaches', 'create_coaches', 'edit_coaches', 'delete_coaches', 'assign_coaches',
                 'view_reports', 'export_reports', 'view_audit_logs',
             ],

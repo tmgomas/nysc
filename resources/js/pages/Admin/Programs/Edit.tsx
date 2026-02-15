@@ -33,7 +33,7 @@ const DAY_SHORT: Record<string, string> = {
     Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun',
 };
 
-interface SportClassItem {
+interface ProgramClassItem {
     id: string;
     label: string | null;
     day_of_week: string;
@@ -54,7 +54,7 @@ interface ScheduleDay {
     end: string;
 }
 
-interface Sport {
+interface Program {
     id: string;
     name: string;
     description: string | null;
@@ -67,26 +67,26 @@ interface Sport {
     schedule_type: string;
     weekly_limit: number | null;
     is_active: boolean;
-    classes: SportClassItem[];
+    classes: ProgramClassItem[];
 }
 
 interface Props {
-    sport: Sport;
+    program: Program;
     coaches: { id: string; name: string; specialization: string }[];
     locations: { id: string; name: string }[];
 }
 
-export default function EditSport({ sport, coaches, locations }: Props) {
+export default function EditProgram({ program, coaches, locations }: Props) {
     const { confirm, ConfirmDialog } = useConfirm();
     const [classDialogOpen, setClassDialogOpen] = useState(false);
-    const [editingClass, setEditingClass] = useState<SportClassItem | null>(null);
+    const [editingClass, setEditingClass] = useState<ProgramClassItem | null>(null);
 
     // Cancel date state
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
-    const [cancellingClass, setCancellingClass] = useState<SportClassItem | null>(null);
+    const [cancellingClass, setCancellingClass] = useState<ProgramClassItem | null>(null);
     const [cancelForm, setCancelForm] = useState({ cancelled_date: '', reason: '' });
 
-    const openCancelDialog = (cls: SportClassItem) => {
+    const openCancelDialog = (cls: ProgramClassItem) => {
         setCancellingClass(cls);
         setCancelForm({ cancelled_date: '', reason: '' });
         setCancelDialogOpen(true);
@@ -94,7 +94,7 @@ export default function EditSport({ sport, coaches, locations }: Props) {
 
     const handleCancelDate = () => {
         if (!cancellingClass || !cancelForm.cancelled_date) return;
-        router.post(`/admin/sports/${sport.id}/classes/${cancellingClass.id}/cancel-date`, cancelForm, {
+        router.post(`/admin/programs/${program.id}/classes/${cancellingClass.id}/cancel-date`, cancelForm, {
             preserveScroll: true,
             onSuccess: () => {
                 setCancelDialogOpen(false);
@@ -103,24 +103,24 @@ export default function EditSport({ sport, coaches, locations }: Props) {
         });
     };
 
-    const handleRestoreDate = (cls: SportClassItem, cancellationId: string) => {
-        router.delete(`/admin/sports/${sport.id}/classes/${cls.id}/cancellations/${cancellationId}`, {
+    const handleRestoreDate = (cls: ProgramClassItem, cancellationId: string) => {
+        router.delete(`/admin/programs/${program.id}/classes/${cls.id}/cancellations/${cancellationId}`, {
             preserveScroll: true,
             onSuccess: () => toast.success('Date restored'),
         });
     };
 
     const { data, setData, put, processing, errors } = useForm({
-        name: sport.name || '',
-        description: sport.description || '',
-        admission_fee: sport.admission_fee || '',
-        monthly_fee: sport.monthly_fee || '',
-        capacity: sport.capacity || '',
-        location_id: sport.location_id || '',
-        schedule_type: sport.schedule_type || 'practice_days',
-        weekly_limit: sport.weekly_limit || '',
-        schedule: sport.schedule || {},
-        is_active: Boolean(sport.is_active),
+        name: program.name || '',
+        description: program.description || '',
+        admission_fee: program.admission_fee || '',
+        monthly_fee: program.monthly_fee || '',
+        capacity: program.capacity || '',
+        location_id: program.location_id || '',
+        schedule_type: program.schedule_type || 'practice_days',
+        weekly_limit: program.weekly_limit || '',
+        schedule: program.schedule || {},
+        is_active: Boolean(program.is_active),
         update_existing_schedules: false,
     });
 
@@ -198,7 +198,7 @@ export default function EditSport({ sport, coaches, locations }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        put(`/admin/sports/${sport.id}`);
+        put(`/admin/programs/${program.id}`);
     };
 
     // Class Management
@@ -219,7 +219,7 @@ export default function EditSport({ sport, coaches, locations }: Props) {
         setClassDialogOpen(true);
     };
 
-    const openEditClassDialog = (cls: SportClassItem) => {
+    const openEditClassDialog = (cls: ProgramClassItem) => {
         setEditingClass(cls);
         setClassForm({
             label: cls.label || '',
@@ -249,7 +249,7 @@ export default function EditSport({ sport, coaches, locations }: Props) {
         if (editingClass) {
             // Update existing class
             router.put(
-                `/admin/sports/${sport.id}/classes/${editingClass.id}`,
+                `/admin/programs/${program.id}/classes/${editingClass.id}`,
                 {
                     label: classForm.label || null,
                     day_of_week: classForm.day_of_week,
@@ -277,7 +277,7 @@ export default function EditSport({ sport, coaches, locations }: Props) {
                 return;
             }
             router.post(
-                `/admin/sports/${sport.id}/classes`,
+                `/admin/programs/${program.id}/classes`,
                 {
                     label: classForm.label || null,
                     days: classForm.days,
@@ -301,7 +301,7 @@ export default function EditSport({ sport, coaches, locations }: Props) {
         }
     };
 
-    const handleDeleteClass = async (cls: SportClassItem) => {
+    const handleDeleteClass = async (cls: ProgramClassItem) => {
         const confirmed = await confirm({
             title: 'Delete Class Slot',
             description: `Delete "${cls.label || cls.day_of_week} ${cls.start_time?.substring(0, 5)}-${cls.end_time?.substring(0, 5)}"?`,
@@ -311,7 +311,7 @@ export default function EditSport({ sport, coaches, locations }: Props) {
         });
 
         if (confirmed) {
-            router.delete(`/admin/sports/${sport.id}/classes/${cls.id}`, {
+            router.delete(`/admin/programs/${program.id}/classes/${cls.id}`, {
                 preserveScroll: true,
                 onSuccess: () => toast.success('Class slot deleted'),
                 onError: () => toast.error('Failed to delete class'),
@@ -334,11 +334,11 @@ export default function EditSport({ sport, coaches, locations }: Props) {
     return (
         <AppLayout
             breadcrumbs={[
-                { title: 'Sports', href: '/admin/sports' },
-                { title: 'Edit Sport', href: `/admin/sports/${sport.id}/edit` },
+                { title: 'Programs', href: '/admin/programs' },
+                { title: 'Edit Program', href: `/admin/programs/${program.id}/edit` },
             ]}
         >
-            <Head title={`Edit ${sport.name}`} />
+            <Head title={`Edit ${program.name}`} />
             <ConfirmDialog />
 
             <div className="py-12">
@@ -346,14 +346,14 @@ export default function EditSport({ sport, coaches, locations }: Props) {
                     {/* Page Header */}
                     <div className="mb-8 flex items-center gap-4">
                         <Button variant="outline" size="icon" asChild>
-                            <Link href="/admin/sports">
+                            <Link href="/admin/programs">
                                 <ChevronLeft className="h-4 w-4" />
                             </Link>
                         </Button>
                         <div>
-                            <h2 className="text-2xl font-bold tracking-tight">Edit Sport</h2>
+                            <h2 className="text-2xl font-bold tracking-tight">Edit Program</h2>
                             <p className="text-muted-foreground">
-                                Update fees and details for {sport.name}
+                                Update fees and details for {program.name}
                             </p>
                         </div>
                     </div>
@@ -363,14 +363,14 @@ export default function EditSport({ sport, coaches, locations }: Props) {
                             {/* Basic Details Card */}
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Sport Details</CardTitle>
+                                    <CardTitle>Program Details</CardTitle>
                                     <CardDescription>
-                                        Update the information for this sport.
+                                        Update the information for this program.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="grid gap-6">
                                     <div className="space-y-2">
-                                        <Label htmlFor="name">Sport Name <span className="text-red-500">*</span></Label>
+                                        <Label htmlFor="name">Program Name <span className="text-red-500">*</span></Label>
                                         <Input
                                             id="name"
                                             value={data.name}
@@ -387,7 +387,7 @@ export default function EditSport({ sport, coaches, locations }: Props) {
                                             id="description"
                                             value={data.description}
                                             onChange={(e) => setData('description', e.target.value)}
-                                            placeholder="Brief description of the sport..."
+                                            placeholder="Brief description of the program..."
                                             rows={3}
                                         />
                                         {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
@@ -478,7 +478,7 @@ export default function EditSport({ sport, coaches, locations }: Props) {
                                             </div>
                                         </div>
 
-                                        {Number(data.monthly_fee) !== Number(sport.monthly_fee) && (
+                                        {Number(data.monthly_fee) !== Number(program.monthly_fee) && (
                                             <div className="flex items-start space-x-2 pt-2 border-t border-dashed border-gray-300">
                                                 <Checkbox
                                                     id="update_existing_schedules"
@@ -625,7 +625,7 @@ export default function EditSport({ sport, coaches, locations }: Props) {
                                 </CardContent>
                             </Card>
 
-                            {/* Submit Sport Details */}
+                            {/* Submit Program Details */}
                             <div className="flex justify-end gap-4">
                                 <Button type="button" variant="outline" onClick={() => window.history.back()}>
                                     Cancel
@@ -639,14 +639,14 @@ export default function EditSport({ sport, coaches, locations }: Props) {
                                     ) : (
                                         <>
                                             <Save className="mr-2 h-4 w-4" />
-                                            Update Sport
+                                            Update Program
                                         </>
                                     )}
                                 </Button>
                             </div>
                         </form>
 
-                        {/* Class Management Card (only for class_based sports) */}
+                        {/* Class Management Card (only for class_based programs) */}
                         {data.schedule_type === 'class_based' && (
                             <Card>
                                 <CardHeader>
@@ -667,9 +667,9 @@ export default function EditSport({ sport, coaches, locations }: Props) {
                                     </div>
                                 </CardHeader>
                                 <CardContent>
-                                    {sport.classes && sport.classes.length > 0 ? (
+                                    {program.classes && program.classes.length > 0 ? (
                                         <div className="space-y-3">
-                                            {sport.classes.map((cls) => (
+                                            {program.classes.map((cls) => (
                                                 <div key={cls.id} className={`rounded-lg border p-4 ${cls.is_active ? 'bg-muted/20' : 'bg-muted/10 opacity-60'}`}>
                                                     <div className="flex items-center justify-between">
                                                         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -727,7 +727,7 @@ export default function EditSport({ sport, coaches, locations }: Props) {
                                                                 title={cls.is_active ? 'Deactivate class' : 'Activate class'}
                                                                 className={cls.is_active ? 'text-green-600 hover:text-red-600' : 'text-red-500 hover:text-green-600'}
                                                                 onClick={() => {
-                                                                    router.post(`/admin/sports/${sport.id}/classes/${cls.id}/toggle`, {}, {
+                                                                    router.post(`/admin/programs/${program.id}/classes/${cls.id}/toggle`, {}, {
                                                                         preserveScroll: true,
                                                                         onSuccess: () => toast.success(cls.is_active ? 'Class deactivated' : 'Class activated'),
                                                                     });

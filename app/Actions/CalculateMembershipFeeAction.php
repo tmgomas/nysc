@@ -2,36 +2,36 @@
 
 namespace App\Actions;
 
-use App\Models\Sport;
+use App\Models\Program;
 
 class CalculateMembershipFeeAction
 {
     /**
-     * Calculate total membership fees for selected sports
+     * Calculate total membership fees for selected programs
      * 
-     * @param array $sportIds Array of sport IDs
+     * @param array $programIds Array of program IDs
      * @param bool $includeAdmission Whether to include admission fees
      * @return array Fee breakdown
      */
-    public function execute(array $sportIds, bool $includeAdmission = true): array
+    public function execute(array $programIds, bool $includeAdmission = true): array
     {
-        $sports = Sport::whereIn('id', $sportIds)->get();
+        $programs = Program::whereIn('id', $programIds)->get();
 
-        $admissionTotal = $includeAdmission ? $sports->sum('admission_fee') : 0;
-        $monthlyTotal = $sports->sum('monthly_fee');
+        $admissionTotal = $includeAdmission ? $programs->sum('admission_fee') : 0;
+        $monthlyTotal = $programs->sum('monthly_fee');
         $grandTotal = $admissionTotal + $monthlyTotal;
 
         return [
             'admission_total' => $admissionTotal,
             'monthly_total' => $monthlyTotal,
             'grand_total' => $grandTotal,
-            'sports_breakdown' => $sports->map(function ($sport) use ($includeAdmission) {
+            'sports_breakdown' => $programs->map(function ($program) use ($includeAdmission) {
                 return [
-                    'id' => $sport->id,
-                    'name' => $sport->name,
-                    'admission_fee' => $includeAdmission ? $sport->admission_fee : 0,
-                    'monthly_fee' => $sport->monthly_fee,
-                    'total' => ($includeAdmission ? $sport->admission_fee : 0) + $sport->monthly_fee,
+                    'id' => $program->id,
+                    'name' => $program->name,
+                    'admission_fee' => $includeAdmission ? $program->admission_fee : 0,
+                    'monthly_fee' => $program->monthly_fee,
+                    'total' => ($includeAdmission ? $program->admission_fee : 0) + $program->monthly_fee,
                 ];
             })->toArray(),
         ];
@@ -40,20 +40,20 @@ class CalculateMembershipFeeAction
     /**
      * Calculate bulk payment amount for multiple months
      */
-    public function calculateBulkPayment(array $sportIds, int $months): array
+    public function calculateBulkPayment(array $programIds, int $months): array
     {
-        $sports = Sport::whereIn('id', $sportIds)->get();
-        $monthlyTotal = $sports->sum('monthly_fee');
+        $programs = Program::whereIn('id', $programIds)->get();
+        $monthlyTotal = $programs->sum('monthly_fee');
         $bulkTotal = $monthlyTotal * $months;
 
         return [
             'monthly_total' => $monthlyTotal,
             'months' => $months,
             'bulk_total' => $bulkTotal,
-            'per_month_breakdown' => $sports->map(function ($sport) {
+            'per_month_breakdown' => $programs->map(function ($program) {
                 return [
-                    'name' => $sport->name,
-                    'monthly_fee' => $sport->monthly_fee,
+                    'name' => $program->name,
+                    'monthly_fee' => $program->monthly_fee,
                 ];
             })->toArray(),
         ];

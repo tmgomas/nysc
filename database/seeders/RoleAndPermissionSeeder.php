@@ -61,18 +61,18 @@ class RoleAndPermissionSeeder extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission, 'guard_name' => 'web']);
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
         // Create Roles and assign permissions
 
         // 1. Super Admin - All permissions
-        $superAdmin = Role::create(['name' => 'super_admin']);
-        $superAdmin->givePermissionTo(Permission::all());
+        $superAdmin = Role::firstOrCreate(['name' => 'super_admin']);
+        $superAdmin->syncPermissions(Permission::all());
 
         // 2. Admin - Club management (no system settings/roles)
-        $admin = Role::create(['name' => 'admin']);
-        $admin->givePermissionTo([
+        $admin = Role::firstOrCreate(['name' => 'admin']);
+        $admin->syncPermissions([
             'view_members', 'create_members', 'edit_members', 'delete_members', 'approve_members', 'suspend_members',
             'view_payments', 'create_payments', 'edit_payments', 'delete_payments', 'verify_payments', 'approve_payments',
             'view_attendance', 'mark_attendance', 'edit_attendance',
@@ -83,8 +83,8 @@ class RoleAndPermissionSeeder extends Seeder
         ]);
 
         // 3. Staff - Operational tasks (limited)
-        $staff = Role::create(['name' => 'staff']);
-        $staff->givePermissionTo([
+        $staff = Role::firstOrCreate(['name' => 'staff']);
+        $staff->syncPermissions([
             'view_members', 'create_members', 'edit_members',
             'view_payments', 'create_payments',
             'view_attendance', 'mark_attendance',
@@ -93,16 +93,16 @@ class RoleAndPermissionSeeder extends Seeder
         ]);
 
         // 4. Coach - Sport-specific access
-        $coach = Role::create(['name' => 'coach']);
-        $coach->givePermissionTo([
+        $coach = Role::firstOrCreate(['name' => 'coach']);
+        $coach->syncPermissions([
             'view_members',
             'view_attendance', 'mark_attendance',
             'view_sports',
         ]);
 
         // 5. Member - Self-service portal
-        $member = Role::create(['name' => 'member']);
-        $member->givePermissionTo([
+        $member = Role::firstOrCreate(['name' => 'member']);
+        $member->syncPermissions([
             'view_members', // Own profile only
             'view_payments', // Own payments only
             'view_attendance', // Own attendance only

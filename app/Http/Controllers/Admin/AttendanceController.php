@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Member;
-use App\Models\Sport;
+use App\Models\Program;
 use App\Models\Attendance;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,22 +16,22 @@ class AttendanceController extends Controller
 {
     public function index(Request $request)
     {
-        $sports = Sport::select('id', 'name')->orderBy('name')->get();
+        $programs = Program::select('id', 'name')->orderBy('name')->get();
         
-        $filters = $request->only(['date', 'sport_id']);
+        $filters = $request->only(['date', 'program_id']);
         $date = $request->input('date', today()->format('Y-m-d'));
-        $sportId = $request->input('sport_id');
+        $programId = $request->input('program_id');
 
         $members = [];
         
-        if ($sportId) {
-            $members = Member::whereHas('sports', function ($query) use ($sportId) {
-                $query->where('sports.id', $sportId);
+        if ($programId) {
+            $members = Member::whereHas('programs', function ($query) use ($programId) {
+                $query->where('programs.id', $programId);
             })
             ->whereIn('status', ['active', 'pending'])
-            ->with(['attendances' => function ($query) use ($date, $sportId) {
+            ->with(['attendances' => function ($query) use ($date, $programId) {
                 $query->whereDate('check_in_time', $date)
-                      ->where('sport_id', $sportId);
+                      ->where('program_id', $programId);
             }])
             ->orderBy('full_name') // Or member_number
             ->get()
@@ -52,7 +52,7 @@ class AttendanceController extends Controller
         
 
         return Inertia::render('Admin/Attendance/Index', [
-            'sports' => $sports,
+            'programs' => $programs,
             'filters' => $filters,
             'members' => $members,
             'currentDate' => $date,
@@ -63,7 +63,7 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'date' => 'required|date',
-            'sport_id' => 'required|exists:sports,id',
+            'program_id' => 'required|exists:sports,id',
             'attendances' => 'required|array',
             'attendances.*.member_id' => 'required|exists:members,id',
             'attendances.*.present' => 'required|boolean',
@@ -71,9 +71,9 @@ class AttendanceController extends Controller
         ]);
 
         $date = Carbon::parse($validated['date']);
-        $sportId = $validated['sport_id'];
+        $programId = $validated['program_id'];
 
-        DB::transaction(function () use ($validated, $date, $sportId) {
+        DB::transaction(function () use ($validated, $date, $programId) {
             foreach ($validated['attendances'] as $item) {
                 $checkInTime = $date->copy()->setTimeFromTimeString($item['check_in'] ?? '08:00'); // Default time if not set? Or use current?
                 
@@ -81,9 +81,9 @@ class AttendanceController extends Controller
                     Attendance::updateOrCreate(
                         [
                             'member_id' => $item['member_id'],
-                            'sport_id' => $sportId,
+                            'program_id' => $programId,
                             'check_in_time' => $checkInTime, // Note: This might create duplicates if we strictly match check_in_time. 
-                            // Better to find by member_id + sport_id + DATE(check_in_time)
+                            // Better to find by member_id + program_id + DATE(check_in_time)
                         ],
                         [
                             'marked_by' => Auth::id(),
@@ -94,7 +94,7 @@ class AttendanceController extends Controller
                 } else {
                     // Remove attendance if unmarked
                     Attendance::where('member_id', $item['member_id'])
-                        ->where('sport_id', $sportId)
+                        ->where('program_id', $programId)
                         ->whereDate('check_in_time', $date->toDateString())
                         ->delete();
                 }
@@ -113,13 +113,13 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'date' => 'required|date',
-            'sport_id' => 'nullable|exists:sports,id', // Made optional
+            'program_id' => 'nullable|exists:sports,id', // Made optional
             'member_number' => 'required|string',
             'method' => 'nullable|in:qr_code,nfc,rfid', // Added method parameter
         ]);
 
         $date = $validated['date'];
-        $sportId = $validated['sport_id'] ?? null;
+        $programId = $validated['program_id'] ?? null;
         $scanData = $validated['member_number']; // This contains the scanned string (Member No, RFID ID, or NFC ID)
         $method = $validated['method'] ?? 'qr_code';
 
@@ -146,14 +146,14 @@ class AttendanceController extends Controller
             ], 404);
         }
 
-        // Check if member is assigned to this sport (only if sport_id is provided)
-        if ($sportId) {
-            $hasSport = $member->sports()->where('sports.id', $sportId)->exists();
+        // Check if member is assigned to this program (only if program_id is provided)
+        if ($programId) {
+            $hasProgram = $member->programs()->where('programs.id', $programId)->exists();
             
-            if (!$hasSport) {
+            if (!$hasProgram) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Member {$member->full_name} is not registered for this sport.",
+                    'message' => "Member {$member->full_name} is not registered for this program.",
                 ], 400);
             }
         }
@@ -168,14 +168,14 @@ class AttendanceController extends Controller
             ], 400);
         }
 
-        // Check for existing attendance on this day (and sport if provided)
+        // Check for existing attendance on this day (and program if provided)
         $attendanceQuery = Attendance::where('member_id', $member->id)
             ->whereDate('check_in_time', $date);
         
-        if ($sportId) {
-            $attendanceQuery->where('sport_id', $sportId);
+        if ($programId) {
+            $attendanceQuery->where('program_id', $programId);
         } else {
-            $attendanceQuery->whereNull('sport_id');
+            $attendanceQuery->whereNull('program_id');
         }
         
         $attendance = $attendanceQuery->first();
@@ -186,7 +186,7 @@ class AttendanceController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => "Already Checked Out: {$member->full_name} at " . $attendance->check_out_time->format('H:i'),
-                    'member' => $member->load(['sports']),
+                    'member' => $member->load(['programs']),
                     'attendance' => $attendance,
                     'status' => 'checked_out'
                 ]);
@@ -197,7 +197,7 @@ class AttendanceController extends Controller
                     return response()->json([
                         'success' => true,
                         'message' => "Already Checked In (Duplicate scan ignored) - Wait 5m to checkout",
-                        'member' => $member->load(['sports']),
+                        'member' => $member->load(['programs']),
                         'attendance' => $attendance,
                         'status' => 'checked_in'
                     ]);
@@ -211,7 +211,7 @@ class AttendanceController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => "Checked Out: {$member->full_name}",
-                    'member' => $member->load(['sports']),
+                    'member' => $member->load(['programs']),
                     'attendance' => $attendance->fresh(),
                     'status' => 'checked_out'
                 ]);
@@ -221,7 +221,7 @@ class AttendanceController extends Controller
         // Check In
         $attendance = Attendance::create([
             'member_id' => $member->id,
-            'sport_id' => $sportId,
+            'program_id' => $programId,
             'check_in_time' => Carbon::now()->setDateFrom($date),
             'marked_by' => Auth::id(),
             'method' => $method,
@@ -230,7 +230,7 @@ class AttendanceController extends Controller
         return response()->json([
             'success' => true,
             'message' => "Checked In: {$member->full_name}",
-            'member' => $member->load(['sports']),
+            'member' => $member->load(['programs']),
             'attendance' => $attendance,
             'status' => 'checked_in'
         ]);
@@ -240,7 +240,7 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'date' => 'required|date',
-            'sport_id' => 'required|exists:sports,id',
+            'program_id' => 'required|exists:sports,id',
             'attendances' => 'required|array',
             'attendances.*.member_id' => 'required|exists:members,id',
             'attendances.*.present' => 'required|boolean',
@@ -249,14 +249,14 @@ class AttendanceController extends Controller
         ]);
 
         $dateStr = $validated['date'];
-        $sportId = $validated['sport_id'];
+        $programId = $validated['program_id'];
         $userId = Auth::id();
 
-        DB::transaction(function () use ($validated, $dateStr, $sportId, $userId) {
+        DB::transaction(function () use ($validated, $dateStr, $programId, $userId) {
             foreach ($validated['attendances'] as $item) {
                 // Check for existing record on this day
                 $attendance = Attendance::where('member_id', $item['member_id'])
-                    ->where('sport_id', $sportId)
+                    ->where('program_id', $programId)
                     ->whereDate('check_in_time', $dateStr)
                     ->first();
 
@@ -284,7 +284,7 @@ class AttendanceController extends Controller
                     } else {
                         Attendance::create([
                             'member_id' => $item['member_id'],
-                            'sport_id' => $sportId,
+                            'program_id' => $programId,
                             'check_in_time' => $fullCheckIn,
                             'check_out_time' => $fullCheckOut,
                             'marked_by' => $userId,

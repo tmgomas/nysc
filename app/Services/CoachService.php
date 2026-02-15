@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Coach;
-use App\Models\Sport;
+use App\Models\Program;
 use Illuminate\Support\Facades\DB;
 
 class CoachService
@@ -16,9 +16,9 @@ class CoachService
         return DB::transaction(function () use ($data) {
             $coach = Coach::create($data);
 
-            // Assign to sports if provided
-            if (!empty($data['sport_ids'])) {
-                $coach->sports()->attach($data['sport_ids'], [
+            // Assign to programs if provided
+            if (!empty($data['program_ids'])) {
+                $coach->programs()->attach($data['program_ids'], [
                     'assigned_at' => now(),
                 ]);
             }
@@ -35,9 +35,9 @@ class CoachService
         return DB::transaction(function () use ($coach, $data) {
             $coach->update($data);
 
-            // Update sport assignments if provided
-            if (isset($data['sport_ids'])) {
-                $coach->sports()->sync($data['sport_ids']);
+            // Update program assignments if provided
+            if (isset($data['program_ids'])) {
+                $coach->programs()->sync($data['program_ids']);
             }
 
             return $coach->fresh();
@@ -45,11 +45,11 @@ class CoachService
     }
 
     /**
-     * Assign sports to coach
+     * Assign programs to coach
      */
-    public function assignSports(Coach $coach, array $sportIds): Coach
+    public function assignPrograms(Coach $coach, array $programIds): Coach
     {
-        $coach->sports()->sync($sportIds);
+        $coach->programs()->sync($programIds);
         return $coach->fresh();
     }
 
@@ -58,20 +58,20 @@ class CoachService
      */
     public function getStatistics(Coach $coach): array
     {
-        $assignedSports = $coach->sports;
+        $assignedPrograms = $coach->programs;
         $totalMembers = 0;
         $monthlyAttendance = 0;
 
-        foreach ($assignedSports as $sport) {
-            $totalMembers += $sport->members()->where('member_sports.status', 'active')->count();
-            $monthlyAttendance += $sport->attendances()
+        foreach ($assignedPrograms as $program) {
+            $totalMembers += $program->members()->where('member_programs.status', 'active')->count();
+            $monthlyAttendance += $program->attendances()
                 ->whereMonth('check_in_time', now()->month)
                 ->count();
         }
 
         return [
-            'assigned_sports_count' => $assignedSports->count(),
-            'assigned_sports' => $assignedSports->pluck('name')->toArray(),
+            'assigned_programs_count' => $assignedPrograms->count(),
+            'assigned_programs' => $assignedPrograms->pluck('name')->toArray(),
             'total_members' => $totalMembers,
             'monthly_attendance' => $monthlyAttendance,
             'experience_years' => $coach->experience_years,
@@ -80,11 +80,11 @@ class CoachService
     }
 
     /**
-     * Get coaches for a sport
+     * Get coaches for a program
      */
-    public function getCoachesForSport(Sport $sport)
+    public function getCoachesForProgram(Program $program)
     {
-        return $sport->coaches()
+        return $program->coaches()
             ->where('is_active', true)
             ->get();
     }

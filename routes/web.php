@@ -10,7 +10,7 @@ use App\Http\Controllers\Admin\{
     MemberImportController as AdminMemberImportController,
     PaymentController as AdminPaymentController,
     AttendanceController as AdminAttendanceController,
-    SportController as AdminSportController,
+    ProgramController as AdminProgramController,
     ReportController as AdminReportController,
     SettingController as AdminSettingController,
     QRCodeController as AdminQRCodeController
@@ -47,7 +47,7 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
     Route::post('members/{member}/approve', [AdminMemberController::class, 'approve'])->name('members.approve');
     Route::post('members/{member}/suspend', [AdminMemberController::class, 'suspend'])->name('members.suspend');
     Route::post('members/{member}/reactivate', [AdminMemberController::class, 'reactivate'])->name('members.reactivate');
-    Route::put('members/{member}/sports', [AdminMemberController::class, 'updateSports'])->name('members.update-sports');
+    Route::put('members/{member}/programs', [AdminMemberController::class, 'updatePrograms'])->name('members.update-programs');
     
     // Member Import
     Route::get('members/import/create', [AdminMemberImportController::class, 'create'])->name('members.import.create');
@@ -77,14 +77,14 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
     Route::post('attendance/quick-scan', [AdminAttendanceController::class, 'quickScan'])->name('attendance.quick-scan');
     Route::get('members/{member}/attendance', [AdminAttendanceController::class, 'getMemberAttendance'])->name('members.attendance');
     
-    // Sports
-    Route::resource('sports', AdminSportController::class);
-    Route::resource('sports.classes', \App\Http\Controllers\Admin\SportClassController::class)
+    // Programs
+    Route::resource('programs', AdminProgramController::class);
+    Route::resource('programs.classes', \App\Http\Controllers\Admin\ProgramClassController::class)
         ->only(['store', 'update', 'destroy'])
         ->parameters(['classes' => 'class']);
-    Route::post('sports/{sport}/classes/{class}/toggle', [\App\Http\Controllers\Admin\SportClassController::class, 'toggleActive'])->name('sports.classes.toggle');
-    Route::post('sports/{sport}/classes/{class}/cancel-date', [\App\Http\Controllers\Admin\SportClassController::class, 'cancelDate'])->name('sports.classes.cancel-date');
-    Route::delete('sports/{sport}/classes/{class}/cancellations/{cancellation}', [\App\Http\Controllers\Admin\SportClassController::class, 'restoreDate'])->name('sports.classes.restore-date');
+    Route::post('programs/{program}/classes/{class}/toggle', [\App\Http\Controllers\Admin\ProgramClassController::class, 'toggleActive'])->name('programs.classes.toggle');
+    Route::post('programs/{program}/classes/{class}/cancel-date', [\App\Http\Controllers\Admin\ProgramClassController::class, 'cancelDate'])->name('programs.classes.cancel-date');
+    Route::delete('programs/{program}/classes/{class}/cancellations/{cancellation}', [\App\Http\Controllers\Admin\ProgramClassController::class, 'restoreDate'])->name('programs.classes.restore-date');
 
     // Locations
     Route::resource('locations', \App\Http\Controllers\Admin\LocationController::class)->except(['show', 'create', 'edit']);

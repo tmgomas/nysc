@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import axios from '@/bootstrap';
 
-interface Sport {
+interface Program {
     id: string;
     name: string;
     admission_fee: number;
@@ -31,7 +31,7 @@ interface PreviewData {
     }>;
 }
 
-export default function Import({ sports }: { sports: Sport[] }) {
+export default function Import({ programs }: { programs: Program[] }) {
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<PreviewData | null>(null);
     const [loading, setLoading] = useState(false);
@@ -126,7 +126,7 @@ export default function Import({ sports }: { sports: Sport[] }) {
                         <ol className="list-decimal list-inside space-y-2 text-sm">
                             <li>Download the CSV template using the button above</li>
                             <li>Fill in the member details in the template (one member per row)</li>
-                            <li>For sport_ids, use comma-separated sport IDs: {sports.map(s => `${s.id} (${s.name})`).join(', ')}</li>
+                            <li>For program_ids, use comma-separated sport IDs: {programs.map(s => `${s.id} (${s.name})`).join(', ')}</li>
                             <li>Save the file and upload it below</li>
                             <li>Preview the data to check for errors</li>
                             <li>Click Import to add the members to the system</li>

@@ -43,7 +43,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
-interface SportClass {
+interface ProgramClass {
     id: string;
     label: string | null;
     day_of_week: string;
@@ -53,7 +53,7 @@ interface SportClass {
     coach?: { id: string; name: string } | null;
 }
 
-interface Sport {
+interface Program {
     id: string;
     name: string;
     schedule_type: string;
@@ -61,7 +61,7 @@ interface Sport {
     weekly_limit: number | null;
     location_id: string | null;
     location?: { id: string; name: string } | null;
-    classes: SportClass[];
+    classes: ProgramClass[];
 }
 
 interface Holiday {
@@ -90,7 +90,7 @@ interface LocationItem {
 }
 
 interface Props {
-    sports: Sport[];
+    programs: Program[];
     holidays: Holiday[];
     specialBookings: SpecialBooking[];
     locations: LocationItem[];
@@ -103,7 +103,7 @@ const COLOR_PALETTE = [
     '#14b8a6',
 ];
 
-function getSportColor(sportId: string, index: number): string {
+function getProgramColor(sportId: string, index: number): string {
     if (!SPORT_COLORS[sportId]) {
         SPORT_COLORS[sportId] = COLOR_PALETTE[index % COLOR_PALETTE.length];
     }
@@ -118,9 +118,9 @@ function dayToNumber(day: string): number {
     return map[day] ?? 1;
 }
 
-export default function ScheduleIndex({ sports, holidays, specialBookings, locations }: Props) {
+export default function ScheduleIndex({ programs, holidays, specialBookings, locations }: Props) {
     const calendarRef = useRef<InstanceType<typeof FullCalendar>>(null);
-    const [selectedSport, setSelectedSport] = useState<string>('all');
+    const [selectedProgram, setSelectedProgram] = useState<string>('all');
     const [eventDetail, setEventDetail] = useState<any>(null);
     const [currentTitle, setCurrentTitle] = useState('');
 
@@ -129,9 +129,9 @@ export default function ScheduleIndex({ sports, holidays, specialBookings, locat
     const [cancelling, setCancelling] = useState(false);
 
     const handleCancelFromCalendar = () => {
-        if (!eventDetail?.sport_id || !eventDetail?.class_id || !eventDetail?.clicked_date) return;
+        if (!eventDetail?.program_id || !eventDetail?.class_id || !eventDetail?.clicked_date) return;
         setCancelling(true);
-        router.post(`/admin/sports/${eventDetail.sport_id}/classes/${eventDetail.class_id}/cancel-date`, {
+        router.post(`/admin/programs/${eventDetail.program_id}/classes/${eventDetail.class_id}/cancel-date`, {
             cancelled_date: eventDetail.clicked_date,
             reason: cancelReason || null,
         }, {
@@ -157,30 +157,30 @@ export default function ScheduleIndex({ sports, holidays, specialBookings, locat
         start_time: '', end_time: '', reason: '', cancels_classes: true,
     });
 
-    // Build events from sports data (recurring events for calendar display)
+    // Build events from programs data (recurring events for calendar display)
     const buildEvents = () => {
         const events: any[] = [];
-        const filteredSports = selectedSport === 'all'
-            ? sports
-            : sports.filter((s) => s.id === selectedSport);
+        const filteredPrograms = selectedProgram === 'all'
+            ? programs
+            : programs.filter((s) => s.id === selectedProgram);
 
-        filteredSports.forEach((sport) => {
-            const color = getSportColor(sport.id, sports.indexOf(sport));
+        filteredPrograms.forEach((program) => {
+            const color = getProgramColor(program.id, programs.indexOf(program));
 
-            if (sport.schedule_type === 'class_based') {
-                sport.classes.forEach((cls) => {
+            if (program.schedule_type === 'class_based') {
+                program.classes.forEach((cls) => {
                     events.push({
                         id: cls.id,
-                        title: sport.name + (cls.label ? ` - ${cls.label}` : ''),
+                        title: program.name + (cls.label ? ` - ${cls.label}` : ''),
                         daysOfWeek: [dayToNumber(cls.day_of_week)],
                         startTime: cls.start_time,
                         endTime: cls.end_time,
                         backgroundColor: color,
                         borderColor: color,
                         extendedProps: {
-                            sport_id: sport.id,
+                            program_id: program.id,
                             class_id: cls.id,
-                            sport_name: sport.name,
+                            sport_name: program.name,
                             coach: cls.coach?.name,
                             capacity: cls.capacity,
                             label: cls.label,
@@ -189,18 +189,18 @@ export default function ScheduleIndex({ sports, holidays, specialBookings, locat
                     });
                 });
             } else {
-                const schedule = sport.schedule || {};
+                const schedule = program.schedule || {};
                 Object.entries(schedule).forEach(([day, times]) => {
                     events.push({
-                        id: `${sport.id}-${day}`,
-                        title: `${sport.name} Practice`,
+                        id: `${program.id}-${day}`,
+                        title: `${program.name} Practice`,
                         daysOfWeek: [dayToNumber(day)],
                         startTime: times.start || '16:00',
                         endTime: times.end || '18:00',
                         backgroundColor: color,
                         borderColor: color,
                         extendedProps: {
-                            sport_name: sport.name,
+                            sport_name: program.name,
                             type: 'practice',
                         },
                     });
@@ -342,15 +342,15 @@ export default function ScheduleIndex({ sports, holidays, specialBookings, locat
                             </p>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
-                            <Select value={selectedSport} onValueChange={setSelectedSport}>
+                            <Select value={selectedProgram} onValueChange={setSelectedProgram}>
                                 <SelectTrigger className="w-[180px]">
-                                    <SelectValue placeholder="All Sports" />
+                                    <SelectValue placeholder="All Programs" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All Sports</SelectItem>
-                                    {sports.map((sport) => (
-                                        <SelectItem key={sport.id} value={sport.id}>
-                                            {sport.name}
+                                    <SelectItem value="all">All Programs</SelectItem>
+                                    {programs.map((program) => (
+                                        <SelectItem key={program.id} value={program.id}>
+                                            {program.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -372,33 +372,33 @@ export default function ScheduleIndex({ sports, holidays, specialBookings, locat
                                 Special Bookings
                             </Button>
                             <Button variant="outline" size="sm" asChild>
-                                <Link href="/admin/sports">Manage Sports</Link>
+                                <Link href="/admin/programs">Manage Programs</Link>
                             </Button>
                         </div>
                     </div>
 
-                    {/* Sport Legend */}
+                    {/* Program Legend */}
                     <div className="mb-4 flex flex-wrap gap-2">
-                        {sports.map((sport, index) => (
+                        {programs.map((program, index) => (
                             <Badge
-                                key={sport.id}
+                                key={program.id}
                                 variant="outline"
                                 className="cursor-pointer transition-all hover:scale-105"
                                 style={{
-                                    borderColor: getSportColor(sport.id, index),
-                                    backgroundColor: selectedSport === sport.id
-                                        ? getSportColor(sport.id, index) + '20'
+                                    borderColor: getProgramColor(program.id, index),
+                                    backgroundColor: selectedProgram === program.id
+                                        ? getProgramColor(program.id, index) + '20'
                                         : 'transparent',
                                 }}
-                                onClick={() => setSelectedSport(
-                                    selectedSport === sport.id ? 'all' : sport.id
+                                onClick={() => setSelectedProgram(
+                                    selectedProgram === program.id ? 'all' : program.id
                                 )}
                             >
                                 <span
                                     className="mr-1.5 inline-block h-2.5 w-2.5 rounded-full"
-                                    style={{ backgroundColor: getSportColor(sport.id, index) }}
+                                    style={{ backgroundColor: getProgramColor(program.id, index) }}
                                 />
-                                {sport.name}
+                                {program.name}
                             </Badge>
                         ))}
                     </div>
@@ -682,10 +682,10 @@ export default function ScheduleIndex({ sports, holidays, specialBookings, locat
                                 </span>
                             </div>
                         )}
-                        {eventDetail?.sport_name && (
+                        {eventDetail?.program_name && (
                             <div className="flex items-center gap-3">
                                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                                <span>{eventDetail.sport_name}</span>
+                                <span>{eventDetail.program_name}</span>
                             </div>
                         )}
                         {eventDetail?.location && (

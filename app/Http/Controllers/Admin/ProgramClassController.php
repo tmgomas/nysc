@@ -3,18 +3,18 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Sport;
-use App\Models\SportClass;
+use App\Models\Program;
+use App\Models\ProgramClass;
 use App\Models\ClassCancellation;
 use Illuminate\Http\Request;
 
-class SportClassController extends Controller
+class ProgramClassController extends Controller
 {
     /**
-     * Store a new class/time slot for a sport.
+     * Store a new class/time slot for a program.
      * Supports multi-day creation (creates one row per day).
      */
-    public function store(Request $request, Sport $sport)
+    public function store(Request $request, Program $program)
     {
         $validated = $request->validate([
             'label' => 'nullable|string|max:255',
@@ -31,7 +31,7 @@ class SportClassController extends Controller
 
         $created = [];
         foreach ($validated['days'] as $day) {
-            $created[] = $sport->classes()->create([
+            $created[] = $program->classes()->create([
                 'label' => $validated['label'] ?? null,
                 'day_of_week' => $day,
                 'start_time' => $validated['start_time'],
@@ -50,7 +50,7 @@ class SportClassController extends Controller
     /**
      * Update an existing class/time slot.
      */
-    public function update(Request $request, Sport $sport, SportClass $class)
+    public function update(Request $request, Program $program, ProgramClass $class)
     {
         $validated = $request->validate([
             'label' => 'nullable|string|max:255',
@@ -73,7 +73,7 @@ class SportClassController extends Controller
     /**
      * Delete a class/time slot.
      */
-    public function destroy(Sport $sport, SportClass $class)
+    public function destroy(Program $program, ProgramClass $class)
     {
         $class->delete();
 
@@ -83,7 +83,7 @@ class SportClassController extends Controller
     /**
      * Toggle active/inactive status.
      */
-    public function toggleActive(Sport $sport, SportClass $class)
+    public function toggleActive(Program $program, ProgramClass $class)
     {
         $class->update(['is_active' => !$class->is_active]);
 
@@ -94,7 +94,7 @@ class SportClassController extends Controller
     /**
      * Cancel a specific date occurrence.
      */
-    public function cancelDate(Request $request, Sport $sport, SportClass $class)
+    public function cancelDate(Request $request, Program $program, ProgramClass $class)
     {
         $validated = $request->validate([
             'cancelled_date' => 'required|date',
@@ -112,7 +112,7 @@ class SportClassController extends Controller
     /**
      * Restore a cancelled date.
      */
-    public function restoreDate(Sport $sport, SportClass $class, ClassCancellation $cancellation)
+    public function restoreDate(Program $program, ProgramClass $class, ClassCancellation $cancellation)
     {
         $cancellation->delete();
 

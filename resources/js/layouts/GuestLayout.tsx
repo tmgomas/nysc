@@ -9,7 +9,7 @@ export default function GuestLayout({ children }: GuestLayoutProps) {
     return (
         <div className="min-h-screen bg-gray-100">
             <Head>
-                <title>NYSC Sports Club</title>
+                <title>NYSC Programs Club</title>
             </Head>
 
             <nav className="border-b border-gray-200 bg-white">
@@ -18,7 +18,7 @@ export default function GuestLayout({ children }: GuestLayoutProps) {
                         <div className="flex">
                             <div className="flex flex-shrink-0 items-center">
                                 <a href="/" className="text-xl font-bold text-blue-600">
-                                    NYSC Sports Club
+                                    NYSC Programs Club
                                 </a>
                             </div>
                         </div>
@@ -45,7 +45,7 @@ export default function GuestLayout({ children }: GuestLayoutProps) {
             <footer className="border-t border-gray-200 bg-white mt-12">
                 <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                     <p className="text-center text-sm text-gray-500">
-                        © {new Date().getFullYear()} NYSC Sports Club. All rights reserved.
+                        © {new Date().getFullYear()} NYSC Programs Club. All rights reserved.
                     </p>
                 </div>
             </footer>

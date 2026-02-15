@@ -22,8 +22,8 @@ class StoreMemberRequest extends FormRequest
             'address' => 'required|string|max:500',
             'emergency_contact' => 'required|string|max:255',
             'emergency_number' => 'required|string|regex:/^[0-9]{10}$/',
-            'sport_ids' => 'required|array|min:1',
-            'sport_ids.*' => 'exists:sports,id',
+            'program_ids' => 'required|array|min:1',
+            'program_ids.*' => 'exists:sports,id',
             'photo_url' => 'nullable|url',
         ];
     }
@@ -34,7 +34,7 @@ class StoreMemberRequest extends FormRequest
             'nic_passport.unique' => 'This NIC/Passport number is already registered.',
             'contact_number.regex' => 'Contact number must be 10 digits.',
             'emergency_number.regex' => 'Emergency number must be 10 digits.',
-            'sport_ids.required' => 'Please select at least one sport.',
+            'program_ids.required' => 'Please select at least one program.',
         ];
     }
 }

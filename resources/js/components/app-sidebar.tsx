@@ -59,8 +59,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             icon: ClipboardCheck,
         },
         {
-            title: 'Sports',
-            href: '/admin/sports',
+            title: 'Programs',
+            href: '/admin/programs',
             icon: Trophy,
         },
         {
@@ -144,7 +144,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                         NYCSC
                                     </span>
                                     <span className="truncate text-xs">
-                                        Sports Club
+                                        Programs Club
                                     </span>
                                 </div>
                             </Link>

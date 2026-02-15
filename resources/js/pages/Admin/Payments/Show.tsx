@@ -36,7 +36,7 @@ interface Payment {
             name: string;
             email: string;
         };
-        sports?: Array<{
+        programs?: Array<{
             id: string;
             name: string;
         }>;
@@ -193,13 +193,13 @@ export default function Show({ payment }: Props) {
                                             {payment.member.user?.email || 'N/A'}
                                         </div>
                                     </div>
-                                    {payment.member.sports && payment.member.sports.length > 0 && (
+                                    {payment.member.programs && payment.member.programs.length > 0 && (
                                         <div>
-                                            <div className="text-sm text-muted-foreground">Enrolled Sports</div>
+                                            <div className="text-sm text-muted-foreground">Enrolled Programs</div>
                                             <div className="flex flex-wrap gap-1 mt-1">
-                                                {payment.member.sports.map((sport) => (
-                                                    <Badge key={sport.id} variant="outline">
-                                                        {sport.name}
+                                                {payment.member.programs.map((program) => (
+                                                    <Badge key={program.id} variant="outline">
+                                                        {program.name}
                                                     </Badge>
                                                 ))}
                                             </div>

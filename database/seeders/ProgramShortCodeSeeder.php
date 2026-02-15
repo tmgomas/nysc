@@ -3,16 +3,16 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Sport;
+use App\Models\Program;
 
-class SportShortCodeSeeder extends Seeder
+class ProgramShortCodeSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        $sportCodes = [
+        $programCodes = [
             'Swimming' => 'SW',
             'Cricket' => 'CR',
             'Martial Arts' => 'MA',
@@ -38,20 +38,20 @@ class SportShortCodeSeeder extends Seeder
             'Chess' => 'CH',
         ];
 
-        foreach ($sportCodes as $sportName => $shortCode) {
-            Sport::where('name', 'like', "%{$sportName}%")
+        foreach ($programCodes as $programName => $shortCode) {
+            Program::where('name', 'like', "%{$programName}%")
                 ->update(['short_code' => $shortCode]);
         }
 
-        // Log sports without short codes
-        $sportsWithoutCode = Sport::whereNull('short_code')->get();
+        // Log programs without short codes
+        $programsWithoutCode = Program::whereNull('short_code')->get();
         
-        if ($sportsWithoutCode->isNotEmpty()) {
-            $this->command->warn('The following sports do not have short codes:');
-            foreach ($sportsWithoutCode as $sport) {
-                $this->command->warn("  - {$sport->name} (ID: {$sport->id})");
+        if ($programsWithoutCode->isNotEmpty()) {
+            $this->command->warn('The following programs do not have short codes:');
+            foreach ($programsWithoutCode as $program) {
+                $this->command->warn("  - {$program->name} (ID: {$program->id})");
             }
-            $this->command->info('Please manually add short codes for these sports.');
+            $this->command->info('Please manually add short codes for these programs.');
         }
     }
 }

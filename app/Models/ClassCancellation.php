@@ -16,7 +16,7 @@ class ClassCancellation extends Model
     protected $table = 'class_cancellations';
 
     protected $fillable = [
-        'sport_class_id',
+        'program_class_id',
         'cancelled_date',
         'reason',
     ];
@@ -26,8 +26,8 @@ class ClassCancellation extends Model
     ];
 
     // Relationships
-    public function sportClass()
+    public function programClass()
     {
-        return $this->belongsTo(SportClass::class);
+        return $this->belongsTo(ProgramClass::class);
     }
 }

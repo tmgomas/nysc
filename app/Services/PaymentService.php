@@ -25,8 +25,8 @@ class PaymentService
      */
     public function calculateFees(Member $member, bool $includeAdmission = false): array
     {
-        $sportIds = $member->activeSports()->pluck('sports.id')->toArray();
-        return $this->calculateFee->execute($sportIds, $includeAdmission);
+        $programIds = $member->activePrograms()->pluck('programs.id')->toArray();
+        return $this->calculateFee->execute($programIds, $includeAdmission);
     }
 
     /**
@@ -61,37 +61,37 @@ class PaymentService
         string $paymentMethod,
         ?string $receiptUrl = null,
         ?string $referenceNumber = null,
-        ?string $sportId = null
+        ?string $programId = null
     ): Payment {
-        // Option 1: Pay for specific sport
-        if ($sportId) {
-            $sport = $member->activeSports()->where('sports.id', $sportId)->first();
-            if (!$sport) {
-                throw new \Exception("Sport not found or not active for this member");
+        // Option 1: Pay for specific program
+        if ($programId) {
+            $program = $member->activePrograms()->where('programs.id', $programId)->first();
+            if (!$program) {
+                throw new \Exception("Program not found or not active for this member");
             }
 
             return $this->processPayment->execute(
                 $member,
                 PaymentType::MONTHLY,
-                $sport->monthly_fee,
+                $program->monthly_fee,
                 $paymentMethod,
                 $monthYear,
                 1,
                 $receiptUrl,
                 $referenceNumber,
-                $sportId
+                $programId
             );
         }
 
-        // Option 2: Pay for ALL active sports (Split into individual records)
-        $sports = $member->activeSports;
+        // Option 2: Pay for ALL active programs (Split into individual records)
+        $programs = $member->activePrograms;
         $payments = [];
 
-        DB::transaction(function () use ($member, $sports, $monthYear, $paymentMethod, $receiptUrl, $referenceNumber, &$payments) {
-            foreach ($sports as $sport) {
+        DB::transaction(function () use ($member, $programs, $monthYear, $paymentMethod, $receiptUrl, $referenceNumber, &$payments) {
+            foreach ($programs as $program) {
                 // Check if already paid for this month to avoid duplicates
                 $isPaid = MemberPaymentSchedule::where('member_id', $member->id)
-                    ->where('sport_id', $sport->id)
+                    ->where('program_id', $program->id)
                     ->where('month_year', $monthYear)
                     ->where('status', ScheduleStatus::PAID)
                     ->exists();
@@ -101,13 +101,13 @@ class PaymentService
                 $payments[] = $this->processPayment->execute(
                     $member,
                     PaymentType::MONTHLY,
-                    $sport->monthly_fee,
+                    $program->monthly_fee,
                     $paymentMethod,
                     $monthYear,
                     1,
                     $receiptUrl,
                     $referenceNumber,
-                    $sport->id
+                    $program->id
                 );
             }
         });
@@ -131,8 +131,8 @@ class PaymentService
         ?string $receiptUrl = null,
         ?string $referenceNumber = null
     ): Payment {
-        $sportIds = $member->activeSports()->pluck('sports.id')->toArray();
-        $bulkFees = $this->calculateFee->calculateBulkPayment($sportIds, $months);
+        $programIds = $member->activePrograms()->pluck('programs.id')->toArray();
+        $bulkFees = $this->calculateFee->calculateBulkPayment($programIds, $months);
 
         return $this->processPayment->execute(
             $member,

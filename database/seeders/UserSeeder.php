@@ -10,48 +10,61 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // Super Admin
-        $superAdmin = User::create([
-            'name' => 'Super Admin',
-            'email' => 'superadmin@nysc.lk',
-            'password' => Hash::make('password'),
-            'email_verified_at' => now(),
-        ]);
-        $superAdmin->assignRole('super_admin');
+        try {
+            // Super Admin
+            $superAdmin = User::firstOrCreate(
+                ['email' => 'superadmin@nysc.lk'],
+                [
+                    'name' => 'Super Admin',
+                    'password' => Hash::make('password'),
+                    'email_verified_at' => now(),
+                ]
+            );
+            $superAdmin->assignRole('super_admin');
 
-        // Admin
-        $admin = User::create([
-            'name' => 'Admin User',
-            'email' => 'admin@nysc.lk',
-            'password' => Hash::make('password'),
-            'email_verified_at' => now(),
-        ]);
-        $admin->assignRole('admin');
+            // Admin
+            $admin = User::firstOrCreate(
+                ['email' => 'admin@nysc.lk'],
+                [
+                    'name' => 'Admin User',
+                    'password' => Hash::make('password'),
+                    'email_verified_at' => now(),
+                ]
+            );
+            $admin->assignRole('admin');
 
-        // Staff
-        $staff = User::create([
-            'name' => 'Staff User',
-            'email' => 'staff@nysc.lk',
-            'password' => Hash::make('password'),
-            'email_verified_at' => now(),
-        ]);
-        $staff->assignRole('staff');
+            // Staff
+            $staff = User::firstOrCreate(
+                ['email' => 'staff@nysc.lk'],
+                [
+                    'name' => 'Staff User',
+                    'password' => Hash::make('password'),
+                    'email_verified_at' => now(),
+                ]
+            );
+            $staff->assignRole('staff');
 
-        // Coach
-        $coach = User::create([
-            'name' => 'Coach User',
-            'email' => 'coach@nysc.lk',
-            'password' => Hash::make('password'),
-            'email_verified_at' => now(),
-        ]);
-        $coach->assignRole('coach');
+            // Coach
+            $coach = User::firstOrCreate(
+                ['email' => 'coach@nysc.lk'],
+                [
+                    'name' => 'Coach User',
+                    'password' => Hash::make('password'),
+                    'email_verified_at' => now(),
+                ]
+            );
+            $coach->assignRole('coach');
 
-        $this->command->info('Users seeded successfully!');
-        $this->command->info('');
-        $this->command->info('Login Credentials:');
-        $this->command->info('Super Admin: superadmin@nysc.lk / password');
-        $this->command->info('Admin: admin@nysc.lk / password');
-        $this->command->info('Staff: staff@nysc.lk / password');
-        $this->command->info('Coach: coach@nysc.lk / password');
+            $this->command->info('Users seeded successfully!');
+            $this->command->info('');
+            $this->command->info('Login Credentials:');
+            $this->command->info('Super Admin: superadmin@nysc.lk / password');
+            $this->command->info('Admin: admin@nysc.lk / password');
+            $this->command->info('Staff: staff@nysc.lk / password');
+            $this->command->info('Coach: coach@nysc.lk / password');
+
+        } catch (\Exception $e) {
+            $this->command->error('UserSeeder failed: ' . $e->getMessage());
+        }
     }
 }

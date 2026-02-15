@@ -12,10 +12,10 @@ export default function Welcome() {
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="text-center">
                         <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
-                            Welcome to NYSC Sports Club
+                            Welcome to NYSC Programs Club
                         </h1>
                         <p className="mx-auto mt-3 max-w-md text-base text-blue-100 sm:text-lg md:mt-5 md:max-w-3xl md:text-xl">
-                            Join our community and pursue your passion for sports. We offer a wide range of activities for all skill levels.
+                            Join our community and pursue your passion for programs. We offer a wide range of activities for all skill levels.
                         </p>
                         <div className="mx-auto mt-5 max-w-md sm:flex sm:justify-center md:mt-8">
                             <div className="rounded-md shadow">
@@ -43,16 +43,16 @@ export default function Welcome() {
             <div className="py-12 bg-white">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="text-center">
-                        <h2 className="text-3xl font-bold text-gray-900">Our Sports</h2>
+                        <h2 className="text-3xl font-bold text-gray-900">Our Programs</h2>
                         <p className="mt-4 text-lg text-gray-600">
-                            Choose from a variety of sports activities
+                            Choose from a variety of programs activities
                         </p>
                     </div>
 
                     <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                        {['Cricket', 'Football', 'Basketball', 'Swimming', 'Gym', 'Badminton'].map((sport) => (
-                            <div key={sport} className="rounded-lg border border-gray-200 p-6 hover:shadow-lg transition">
-                                <h3 className="text-xl font-semibold text-gray-900">{sport}</h3>
+                        {['Cricket', 'Football', 'Basketball', 'Swimming', 'Gym', 'Badminton'].map((program) => (
+                            <div key={program} className="rounded-lg border border-gray-200 p-6 hover:shadow-lg transition">
+                                <h3 className="text-xl font-semibold text-gray-900">{program}</h3>
                                 <p className="mt-2 text-gray-600">
                                     Professional coaching and modern facilities
                                 </p>

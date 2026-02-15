@@ -6,19 +6,19 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
-class MemberSport extends Pivot
+class MemberProgram extends Pivot
 {
     use HasFactory, HasUuids;
 
-    protected $table = 'member_sports';
+    protected $table = 'member_programs';
 
     public $incrementing = false;
     protected $keyType = 'string';
 
     protected $fillable = [
         'member_id',
-        'sport_id',
-        'sport_reference',
+        'program_id',
+        'program_reference',
         'enrolled_at',
         'status',
     ];
@@ -33,8 +33,8 @@ class MemberSport extends Pivot
         return $this->belongsTo(Member::class);
     }
 
-    public function sport()
+    public function program()
     {
-        return $this->belongsTo(Sport::class);
+        return $this->belongsTo(Program::class);
     }
 }

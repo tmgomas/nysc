@@ -16,7 +16,7 @@ interface Props {
 export default function MembersReport({ statusStats, sportStats, registrationTrend, totalMembers, newMembersThisMonth }: Props) {
 
     // Helper to get max value for scaling charts
-    const maxSportCount = Math.max(...sportStats.map(s => s.count), 1);
+    const maxProgramCount = Math.max(...programStats.map(s => s.count), 1);
     const maxTrendCount = Math.max(...registrationTrend.map(t => t.count), 1);
 
     const getStatusColor = (status: string) => {
@@ -104,24 +104,24 @@ export default function MembersReport({ statusStats, sportStats, registrationTre
                             </CardContent>
                         </Card>
 
-                        {/* Sports Preference */}
+                        {/* Programs Preference */}
                         <Card className="col-span-4">
                             <CardHeader>
-                                <CardTitle>Popular Sports</CardTitle>
+                                <CardTitle>Popular Programs</CardTitle>
                                 <CardDescription>Number of active members per sport</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
-                                    {sportStats.sort((a, b) => b.count - a.count).map((sport) => (
-                                        <div key={sport.name} className="space-y-1">
+                                    {sportStats.sort((a, b) => b.count - a.count).map((program) => (
+                                        <div key={program.name} className="space-y-1">
                                             <div className="flex items-center justify-between text-sm">
-                                                <span className="font-medium">{sport.name}</span>
-                                                <span className="text-muted-foreground">{sport.count} members</span>
+                                                <span className="font-medium">{program.name}</span>
+                                                <span className="text-muted-foreground">{program.count} members</span>
                                             </div>
                                             <div className="h-2 bg-muted rounded-full overflow-hidden">
                                                 <div
                                                     className="h-full bg-primary"
-                                                    style={{ width: `${(sport.count / maxSportCount) * 100}%` }}
+                                                    style={{ width: `${(program.count / maxProgramCount) * 100}%` }}
                                                 />
                                             </div>
                                         </div>

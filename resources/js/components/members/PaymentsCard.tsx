@@ -338,7 +338,7 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
                                                                         <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
                                                                         <div>
                                                                             <div className="text-sm font-medium">
-                                                                                {item.description || `${item.type} - ${item.sport?.name}`}
+                                                                                {item.description || `${item.type} - ${item.program?.name}`}
                                                                             </div>
                                                                             {item.month_year && (
                                                                                 <div className="text-xs text-muted-foreground">{item.month_year}</div>
@@ -347,7 +347,7 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
                                                                     </div>
                                                                     <div className="flex items-center gap-3">
                                                                         <Badge variant="secondary" className="text-xs">
-                                                                            {item.sport?.name || 'General'}
+                                                                            {item.program?.name || 'General'}
                                                                         </Badge>
                                                                         <div className="font-mono text-sm font-medium">
                                                                             Rs. {Number(item.amount).toLocaleString()}
@@ -414,7 +414,7 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
                                                         <TableHeader>
                                                             <TableRow>
                                                                 {isSelectionMode && <TableHead className="w-12"></TableHead>}
-                                                                <TableHead>Sport</TableHead>
+                                                                <TableHead>Program</TableHead>
                                                                 <TableHead>Due Date</TableHead>
                                                                 <TableHead>Status</TableHead>
                                                                 <TableHead className="text-right">Amount</TableHead>
@@ -437,7 +437,7 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
                                                                         <TableCell className="font-medium">
                                                                             <div className="flex items-center gap-2">
                                                                                 <Badge variant="secondary" className="text-xs">
-                                                                                    {schedule.sport?.name || 'General'}
+                                                                                    {schedule.program?.name || 'General'}
                                                                                 </Badge>
                                                                             </div>
                                                                         </TableCell>
@@ -485,7 +485,7 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
                                                                     <div className="flex-1">
                                                                         <div className="flex items-center justify-between mb-2">
                                                                             <Badge variant="secondary" className="text-xs">
-                                                                                {schedule.sport?.name || 'General'}
+                                                                                {schedule.program?.name || 'General'}
                                                                             </Badge>
                                                                             {overdue && (
                                                                                 <Badge variant="destructive" className="text-xs">
@@ -707,7 +707,7 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
                                                                     <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
                                                                     <div>
                                                                         <div className="text-sm font-medium">
-                                                                            {item.description || `${item.type} - ${item.sport?.name}`}
+                                                                            {item.description || `${item.type} - ${item.program?.name}`}
                                                                         </div>
                                                                         {item.month_year && (
                                                                             <div className="text-xs text-muted-foreground">{item.month_year}</div>
@@ -716,7 +716,7 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
                                                                 </div>
                                                                 <div className="flex items-center gap-3">
                                                                     <Badge variant="secondary" className="text-xs">
-                                                                        {item.sport?.name || 'General'}
+                                                                        {item.program?.name || 'General'}
                                                                     </Badge>
                                                                     <div className="font-mono text-sm font-medium text-green-600">
                                                                         Rs. {Number(item.amount).toLocaleString()}

@@ -23,8 +23,8 @@ export function ApproveDialog({
     member,
     onApprove,
 }: ApproveDialogProps) {
-    const totalAdmissionFee = member.sports.reduce((sum, sport) => sum + Number(sport.admission_fee), 0);
-    const totalMonthlyFee = member.sports.reduce((sum, sport) => sum + Number(sport.monthly_fee), 0);
+    const totalAdmissionFee = member.programs.reduce((sum, program) => sum + Number(program.admission_fee), 0);
+    const totalMonthlyFee = member.programs.reduce((sum, program) => sum + Number(program.monthly_fee), 0);
     const totalDue = totalAdmissionFee + totalMonthlyFee;
 
     return (
@@ -60,7 +60,7 @@ export function ApproveDialog({
                         <p className="text-blue-900 font-medium mb-2">What happens on approval:</p>
                         <ul className="list-disc list-inside space-y-1 text-blue-800 text-xs">
                             <li>Member account will be activated</li>
-                            <li>Sport-specific references will be generated</li>
+                            <li>Program-specific references will be generated</li>
                             <li>A pending payment will be created</li>
                             <li>Member can be marked as paid later from their profile</li>
                         </ul>

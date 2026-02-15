@@ -12,7 +12,7 @@ class MemberRegistrationData
         public readonly string $address,
         public readonly string $emergencyContact,
         public readonly string $emergencyNumber,
-        public readonly array $sportIds,
+        public readonly array $programIds,
         public readonly ?string $photoUrl = null,
     ) {}
 
@@ -29,7 +29,7 @@ class MemberRegistrationData
             address: $data['address'],
             emergencyContact: $data['emergency_contact'],
             emergencyNumber: $data['emergency_number'],
-            sportIds: $data['sport_ids'] ?? [],
+            sportIds: $data['program_ids'] ?? [],
             photoUrl: $data['photo_url'] ?? null,
         );
     }
@@ -47,7 +47,7 @@ class MemberRegistrationData
             'address' => $this->address,
             'emergency_contact' => $this->emergencyContact,
             'emergency_number' => $this->emergencyNumber,
-            'sport_ids' => $this->sportIds,
+            'program_ids' => $this->sportIds,
             'photo_url' => $this->photoUrl,
         ];
     }

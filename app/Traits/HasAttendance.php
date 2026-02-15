@@ -3,7 +3,7 @@
 namespace App\Traits;
 
 use App\Models\Attendance;
-use App\Models\Sport;
+use App\Models\Program;
 use Carbon\Carbon;
 
 trait HasAttendance
@@ -27,9 +27,9 @@ trait HasAttendance
     /**
      * Get attendance for a specific sport
      */
-    public function attendanceForSport($sportId)
+    public function attendanceForProgram($programId)
     {
-        return $this->attendances()->where('sport_id', $sportId);
+        return $this->attendances()->where('program_id', $programId);
     }
 
     /**
@@ -84,11 +84,11 @@ trait HasAttendance
     }
 
     /**
-     * Get attendance count for specific sport
+     * Get attendance count for specific program
      */
-    public function attendanceCountForSport($sportId): int
+    public function attendanceCountForProgram($programId): int
     {
-        return $this->attendanceForSport($sportId)->count();
+        return $this->attendanceForProgram($programId)->count();
     }
 
     /**
@@ -109,11 +109,11 @@ trait HasAttendance
     }
 
     /**
-     * Get most attended sport
+     * Get most attended program
      */
-    public function getMostAttendedSportAttribute()
+    public function getMostAttendedProgramAttribute()
     {
-        return Sport::whereHas('attendances', function ($query) {
+        return Program::whereHas('attendances', function ($query) {
             $query->where('member_id', $this->id);
         })
         ->withCount(['attendances' => function ($query) {

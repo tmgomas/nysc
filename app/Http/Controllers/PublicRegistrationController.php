@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\MemberService;
-use App\Models\Sport;
+use App\Models\Program;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -15,10 +15,10 @@ class PublicRegistrationController extends Controller
 
     public function create()
     {
-        $sports = Sport::where('is_active', true)->get();
+        $programs = Program::where('is_active', true)->get();
 
         return Inertia::render('Public/Registration', [
-            'sports' => $sports,
+            'programs' => $programs,
         ]);
     }
 
@@ -32,8 +32,8 @@ class PublicRegistrationController extends Controller
             'address' => 'required|string',
             'emergency_contact' => 'required|string',
             'emergency_number' => 'required|string',
-            'sport_ids' => 'required|array|min:1',
-            'sport_ids.*' => 'exists:sports,id',
+            'program_ids' => 'required|array|min:1',
+            'program_ids.*' => 'exists:sports,id',
         ]);
 
         $member = $this->memberService->register($validated);

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
-class CoachSport extends Model
+class CoachProgram extends Model
 {
     use HasFactory, HasUuids;
 
@@ -15,7 +15,7 @@ class CoachSport extends Model
 
     protected $fillable = [
         'coach_id',
-        'sport_id',
+        'program_id',
         'assigned_at',
     ];
 
@@ -29,8 +29,8 @@ class CoachSport extends Model
         return $this->belongsTo(Coach::class);
     }
 
-    public function sport()
+    public function program()
     {
-        return $this->belongsTo(Sport::class);
+        return $this->belongsTo(Program::class);
     }
 }

@@ -15,14 +15,14 @@ class ReportController extends Controller
             ->groupBy('status')
             ->pluck('count', 'status');
 
-        // 2. Members per Sport
-        $sportStats = \App\Models\Sport::withCount(['members' => function($q) {
-            $q->where('member_sports.status', 'active');
+        // 2. Members per Program
+        $sportStats = \App\Models\Program::withCount(['members' => function($q) {
+            $q->where('member_programs.status', 'active');
         }])
         ->get()
-        ->map(fn($sport) => [
-            'name' => $sport->name,
-            'count' => $sport->members_count
+        ->map(fn($program) => [
+            'name' => $program->name,
+            'count' => $program->members_count
         ]);
 
         // 3. Registration Trend (Last 6 Months)
@@ -71,13 +71,13 @@ class ReportController extends Controller
     {
         $date = $request->input('date', now()->format('Y-m-d'));
 
-        $attendanceBySport = \App\Models\Attendance::whereDate('check_in_time', $date)
-            ->selectRaw('sport_id, count(*) as count')
-            ->groupBy('sport_id')
+        $attendanceByProgram = \App\Models\Attendance::whereDate('check_in_time', $date)
+            ->selectRaw('program_id, count(*) as count')
+            ->groupBy('program_id')
             ->with('sport:id,name')
             ->get()
             ->map(fn($item) => [
-                'sport' => $item->sport->name,
+                'program' => $item->sport->name,
                 'count' => $item->count
             ]);
 
@@ -88,7 +88,7 @@ class ReportController extends Controller
             ->get();
 
         return \Inertia\Inertia::render('Admin/Reports/Attendance', [
-            'attendanceBySport' => $attendanceBySport,
+            'attendanceByProgram' => $attendanceByProgram,
             'hourlyTraffic' => $hourlyTraffic,
             'date' => $date,
             'totalToday' => \App\Models\Attendance::whereDate('check_in_time', $date)->count()

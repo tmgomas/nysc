@@ -31,7 +31,7 @@ class PaymentController extends Controller
 
     public function show(Payment $payment)
     {
-        $payment->load(['member.user', 'member.sports']);
+        $payment->load(['member.user', 'member.programs']);
 
         return Inertia::render('Admin/Payments/Show', [
             'payment' => $payment,
@@ -42,7 +42,7 @@ class PaymentController extends Controller
     {
         $validated = $request->validate([
             'member_id' => 'required|exists:members,id',
-            'sport_id' => 'nullable|exists:sports,id',
+            'program_id' => 'nullable|exists:sports,id',
             'type' => 'required|in:admission,monthly,bulk',
             'payment_method' => 'required|in:cash,bank_transfer,online',
             'month_year' => 'nullable|string',
@@ -68,7 +68,7 @@ class PaymentController extends Controller
                 $method->value,
                 $validated['receipt_url'] ?? null,
                 $validated['reference_number'] ?? null,
-                $validated['sport_id'] ?? null
+                $validated['program_id'] ?? null
             ),
             PaymentType::BULK => $this->paymentService->processBulkPayment(
                 $member,
@@ -157,7 +157,7 @@ class PaymentController extends Controller
                         $method->value,
                         null,
                         null,
-                        $schedule->sport_id
+                        $schedule->program_id
                     );
                     $processedCount++;
                 }

@@ -16,7 +16,7 @@ class MemberPaymentSchedule extends Model
 
     protected $fillable = [
         'member_id',
-        'sport_id', // Added
+        'program_id', // Added
         'month_year',
         'amount',
         'status',
@@ -36,9 +36,9 @@ class MemberPaymentSchedule extends Model
         return $this->belongsTo(Member::class);
     }
 
-    public function sport()
+    public function program()
     {
-        return $this->belongsTo(Sport::class);
+        return $this->belongsTo(Program::class);
     }
 
     public function payment()

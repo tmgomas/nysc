@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
-class Sport extends Model
+class Program extends Model
 {
     use HasFactory, HasUuids;
 
@@ -39,14 +39,14 @@ class Sport extends Model
     // Relationships
     public function members()
     {
-        return $this->belongsToMany(Member::class, 'member_sports')
+        return $this->belongsToMany(Member::class, 'member_programs')
             ->withPivot('enrolled_at', 'status')
             ->withTimestamps();
     }
 
     public function coaches()
     {
-        return $this->belongsToMany(Coach::class, 'coach_sports')
+        return $this->belongsToMany(Coach::class, 'coach_programs')
             ->withPivot('assigned_at')
             ->withTimestamps();
     }
@@ -58,7 +58,7 @@ class Sport extends Model
 
     public function classes()
     {
-        return $this->hasMany(SportClass::class);
+        return $this->hasMany(ProgramClass::class);
     }
 
     public function location()
@@ -84,7 +84,7 @@ class Sport extends Model
             return null;
         }
         
-        $enrolledCount = $this->members()->where('member_sports.status', 'active')->count();
+        $enrolledCount = $this->members()->where('member_programs.status', 'active')->count();
         return $this->capacity - $enrolledCount;
     }
 }

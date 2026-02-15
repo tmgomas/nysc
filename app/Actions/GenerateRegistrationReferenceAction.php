@@ -2,8 +2,8 @@
 
 namespace App\Actions;
 
-use App\Models\MemberSport;
-use App\Models\Sport;
+use App\Models\MemberProgram;
+use App\Models\Program;
 use App\Models\Setting;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -15,22 +15,22 @@ class GenerateRegistrationReferenceAction
      * Format: {YEAR}-{SPORT_CODE}-{NUMBER}
      * Example: 26-SW-0001 (2026, Swimming, 1st member for this sport)
      * 
-     * Each sport enrollment gets its own reference
+     * Each program enrollment gets its own reference
      * Resets each year per sport
      * 
-     * @param string $sportId The sport ID
+     * @param string $programId The program ID
      * @param CarbonInterface|null $date The enrollment date (defaults to current date)
-     * @return string The generated sport registration reference
+     * @return string The generated program registration reference
      */
-    public function execute(string $sportId, ?CarbonInterface $date = null): string
+    public function execute(string $programId, ?CarbonInterface $date = null): string
     {
         $date = $date ?? now();
         
         // Get sport
-        $sport = Sport::findOrFail($sportId);
+        $program = Program::findOrFail($programId);
         
-        if (!$sport->short_code) {
-            throw new \Exception("Sport '{$sport->name}' does not have a short code configured.");
+        if (!$program->short_code) {
+            throw new \Exception("Program '{$program->name}' does not have a short code configured.");
         }
 
         // Get settings
@@ -42,14 +42,14 @@ class GenerateRegistrationReferenceAction
             ? $date->format('Y') 
             : $date->format('y');
 
-        // Get the last sport enrollment for this sport in this year
-        $lastEnrollment = MemberSport::query()
+        // Get the last program enrollment for this program in this year
+        $lastEnrollment = MemberProgram::query()
             ->whereHas('member', function ($query) use ($date) {
                 $query->whereYear('registration_date', $date->year);
             })
-            ->where('sport_id', $sportId)
-            ->whereNotNull('sport_reference')
-            ->where('sport_reference', 'like', "{$year}-{$sport->short_code}-%")
+            ->where('program_id', $programId)
+            ->whereNotNull('program_reference')
+            ->where('program_reference', 'like', "{$year}-{$program->short_code}-%")
             ->latest('enrolled_at')
             ->first();
 
@@ -57,7 +57,7 @@ class GenerateRegistrationReferenceAction
             $nextNumber = 1;
         } else {
             // Extract number from reference (e.g., "26-SW-0001" -> 1)
-            $parts = explode('-', $lastEnrollment->sport_reference);
+            $parts = explode('-', $lastEnrollment->program_reference);
             $lastNumber = (int) end($parts);
             $nextNumber = $lastNumber + 1;
         }
@@ -65,6 +65,6 @@ class GenerateRegistrationReferenceAction
         // Generate reference number
         $number = str_pad($nextNumber, $digits, '0', STR_PAD_LEFT);
         
-        return "{$year}-{$sport->short_code}-{$number}";
+        return "{$year}-{$program->short_code}-{$number}";
     }
 }

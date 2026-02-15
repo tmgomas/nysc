@@ -80,7 +80,7 @@ export function PaymentDialog({
                                         <div>
                                             <div className="font-medium">{schedule.month_year}</div>
                                             <div className="text-xs text-muted-foreground">
-                                                {schedule.sport?.name || 'General'}
+                                                {schedule.program?.name || 'General'}
                                             </div>
                                         </div>
                                         <div className="font-mono font-semibold">
@@ -119,7 +119,7 @@ export function PaymentDialog({
                                             const total = schedules.reduce((sum, s) => sum + Number(s.amount), 0);
                                             return (
                                                 <SelectItem key={`ALL:${month}`} value={`ALL:${month}`} className="font-semibold text-primary">
-                                                    {month} - All Sports (Total Rs. {total.toFixed(2)})
+                                                    {month} - All Programs (Total Rs. {total.toFixed(2)})
                                                 </SelectItem>
                                             );
                                         }
@@ -129,7 +129,7 @@ export function PaymentDialog({
                                     {/* Individual schedules */}
                                     {pendingSchedules.map(schedule => (
                                         <SelectItem key={schedule.id} value={schedule.id}>
-                                            {schedule.month_year} - {schedule.sport?.name || 'General'} (Rs. {Number(schedule.amount).toFixed(2)})
+                                            {schedule.month_year} - {schedule.program?.name || 'General'} (Rs. {Number(schedule.amount).toFixed(2)})
                                         </SelectItem>
                                     ))}
 

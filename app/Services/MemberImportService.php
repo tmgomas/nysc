@@ -213,7 +213,7 @@ class MemberImportService
             'membership_type' => 'required|in:regular,student,senior',
             'fitness_level' => 'required|in:beginner,intermediate,advanced',
             'preferred_contact_method' => 'required|string',
-            'sport_ids' => 'nullable|string',
+            'program_ids' => 'nullable|string',
         ];
 
         $validator = Validator::make($row, $rules);
@@ -258,10 +258,10 @@ class MemberImportService
      */
     protected function prepareMemberData(array $row): array
     {
-        // Parse sport IDs - handle empty values
-        $sportIds = [];
-        if (!empty($row['sport_ids'])) {
-            $sportIds = array_filter(array_map('trim', explode(',', $row['sport_ids'])));
+        // Parse program IDs - handle empty values
+        $programIds = [];
+        if (!empty($row['program_ids'])) {
+            $programIds = array_filter(array_map('trim', explode(',', $row['program_ids'])));
         }
 
         // Parse preferred training days
@@ -302,8 +302,8 @@ class MemberImportService
             'preferred_training_days' => $preferredTrainingDays,
             'previous_club_experience' => $row['previous_club_experience'] ?? null,
 
-            // Sports & Legal
-            'sport_ids' => $sportIds,
+            // Programs & Legal
+            'program_ids' => $programIds,
             'terms_accepted' => true,
             'terms_accepted_at' => now(),
             'photo_consent' => false,

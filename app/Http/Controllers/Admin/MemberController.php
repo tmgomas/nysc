@@ -16,7 +16,7 @@ class MemberController extends Controller
 
     public function index(Request $request)
     {
-        $members = Member::with(['user', 'sports'])
+        $members = Member::with(['user', 'programs'])
             ->when($request->status, fn($q, $status) => $q->where('status', $status))
             ->when($request->search, fn($q, $search) => 
                 $q->where('member_number', 'like', "%{$search}%")
@@ -36,12 +36,12 @@ class MemberController extends Controller
 
     public function create()
     {
-        $sports = \App\Models\Sport::where('is_active', true)
+        $programs = \App\Models\Program::where('is_active', true)
             ->select('id', 'name', 'admission_fee', 'monthly_fee')
             ->get();
 
         return Inertia::render('Admin/Members/Create', [
-            'sports' => $sports,
+            'programs' => $programs,
         ]);
     }
 
@@ -80,8 +80,8 @@ class MemberController extends Controller
             'preferred_training_days' => 'nullable|array',
             'previous_club_experience' => 'nullable|string',
 
-            // Sports & Legal
-            'sport_ids' => 'nullable|array',
+            // Programs & Legal
+            'program_ids' => 'nullable|array',
             'terms_accepted' => 'accepted',
             'photo_consent' => 'boolean',
         ]);
@@ -102,13 +102,13 @@ class MemberController extends Controller
 
     public function show(Member $member)
     {
-        $member->load(['user', 'sports', 'payments.sport', 'payments.items.sport', 'attendances', 'paymentSchedules.sport']);
+        $member->load(['user', 'programs', 'payments.sport', 'payments.items.sport', 'attendances', 'paymentSchedules.sport']);
         $stats = $this->memberService->getStatistics($member);
 
         return Inertia::render('Admin/Members/Show', [
             'member' => $member,
             'stats' => $stats,
-            'availableSports' => \App\Models\Sport::where('is_active', true)->select('id', 'name', 'monthly_fee')->get(),
+            'availablePrograms' => \App\Models\Program::where('is_active', true)->select('id', 'name', 'monthly_fee')->get(),
         ]);
     }
 
@@ -140,16 +140,16 @@ class MemberController extends Controller
             ->with('success', 'Member reactivated successfully');
     }
 
-    public function updateSports(Request $request, Member $member)
+    public function updatePrograms(Request $request, Member $member)
     {
         $validated = $request->validate([
-            'sport_ids' => 'required|array', // Allow empty array if they want to remove all? No, logical min 1 usually, but let's stick to array.
-            'sport_ids.*' => 'exists:sports,id',
+            'program_ids' => 'required|array', // Allow empty array if they want to remove all? No, logical min 1 usually, but let's stick to array.
+            'program_ids.*' => 'exists:sports,id',
         ]);
 
-        $this->memberService->updateSports($member, $validated['sport_ids']);
+        $this->memberService->updatePrograms($member, $validated['program_ids']);
 
         return redirect()->back()
-            ->with('success', 'Member sports updated successfully');
+            ->with('success', 'Member programs updated successfully');
     }
 }

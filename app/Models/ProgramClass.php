@@ -6,17 +6,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
-class SportClass extends Model
+class ProgramClass extends Model
 {
     use HasFactory, HasUuids;
 
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $table = 'sport_classes';
+    protected $table = 'program_classes';
 
     protected $fillable = [
-        'sport_id',
+        'program_id',
         'label',
         'day_of_week',
         'start_time',
@@ -37,9 +37,9 @@ class SportClass extends Model
     ];
 
     // Relationships
-    public function sport()
+    public function program()
     {
-        return $this->belongsTo(Sport::class);
+        return $this->belongsTo(Program::class);
     }
 
     public function coach()

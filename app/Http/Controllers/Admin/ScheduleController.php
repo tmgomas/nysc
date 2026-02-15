@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Sport;
-use App\Models\SportClass;
+use App\Models\Program;
+use App\Models\ProgramClass;
 use App\Models\Holiday;
 use App\Models\SpecialBooking;
 use App\Models\Location;
@@ -20,7 +20,7 @@ class ScheduleController extends Controller
      */
     public function index(Request $request)
     {
-        $sports = Sport::active()
+        $programs = Program::active()
             ->select('id', 'name', 'schedule_type', 'schedule', 'weekly_limit', 'location_id')
             ->with(['classes' => function ($query) {
                 $query->with('coach:id,name', 'cancellations')
@@ -37,7 +37,7 @@ class ScheduleController extends Controller
             ->get();
 
         return Inertia::render('Admin/Schedule/Index', [
-            'sports' => $sports,
+            'programs' => $programs,
             'holidays' => $holidays,
             'locations' => $locations,
             'specialBookings' => $specialBookings,
@@ -53,7 +53,7 @@ class ScheduleController extends Controller
         $start = $request->input('start', now()->startOfMonth()->toDateString());
         $end = $request->input('end', now()->endOfMonth()->toDateString());
 
-        $sports = Sport::active()
+        $programs = Program::active()
             ->select('id', 'name', 'schedule_type', 'schedule', 'short_code', 'location_id')
             ->with(['classes' => function ($query) {
                 $query->with('coach:id,name', 'cancellations');
@@ -72,18 +72,18 @@ class ScheduleController extends Controller
 
         $events = [];
 
-        // Sport color map
+        // Program color map
         $colors = [
             '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
             '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
             '#14b8a6',
         ];
 
-        foreach ($sports as $index => $sport) {
+        foreach ($programs as $index => $program) {
             $color = $colors[$index % count($colors)];
 
-            if ($sport->schedule_type === 'class_based') {
-                foreach ($sport->classes as $class) {
+            if ($program->schedule_type === 'class_based') {
+                foreach ($program->classes as $class) {
                     if (!$class->is_active) continue;
 
                     // Get cancelled dates for this class
@@ -118,9 +118,9 @@ class ScheduleController extends Controller
                         }
 
                         // Check special booking
-                        if (!$isCancelled && $sport->location_id) {
+                        if (!$isCancelled && $program->location_id) {
                             foreach ($specialBookings as $booking) {
-                                if ($booking->location_id === $sport->location_id
+                                if ($booking->location_id === $program->location_id
                                     && $date->between($booking->start_date, $booking->end_date)
                                     && $booking->overlapsTime($class->start_time, $class->end_time)
                                 ) {
@@ -133,20 +133,20 @@ class ScheduleController extends Controller
 
                         $events[] = [
                             'id' => $class->id . '-' . $dateStr,
-                            'title' => $sport->name . ($class->label ? " - {$class->label}" : ''),
+                            'title' => $program->name . ($class->label ? " - {$class->label}" : ''),
                             'start' => $dateStr . 'T' . $class->start_time,
                             'end' => $dateStr . 'T' . $class->end_time,
                             'backgroundColor' => $isCancelled ? '#9ca3af' : $color,
                             'borderColor' => $isCancelled ? '#6b7280' : $color,
                             'classNames' => $isCancelled ? ['fc-event-cancelled'] : [],
                             'extendedProps' => [
-                                'sport_id' => $sport->id,
-                                'sport_name' => $sport->name,
+                                'program_id' => $program->id,
+                                'sport_name' => $program->name,
                                 'class_id' => $class->id,
                                 'coach' => $class->coach?->name,
                                 'capacity' => $class->capacity,
                                 'label' => $class->label,
-                                'location' => $sport->location?->name,
+                                'location' => $program->location?->name,
                                 'type' => 'class',
                                 'is_cancelled' => $isCancelled,
                                 'cancel_reason' => $cancelReason,
@@ -156,7 +156,7 @@ class ScheduleController extends Controller
                 }
             } else {
                 // Practice days from schedule JSON
-                $schedule = $sport->schedule ?? [];
+                $schedule = $program->schedule ?? [];
                 foreach ($schedule as $day => $times) {
                     $period = CarbonPeriod::create($start, $end);
                     foreach ($period as $date) {
@@ -174,9 +174,9 @@ class ScheduleController extends Controller
                         }
 
                         // Check special booking
-                        if (!$isCancelled && $sport->location_id) {
+                        if (!$isCancelled && $program->location_id) {
                             foreach ($specialBookings as $booking) {
-                                if ($booking->location_id === $sport->location_id
+                                if ($booking->location_id === $program->location_id
                                     && $date->between($booking->start_date, $booking->end_date)
                                     && $booking->overlapsTime($times['start'] ?? null, $times['end'] ?? null)
                                 ) {
@@ -188,17 +188,17 @@ class ScheduleController extends Controller
                         }
 
                         $events[] = [
-                            'id' => $sport->id . '-' . $day . '-' . $dateStr,
-                            'title' => $sport->name . ' Practice',
+                            'id' => $program->id . '-' . $day . '-' . $dateStr,
+                            'title' => $program->name . ' Practice',
                             'start' => $dateStr . 'T' . ($times['start'] ?? '16:00'),
                             'end' => $dateStr . 'T' . ($times['end'] ?? '18:00'),
                             'backgroundColor' => $isCancelled ? '#9ca3af' : $color,
                             'borderColor' => $isCancelled ? '#6b7280' : $color,
                             'classNames' => $isCancelled ? ['fc-event-cancelled'] : [],
                             'extendedProps' => [
-                                'sport_id' => $sport->id,
-                                'sport_name' => $sport->name,
-                                'location' => $sport->location?->name,
+                                'program_id' => $program->id,
+                                'sport_name' => $program->name,
+                                'location' => $program->location?->name,
                                 'type' => 'practice',
                                 'is_cancelled' => $isCancelled,
                                 'cancel_reason' => $cancelReason,
@@ -262,7 +262,7 @@ class ScheduleController extends Controller
         // Check if today is a holiday
         $holiday = Holiday::forDate($todayDate)->first();
 
-        $sports = Sport::active()
+        $programs = Program::active()
             ->select('id', 'name', 'schedule_type', 'schedule', 'short_code', 'location_id')
             ->with(['classes' => function ($query) use ($today) {
                 $query->active()
@@ -271,7 +271,7 @@ class ScheduleController extends Controller
                     ->orderBy('start_time');
             }])
             ->withCount(['members' => function ($query) {
-                $query->where('member_sports.status', 'active');
+                $query->where('member_programs.status', 'active');
             }])
             ->get();
 
@@ -283,9 +283,9 @@ class ScheduleController extends Controller
 
         $todaySchedule = [];
 
-        foreach ($sports as $sport) {
-            if ($sport->schedule_type === 'class_based') {
-                foreach ($sport->classes as $class) {
+        foreach ($programs as $program) {
+            if ($program->schedule_type === 'class_based') {
+                foreach ($program->classes as $class) {
                     $isCancelled = false;
                     $cancelReason = null;
 
@@ -302,8 +302,8 @@ class ScheduleController extends Controller
                     }
 
                     // Check special booking
-                    if (!$isCancelled && $sport->location_id && isset($todayBookings[$sport->location_id])) {
-                        $booking = $todayBookings[$sport->location_id];
+                    if (!$isCancelled && $program->location_id && isset($todayBookings[$program->location_id])) {
+                        $booking = $todayBookings[$program->location_id];
                         if ($booking->overlapsTime($class->start_time, $class->end_time)) {
                             $isCancelled = true;
                             $cancelReason = 'Booking: ' . $booking->title;
@@ -311,7 +311,7 @@ class ScheduleController extends Controller
                     }
 
                     $todaySchedule[] = [
-                        'sport_name' => $sport->name,
+                        'sport_name' => $program->name,
                         'label' => $class->label,
                         'start_time' => $class->start_time,
                         'end_time' => $class->end_time,
@@ -323,7 +323,7 @@ class ScheduleController extends Controller
                     ];
                 }
             } else {
-                $schedule = $sport->schedule ?? [];
+                $schedule = $program->schedule ?? [];
                 if (isset($schedule[$today])) {
                     $isCancelled = false;
                     $cancelReason = null;
@@ -333,8 +333,8 @@ class ScheduleController extends Controller
                         $cancelReason = 'Holiday: ' . $holiday->name;
                     }
 
-                    if (!$isCancelled && $sport->location_id && isset($todayBookings[$sport->location_id])) {
-                        $booking = $todayBookings[$sport->location_id];
+                    if (!$isCancelled && $program->location_id && isset($todayBookings[$program->location_id])) {
+                        $booking = $todayBookings[$program->location_id];
                         if ($booking->overlapsTime($schedule[$today]['start'] ?? null, $schedule[$today]['end'] ?? null)) {
                             $isCancelled = true;
                             $cancelReason = 'Booking: ' . $booking->title;
@@ -342,10 +342,10 @@ class ScheduleController extends Controller
                     }
 
                     $todaySchedule[] = [
-                        'sport_name' => $sport->name,
+                        'sport_name' => $program->name,
                         'start_time' => $schedule[$today]['start'] ?? null,
                         'end_time' => $schedule[$today]['end'] ?? null,
-                        'members_count' => $sport->members_count,
+                        'members_count' => $program->members_count,
                         'type' => 'practice',
                         'is_cancelled' => $isCancelled,
                         'cancel_reason' => $cancelReason,

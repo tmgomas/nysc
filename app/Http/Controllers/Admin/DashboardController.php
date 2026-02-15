@@ -20,7 +20,7 @@ class DashboardController extends Controller
         $today = now()->format('l');
         $todaySchedule = [];
 
-        $sports = \App\Models\Sport::active()
+        $programs = \App\Models\Program::active()
             ->select('id', 'name', 'schedule_type', 'schedule', 'short_code')
             ->with(['classes' => function ($query) use ($today) {
                 $query->active()
@@ -30,11 +30,11 @@ class DashboardController extends Controller
             }])
             ->get();
 
-        foreach ($sports as $sport) {
-            if ($sport->schedule_type === 'class_based') {
-                foreach ($sport->classes as $class) {
+        foreach ($programs as $program) {
+            if ($program->schedule_type === 'class_based') {
+                foreach ($program->classes as $class) {
                     $todaySchedule[] = [
-                        'sport_name' => $sport->name,
+                        'sport_name' => $program->name,
                         'label' => $class->label,
                         'start_time' => $class->start_time,
                         'end_time' => $class->end_time,
@@ -44,10 +44,10 @@ class DashboardController extends Controller
                     ];
                 }
             } else {
-                $schedule = $sport->schedule ?? [];
+                $schedule = $program->schedule ?? [];
                 if (isset($schedule[$today])) {
                     $todaySchedule[] = [
-                        'sport_name' => $sport->name,
+                        'sport_name' => $program->name,
                         'start_time' => $schedule[$today]['start'] ?? null,
                         'end_time' => $schedule[$today]['end'] ?? null,
                         'type' => 'practice',

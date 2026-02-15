@@ -34,7 +34,7 @@ import {
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 
-interface SportClassItem {
+interface ProgramClassItem {
     id: string;
     day_of_week: string;
     start_time: string;
@@ -42,7 +42,7 @@ interface SportClassItem {
     label: string | null;
 }
 
-interface Sport {
+interface Program {
     id: string;
     name: string;
     short_code: string;
@@ -57,11 +57,11 @@ interface Sport {
     is_active: boolean;
     members_count: number;
     classes_count: number;
-    classes: SportClassItem[];
+    classes: ProgramClassItem[];
 }
 
-interface PaginatedSports {
-    data: Sport[];
+interface PaginatedPrograms {
+    data: Program[];
     current_page: number;
     last_page: number;
     per_page: number;
@@ -74,26 +74,26 @@ interface PaginatedSports {
 }
 
 interface Props {
-    sports: PaginatedSports;
+    programs: PaginatedPrograms;
     filters: {
         status?: string;
         search?: string;
     };
 }
 
-export default function Index({ sports, filters }: Props) {
+export default function Index({ programs, filters }: Props) {
     const [search, setSearch] = React.useState(filters.search || '');
     const [status, setStatus] = React.useState(filters.status || '');
     const { confirm, ConfirmDialog } = useConfirm();
 
     const handleFilter = () => {
-        router.get('/admin/sports', { search, status }, { preserveState: true });
+        router.get('/admin/programs', { search, status }, { preserveState: true });
     };
 
-    const handleDelete = async (sport: Sport) => {
+    const handleDelete = async (program: Program) => {
         const confirmed = await confirm({
-            title: 'Delete Sport',
-            description: `Are you sure you want to delete "${sport.name}"? This action cannot be undone.`,
+            title: 'Delete Program',
+            description: `Are you sure you want to delete "${program.name}"? This action cannot be undone.`,
             confirmText: 'Delete',
             cancelText: 'Cancel',
             variant: 'destructive',
@@ -102,13 +102,13 @@ export default function Index({ sports, filters }: Props) {
         if (confirmed) {
             toast.promise(
                 new Promise((resolve, reject) => {
-                    router.delete(`/admin/sports/${sport.id}`, {
-                        onSuccess: () => resolve(sport.name),
+                    router.delete(`/admin/programs/${program.id}`, {
+                        onSuccess: () => resolve(program.name),
                         onError: () => reject()
                     });
                 }),
                 {
-                    loading: 'Deleting sport...',
+                    loading: 'Deleting program...',
                     success: (name) => `${name} has been deleted successfully!`,
                     error: 'Failed to delete sport',
                 }
@@ -117,8 +117,8 @@ export default function Index({ sports, filters }: Props) {
     };
 
     return (
-        <AppLayout breadcrumbs={[{ title: 'Sports', href: '/admin/sports' }]}>
-            <Head title="Sports Management" />
+        <AppLayout breadcrumbs={[{ title: 'Programs', href: '/admin/programs' }]}>
+            <Head title="Programs Management" />
             <ConfirmDialog />
             <div className="py-12">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -126,15 +126,15 @@ export default function Index({ sports, filters }: Props) {
                         {/* Header */}
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <h2 className="text-2xl font-bold tracking-tight">Sports Management</h2>
+                                <h2 className="text-2xl font-bold tracking-tight">Programs Management</h2>
                                 <p className="text-muted-foreground">
-                                    Manage sports, fees, and capacities
+                                    Manage programs, fees, and capacities
                                 </p>
                             </div>
                             <Button asChild>
-                                <Link href="/admin/sports/create">
+                                <Link href="/admin/programs/create">
                                     <Plus className="mr-2 h-4 w-4" />
-                                    Add Sport
+                                    Add Program
                                 </Link>
                             </Button>
                         </div>
@@ -147,7 +147,7 @@ export default function Index({ sports, filters }: Props) {
                                     Filters
                                 </CardTitle>
                                 <CardDescription>
-                                    Search and filter sports
+                                    Search and filter programs
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -161,7 +161,7 @@ export default function Index({ sports, filters }: Props) {
                                                 type="text"
                                                 value={search}
                                                 onChange={(e) => setSearch(e.target.value)}
-                                                placeholder="Sport name, location..."
+                                                placeholder="Program name, location..."
                                                 className="pl-9"
                                             />
                                         </div>
@@ -188,22 +188,22 @@ export default function Index({ sports, filters }: Props) {
                             </CardContent>
                         </Card>
 
-                        {/* Sports List - Desktop & Mobile */}
+                        {/* Programs List - Desktop & Mobile */}
                         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                            {sports.data.map((sport) => (
-                                <Card key={sport.id} className="overflow-hidden">
+                            {programs.data.map((program) => (
+                                <Card key={program.id} className="overflow-hidden">
                                     <CardHeader className="pb-3 bg-muted/30">
                                         <div className="flex items-start justify-between">
                                             <div>
                                                 <CardTitle className="text-xl flex items-center gap-2">
-                                                    {sport.name}
-                                                    <Badge variant={sport.is_active ? 'default' : 'secondary'}>
-                                                        {sport.is_active ? 'Active' : 'Inactive'}
+                                                    {program.name}
+                                                    <Badge variant={program.is_active ? 'default' : 'secondary'}>
+                                                        {program.is_active ? 'Active' : 'Inactive'}
                                                     </Badge>
                                                 </CardTitle>
                                                 <CardDescription className="flex items-center gap-1 mt-1">
                                                     <MapPin className="h-3 w-3" />
-                                                    {sport.location || 'No location set'}
+                                                    {program.location || 'No location set'}
                                                 </CardDescription>
                                             </div>
                                             <DropdownMenu>
@@ -214,13 +214,13 @@ export default function Index({ sports, filters }: Props) {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem asChild>
-                                                        <Link href={`/admin/sports/${sport.id}/edit`}>
+                                                        <Link href={`/admin/programs/${program.id}/edit`}>
                                                             <Edit className="mr-2 h-4 w-4" />
                                                             Edit
                                                         </Link>
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
-                                                        onClick={() => handleDelete(sport)}
+                                                        onClick={() => handleDelete(program)}
                                                         className="text-destructive focus:text-destructive"
                                                     >
                                                         <Trash2 className="mr-2 h-4 w-4" />
@@ -236,13 +236,13 @@ export default function Index({ sports, filters }: Props) {
                                                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                                                     <DollarSign className="h-3 w-3" /> Admission
                                                 </span>
-                                                <p className="font-medium">Rs. {Number(sport.admission_fee).toLocaleString()}</p>
+                                                <p className="font-medium">Rs. {Number(program.admission_fee).toLocaleString()}</p>
                                             </div>
                                             <div className="space-y-1">
                                                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                                                     <DollarSign className="h-3 w-3" /> Monthly
                                                 </span>
-                                                <p className="font-medium">Rs. {Number(sport.monthly_fee).toLocaleString()}</p>
+                                                <p className="font-medium">Rs. {Number(program.monthly_fee).toLocaleString()}</p>
                                             </div>
                                         </div>
 
@@ -251,19 +251,19 @@ export default function Index({ sports, filters }: Props) {
                                                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                                                     <Activity className="h-3 w-3" /> Capacity
                                                 </span>
-                                                <p className="font-medium">{sport.capacity ? sport.capacity : 'Unlimited'}</p>
+                                                <p className="font-medium">{program.capacity ? program.capacity : 'Unlimited'}</p>
                                             </div>
                                             <div className="space-y-1">
                                                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                                                     <Users className="h-3 w-3" /> Members
                                                 </span>
-                                                <p className="font-medium">{sport.members_count}</p>
+                                                <p className="font-medium">{program.members_count}</p>
                                             </div>
                                         </div>
 
-                                        {sport.description && (
+                                        {program.description && (
                                             <div className="text-sm text-muted-foreground pt-2 border-t line-clamp-2">
-                                                {sport.description}
+                                                {program.description}
                                             </div>
                                         )}
 
@@ -271,26 +271,26 @@ export default function Index({ sports, filters }: Props) {
                                         <div className="pt-2 border-t space-y-2">
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <Badge variant="outline" className="text-xs">
-                                                    {sport.schedule_type === 'class_based' ? '📚 Class-Based' : '🏃 Practice Days'}
+                                                    {program.schedule_type === 'class_based' ? '📚 Class-Based' : '🏃 Practice Days'}
                                                 </Badge>
-                                                {sport.weekly_limit && (
+                                                {program.weekly_limit && (
                                                     <Badge variant="secondary" className="text-xs">
-                                                        Max {sport.weekly_limit}x/week
+                                                        Max {program.weekly_limit}x/week
                                                     </Badge>
                                                 )}
                                             </div>
-                                            {sport.schedule_type === 'practice_days' && sport.schedule && Object.keys(sport.schedule).length > 0 && (
+                                            {program.schedule_type === 'practice_days' && program.schedule && Object.keys(program.schedule).length > 0 && (
                                                 <div className="flex flex-wrap gap-1">
-                                                    {Object.keys(sport.schedule).map((day) => (
+                                                    {Object.keys(program.schedule).map((day) => (
                                                         <Badge key={day} variant="secondary" className="text-xs font-normal">
                                                             {day.substring(0, 3)}
                                                         </Badge>
                                                     ))}
                                                 </div>
                                             )}
-                                            {sport.schedule_type === 'class_based' && (
+                                            {program.schedule_type === 'class_based' && (
                                                 <p className="text-xs text-muted-foreground">
-                                                    {sport.classes_count || 0} class slot{(sport.classes_count || 0) !== 1 ? 's' : ''} configured
+                                                    {program.classes_count || 0} class slot{(program.classes_count || 0) !== 1 ? 's' : ''} configured
                                                 </p>
                                             )}
                                         </div>
@@ -300,20 +300,20 @@ export default function Index({ sports, filters }: Props) {
                         </div>
 
                         {/* Empty State */}
-                        {sports.data.length === 0 && (
+                        {programs.data.length === 0 && (
                             <Card>
                                 <CardContent className="flex flex-col items-center justify-center py-12">
                                     <div className="rounded-full bg-muted p-4 mb-4">
                                         <Activity className="h-8 w-8 text-muted-foreground" />
                                     </div>
-                                    <h3 className="text-lg font-semibold mb-2">No sports found</h3>
+                                    <h3 className="text-lg font-semibold mb-2">No programs found</h3>
                                     <p className="text-sm text-muted-foreground mb-4">
                                         Get started by adding your first sport
                                     </p>
                                     <Button asChild>
-                                        <Link href="/admin/sports/create">
+                                        <Link href="/admin/programs/create">
                                             <Plus className="mr-2 h-4 w-4" />
-                                            Add Sport
+                                            Add Program
                                         </Link>
                                     </Button>
                                 </CardContent>
@@ -321,9 +321,9 @@ export default function Index({ sports, filters }: Props) {
                         )}
 
                         {/* Pagination */}
-                        {sports.last_page > 1 && (
+                        {programs.last_page > 1 && (
                             <div className="flex justify-center mt-6 gap-2">
-                                {sports.links.map((link, i) => (
+                                {programs.links.map((link, i) => (
                                     <Button
                                         key={i}
                                         variant={link.active ? 'default' : 'outline'}

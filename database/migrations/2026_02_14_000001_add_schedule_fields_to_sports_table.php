@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('sports', function (Blueprint $table) {
+        Schema::table('programs', function (Blueprint $table) {
             $table->string('schedule_type')->default('practice_days')->after('schedule');
             $table->unsignedInteger('weekly_limit')->nullable()->after('schedule_type');
         });
@@ -16,7 +16,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('sports', function (Blueprint $table) {
+        Schema::table('programs', function (Blueprint $table) {
             $table->dropColumn(['schedule_type', 'weekly_limit']);
         });
     }

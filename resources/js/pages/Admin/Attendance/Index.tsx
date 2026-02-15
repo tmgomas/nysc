@@ -39,7 +39,7 @@ import axios from 'axios';
 import { route } from 'ziggy-js';
 import { cn } from '@/lib/utils';
 
-interface Sport {
+interface Program {
     id: string;
     name: string;
 }
@@ -58,10 +58,10 @@ interface Member {
 }
 
 interface Props {
-    sports: Sport[];
+    programs: Program[];
     filters: {
         date?: string;
-        sport_id?: string;
+        program_id?: string;
     };
     members: Member[];
     currentDate: string;
@@ -88,9 +88,9 @@ const apiPost = async (url: string, data: any) => {
     return response.json();
 };
 
-export default function Index({ sports, filters, members, currentDate }: Props) {
+export default function Index({ programs, filters, members, currentDate }: Props) {
     const [selectedDate, setSelectedDate] = useState(filters.date || currentDate);
-    const [selectedSportId, setSelectedSportId] = useState(filters.sport_id || '');
+    const [selectedProgramId, setSelectedProgramId] = useState(filters.program_id || '');
     const [searchTerm, setSearchTerm] = useState('');
     const [attendanceData, setAttendanceData] = useState<AttendanceState[]>([]);
     const [processing, setProcessing] = useState(false);
@@ -120,19 +120,19 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
 
     // Handle Filters Change
     const applyFilters = (date: string, sportId: string) => {
-        router.get('/admin/attendance', { date, sport_id: sportId }, { preserveState: true, preserveScroll: true });
+        router.get('/admin/attendance', { date, program_id: sportId }, { preserveState: true, preserveScroll: true });
     };
 
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const date = e.target.value;
         setSelectedDate(date);
-        if (selectedSportId) {
-            applyFilters(date, selectedSportId);
+        if (selectedProgramId) {
+            applyFilters(date, selectedProgramId);
         }
     };
 
-    const handleSportChange = (sportId: string) => {
-        setSelectedSportId(sportId);
+    const handleProgramChange = (sportId: string) => {
+        setSelectedProgramId(sportId);
         applyFilters(selectedDate, sportId);
     };
 
@@ -159,12 +159,12 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
     };
 
     const handleSave = () => {
-        if (!selectedSportId) return;
+        if (!selectedProgramId) return;
 
         setProcessing(true);
         router.post('/admin/attendance/bulk', {
             date: selectedDate,
-            sport_id: selectedSportId,
+            program_id: selectedProgramId,
             attendances: attendanceData.map(a => ({
                 member_id: a.id,
                 present: a.present,
@@ -182,7 +182,7 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
 
     // Generic Scan Handler
     const handleScan = (data: string, method: 'qr' | 'nfc' | 'rfid') => {
-        if (!selectedSportId) return;
+        if (!selectedProgramId) return;
 
         if (method === 'qr' && data === lastScanned) return;
         if (method === 'qr') setLastScanned(data);
@@ -195,7 +195,7 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
 
         apiPost('/admin/attendance/scan', {
             date: selectedDate,
-            sport_id: selectedSportId,
+            program_id: selectedProgramId,
             member_number: memberIdentifier,
             method: method === 'qr' ? 'qr_code' : method
         }).then(data => {
@@ -244,7 +244,7 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                     <div className="flex flex-col gap-3">
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-semibold text-gray-900">Attendance</h2>
-                            {selectedSportId && (
+                            {selectedProgramId && (
                                 <div className="flex items-center gap-2">
                                     <div className="hidden sm:block text-sm text-muted-foreground mr-2">
                                         <span className="font-medium text-foreground">{presentCount}</span> / {members.length} Present
@@ -277,13 +277,13 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                                     />
                                 </div>
                                 <div className="flex-shrink-0 w-40 sm:w-56">
-                                    <Select value={selectedSportId} onValueChange={handleSportChange}>
+                                    <Select value={selectedProgramId} onValueChange={handleProgramChange}>
                                         <SelectTrigger className="h-9 bg-white/50 border-gray-200">
-                                            <SelectValue placeholder="Select Sport" />
+                                            <SelectValue placeholder="Select Program" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {sports.map(sport => (
-                                                <SelectItem key={sport.id} value={sport.id}>{sport.name}</SelectItem>
+                                            {programs.map(sport => (
+                                                <SelectItem key={program.id} value={program.id}>{program.name}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
@@ -291,7 +291,7 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
 
                                 <span className="flex-1"></span>
 
-                                {selectedSportId && (
+                                {selectedProgramId && (
                                     <div className="relative w-full sm:w-64 hidden sm:block">
                                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                         <Input
@@ -309,7 +309,7 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                                     size="sm"
                                     className="flex-shrink-0 gap-2 h-9 bg-white/80 hover:bg-white shadow-sm border-gray-200 text-gray-700"
                                     onClick={() => setIsScanning(true)}
-                                    disabled={!selectedSportId}
+                                    disabled={!selectedProgramId}
                                 >
                                     <ScanLine className="h-4 w-4 text-primary" />
                                     <span className="hidden sm:inline">Quick Scan</span>
@@ -318,7 +318,7 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
                             </div>
 
                             {/* Mobile Search - Only visible on small screens */}
-                            {selectedSportId && (
+                            {selectedProgramId && (
                                 <div className="relative w-full sm:hidden">
                                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                     <Input
@@ -339,12 +339,12 @@ export default function Index({ sports, filters, members, currentDate }: Props) 
 
 
                 {/* Content Area */}
-                {!selectedSportId ? (
+                {!selectedProgramId ? (
                     <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground bg-white rounded-xl border border-dashed p-8">
                         <div className="rounded-full bg-gray-100 p-4 mb-4">
                             <Filter className="h-8 w-8 opacity-50" />
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900">No Sport Selected</h3>
+                        <h3 className="text-lg font-medium text-gray-900">No Program Selected</h3>
                         <p className="mt-1 text-sm">Select a sport from the toolbar to load members.</p>
                     </div>
                 ) : filteredMembers.length === 0 ? (

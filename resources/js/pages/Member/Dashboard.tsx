@@ -10,7 +10,7 @@ interface MemberStats {
     has_overdue: boolean;
     monthly_attendance_count: number;
     total_attendance_count: number;
-    active_sports_count: number;
+    active_programs_count: number;
     total_monthly_fee: number;
     last_payment?: {
         amount: number;
@@ -118,14 +118,14 @@ export default function Dashboard({ stats, member }: Props) {
                             </CardContent>
                         </Card>
 
-                        {/* Active Sports */}
+                        {/* Active Programs */}
                         <Card>
                             <CardHeader>
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <CardDescription>Active Sports</CardDescription>
+                                        <CardDescription>Active Programs</CardDescription>
                                         <CardTitle className="text-2xl text-orange-600">
-                                            {stats.active_sports_count}
+                                            {stats.active_programs_count}
                                         </CardTitle>
                                     </div>
                                     <div className="rounded-full bg-orange-100 p-3">

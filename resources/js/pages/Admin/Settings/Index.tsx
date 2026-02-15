@@ -221,7 +221,7 @@ export default function Index({ settings: initialSettings }: Props) {
                                                     </div>
                                                 </div>
                                                 <p className="text-sm text-muted-foreground mt-4">
-                                                    ℹ️ Prefix is automatically set from member's primary sport. Resets yearly per sport.
+                                                    ℹ️ Prefix is automatically set from member's primary program. Resets yearly per program.
                                                 </p>
                                             </div>
                                         </>

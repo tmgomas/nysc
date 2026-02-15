@@ -26,7 +26,7 @@ class ProcessPaymentAction
      * @param int $monthsCount Number of months for bulk payment
      * @param string|null $receiptUrl URL to payment receipt
      * @param string|null $referenceNumber Payment reference number
-     * @param string|null $sportId Sport ID if payment is for specific sport
+     * @param string|null $programId Program ID if payment is for specific program
      * @return Payment The created payment record
      * 
      * @throws InvalidPaymentAmountException If payment amount is invalid
@@ -42,7 +42,7 @@ class ProcessPaymentAction
         int $monthsCount = 1,
         ?string $receiptUrl = null,
         ?string $referenceNumber = null,
-        ?string $sportId = null
+        ?string $programId = null
     ): Payment {
         // Validate payment amount
         $this->validateAmount($amount);
@@ -54,7 +54,7 @@ class ProcessPaymentAction
         return DB::transaction(function () use (
             $member, $type, $amount, $paymentMethod, 
             $monthYear, $monthsCount, $receiptUrl, 
-            $referenceNumber, $sportId
+            $referenceNumber, $programId
         ) {
             try {
                 $dueDate = $monthYear 
@@ -64,9 +64,9 @@ class ProcessPaymentAction
                 // Generate reference number if not provided
                 if (!$referenceNumber) {
                     $referenceGenerator = new GeneratePaymentReferenceAction();
-                    $referenceNumber = $sportId 
-                        ? $referenceGenerator->execute($sportId, $dueDate)
-                        : $referenceGenerator->executeForMultipleSports($dueDate);
+                    $referenceNumber = $programId 
+                        ? $referenceGenerator->execute($programId, $dueDate)
+                        : $referenceGenerator->executeForMultiplePrograms($dueDate);
                 }
 
                 // Generate receipt number
@@ -76,7 +76,7 @@ class ProcessPaymentAction
                 // Create payment record
                 $payment = Payment::create([
                     'member_id' => $member->id,
-                    'sport_id' => $sportId,
+                    'program_id' => $programId,
                     'type' => $type,
                     'amount' => $amount,
                     'month_year' => $monthYear,
@@ -92,11 +92,11 @@ class ProcessPaymentAction
 
                 // Update payment schedules if monthly or bulk payment
                 if ($type === PaymentType::MONTHLY || $type === PaymentType::BULK) {
-                    $this->updateSchedules($member, $payment, $monthYear, $monthsCount, $sportId);
+                    $this->updateSchedules($member, $payment, $monthYear, $monthsCount, $programId);
                 }
 
                 // Log the payment
-                $this->logPayment($member, $payment, $type, $amount, $sportId);
+                $this->logPayment($member, $payment, $type, $amount, $programId);
 
                 // Log success
                 Log::info('Payment processed successfully', [
@@ -170,7 +170,7 @@ class ProcessPaymentAction
         Payment $payment, 
         ?string $startMonthYear, 
         int $monthsCount, 
-        ?string $sportId = null
+        ?string $programId = null
     ): void {
         $startDate = $startMonthYear 
             ? Carbon::createFromFormat('Y-m', $startMonthYear)
@@ -182,8 +182,8 @@ class ProcessPaymentAction
             $query = MemberPaymentSchedule::where('member_id', $member->id)
                 ->where('month_year', $monthYear);
 
-            if ($sportId) {
-                $query->where('sport_id', $sportId);
+            if ($programId) {
+                $query->where('program_id', $programId);
             }
 
             $affectedRows = $query->update([
@@ -196,7 +196,7 @@ class ProcessPaymentAction
                 Log::warning('No payment schedule found to update', [
                     'member_id' => $member->id,
                     'month_year' => $monthYear,
-                    'sport_id' => $sportId,
+                    'program_id' => $programId,
                 ]);
             }
         }
@@ -210,13 +210,13 @@ class ProcessPaymentAction
         Payment $payment, 
         PaymentType $type, 
         float $amount, 
-        ?string $sportId
+        ?string $programId
     ): void {
         $member->log('payment_received', "Payment of Rs. {$amount} received", [
             'payment_id' => $payment->id,
             'type' => $type->value,
             'amount' => $amount,
-            'sport_id' => $sportId,
+            'program_id' => $programId,
             'payment_method' => $payment->payment_method,
             'reference_number' => $payment->reference_number,
         ]);

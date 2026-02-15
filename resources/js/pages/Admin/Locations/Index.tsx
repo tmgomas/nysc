@@ -23,7 +23,7 @@ interface Location {
     name: string;
     description: string | null;
     is_active: boolean;
-    sports_count: number;
+    programs_count: number;
     special_bookings_count: number;
 }
 
@@ -69,8 +69,8 @@ export default function LocationsIndex({ locations }: Props) {
     };
 
     const handleDelete = (loc: Location) => {
-        if (loc.sports_count > 0) {
-            toast.error('Cannot delete location with assigned sports');
+        if (loc.programs_count > 0) {
+            toast.error('Cannot delete location with assigned programs');
             return;
         }
         if (!window.confirm(`Delete "${loc.name}"?`)) return;
@@ -90,7 +90,7 @@ export default function LocationsIndex({ locations }: Props) {
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight">Locations</h1>
                         <p className="text-muted-foreground">
-                            Manage venues and locations for sports activities.
+                            Manage venues and locations for programs activities.
                         </p>
                     </div>
                     <Button onClick={openAddDialog}>
@@ -130,7 +130,7 @@ export default function LocationsIndex({ locations }: Props) {
                                 <CardContent>
                                     <div className="flex gap-3 text-sm text-muted-foreground">
                                         <Badge variant="secondary">
-                                            {loc.sports_count} sport{loc.sports_count !== 1 ? 's' : ''}
+                                            {loc.programs_count} sport{loc.programs_count !== 1 ? 's' : ''}
                                         </Badge>
                                         {loc.special_bookings_count > 0 && (
                                             <Badge variant="outline">

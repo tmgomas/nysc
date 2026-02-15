@@ -7,12 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use App\Enums\MemberStatus;
-use App\Traits\{HasPayments, HasAttendance, HasSports, Loggable};
+use App\Traits\{HasPayments, HasAttendance, HasPrograms, Loggable};
 
 class Member extends Model
 {
     use HasFactory, SoftDeletes, HasUuids;
-    use HasPayments, HasAttendance, HasSports, Loggable;
+    use HasPayments, HasAttendance, HasPrograms, Loggable;
 
     public $incrementing = false;
     protected $keyType = 'string';
@@ -82,11 +82,11 @@ class Member extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    public function sports()
+    public function programs()
     {
-        return $this->belongsToMany(Sport::class, 'member_sports')
-            ->using(MemberSport::class)
-            ->withPivot('enrolled_at', 'status','sport_reference')
+        return $this->belongsToMany(Program::class, 'member_programs')
+            ->using(MemberProgram::class)
+            ->withPivot('enrolled_at', 'status','program_reference')
             ->withTimestamps();
     }
 

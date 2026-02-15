@@ -8,9 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('sport_classes', function (Blueprint $table) {
+        Schema::create('program_classes', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('sport_id')->constrained('sports')->cascadeOnDelete();
+            $table->foreignUuid('program_id')->constrained('programs')->cascadeOnDelete();
             $table->string('label')->nullable();
             $table->string('day_of_week'); // Monday, Tuesday, etc.
             $table->time('start_time');
@@ -23,13 +23,13 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 
-            $table->index(['sport_id', 'day_of_week']);
-            $table->index(['sport_id', 'is_active']);
+            $table->index(['program_id', 'day_of_week']);
+            $table->index(['program_id', 'is_active']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('sport_classes');
+        Schema::dropIfExists('program_classes');
     }
 };

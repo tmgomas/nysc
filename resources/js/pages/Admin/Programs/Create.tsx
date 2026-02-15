@@ -78,7 +78,7 @@ export default function Create({ coaches, locations }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post('/admin/sports');
+        post('/admin/programs');
     };
 
     const selectedDays = Object.keys(data.schedule);
@@ -86,23 +86,23 @@ export default function Create({ coaches, locations }: Props) {
     return (
         <AppLayout
             breadcrumbs={[
-                { title: 'Sports', href: '/admin/sports' },
-                { title: 'Add New', href: '/admin/sports/create' },
+                { title: 'Programs', href: '/admin/programs' },
+                { title: 'Add New', href: '/admin/programs/create' },
             ]}
         >
-            <Head title="Add Sport" />
+            <Head title="Add Program" />
 
             <div className="py-12">
                 <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
                     {/* Page Header */}
                     <div className="mb-8 flex items-center gap-4">
                         <Button variant="outline" size="icon" asChild>
-                            <Link href="/admin/sports">
+                            <Link href="/admin/programs">
                                 <ChevronLeft className="h-4 w-4" />
                             </Link>
                         </Button>
                         <div>
-                            <h2 className="text-2xl font-bold tracking-tight">Add New Sport</h2>
+                            <h2 className="text-2xl font-bold tracking-tight">Add New Program</h2>
                             <p className="text-muted-foreground">
                                 Create a new sport with fees, schedule, and capacity rules
                             </p>
@@ -113,14 +113,14 @@ export default function Create({ coaches, locations }: Props) {
                         {/* Basic Details Card */}
                         <Card>
                             <CardHeader>
-                                <CardTitle>Sport Details</CardTitle>
+                                <CardTitle>Program Details</CardTitle>
                                 <CardDescription>
-                                    Enter the basic information for the sport.
+                                    Enter the basic information for the program.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="grid gap-6">
                                 <div className="space-y-2">
-                                    <Label htmlFor="name">Sport Name <span className="text-red-500">*</span></Label>
+                                    <Label htmlFor="name">Program Name <span className="text-red-500">*</span></Label>
                                     <Input
                                         id="name"
                                         value={data.name}
@@ -137,7 +137,7 @@ export default function Create({ coaches, locations }: Props) {
                                         id="description"
                                         value={data.description}
                                         onChange={(e) => setData('description', e.target.value)}
-                                        placeholder="Brief description of the sport..."
+                                        placeholder="Brief description of the program..."
                                         rows={3}
                                     />
                                     {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
@@ -240,7 +240,7 @@ export default function Create({ coaches, locations }: Props) {
                                     Schedule Configuration
                                 </CardTitle>
                                 <CardDescription>
-                                    Configure the schedule type and attendance limits for this sport.
+                                    Configure the schedule type and attendance limits for this program.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="grid gap-6">
@@ -374,7 +374,7 @@ export default function Create({ coaches, locations }: Props) {
                                         <Calendar className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                                         <p className="text-sm font-medium">Class Time Slots</p>
                                         <p className="text-sm text-muted-foreground mt-1">
-                                            After creating this sport, you can add class time slots with coaches and capacities from the Edit page.
+                                            After creating this program, you can add class time slots with coaches and capacities from the Edit page.
                                         </p>
                                     </div>
                                 )}
@@ -399,7 +399,7 @@ export default function Create({ coaches, locations }: Props) {
                                 ) : (
                                     <>
                                         <Save className="mr-2 h-4 w-4" />
-                                        Create Sport
+                                        Create Program
                                     </>
                                 )}
                             </Button>

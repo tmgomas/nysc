@@ -9,7 +9,7 @@ class AttendanceData
 {
     public function __construct(
         public readonly string $memberId,
-        public readonly string $sportId,
+        public readonly string $programId,
         public readonly AttendanceMethod $method,
         public readonly ?Carbon $checkInTime = null,
         public readonly ?string $notes = null,
@@ -22,7 +22,7 @@ class AttendanceData
     {
         return new self(
             memberId: $data['member_id'],
-            sportId: $data['sport_id'],
+            sportId: $data['program_id'],
             method: AttendanceMethod::from($data['method']),
             checkInTime: isset($data['check_in_time']) ? Carbon::parse($data['check_in_time']) : null,
             notes: $data['notes'] ?? null,
@@ -36,7 +36,7 @@ class AttendanceData
     {
         return [
             'member_id' => $this->memberId,
-            'sport_id' => $this->sportId,
+            'program_id' => $this->sportId,
             'method' => $this->method->value,
             'check_in_time' => $this->checkInTime?->toDateTimeString(),
             'notes' => $this->notes,

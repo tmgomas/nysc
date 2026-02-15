@@ -4,21 +4,21 @@ export { MemberStats } from './MemberStats';
 export { PersonalInfoCard } from './PersonalInfoCard';
 export { ContactInfoCard } from './ContactInfoCard';
 export { MedicalInfoCard } from './MedicalInfoCard';
-export { SportsEnrollmentCard } from './SportsEnrollmentCard';
+export { ProgramsEnrollmentCard } from './ProgramsEnrollmentCard';
 export { PaymentsCard } from './PaymentsCard';
 
 // Export dialogs
 export { ApproveDialog } from './dialogs/ApproveDialog';
-export { ManageSportsDialog } from './dialogs/ManageSportsDialog';
+export { ManageProgramsDialog } from './dialogs/ManageProgramsDialog';
 export { PaymentDialog } from './dialogs/PaymentDialog';
 
 // Export types
 export type {
     Member,
     MemberStatsData,
-    Sport,
+    Program,
     User,
     Payment,
     PaymentSchedule,
-    AvailableSport,
+    AvailableProgram,
 } from './types';

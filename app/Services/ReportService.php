@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\{Member, Payment, Attendance, Sport};
+use App\Models\{Member, Payment, Attendance, Program};
 use App\Enums\{MemberStatus, PaymentStatus};
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -28,14 +28,14 @@ class ReportService
                 ->get()
                 ->pluck('count', 'gender')
                 ->toArray(),
-            'by_sport' => Sport::withCount(['members' => function ($query) {
-                $query->where('member_sports.status', 'active');
+            'by_program' => Program::withCount(['members' => function ($query) {
+                $query->where('member_programs.status', 'active');
             }])
             ->get()
-            ->map(function ($sport) {
+            ->map(function ($program) {
                 return [
-                    'sport' => $sport->name,
-                    'members' => $sport->members_count,
+                    'program' => $program->name,
+                    'members' => $program->members_count,
                 ];
             })
             ->toArray(),
@@ -99,14 +99,14 @@ class ReportService
             'total_attendances' => $attendances->count(),
             'unique_members' => $attendances->clone()->distinct('member_id')->count('member_id'),
             'average_daily' => round($attendances->count() / $startDate->diffInDays($endDate), 2),
-            'by_sport' => Sport::withCount(['attendances' => function ($query) use ($startDate, $endDate) {
+            'by_program' => Program::withCount(['attendances' => function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('check_in_time', [$startDate, $endDate]);
             }])
             ->get()
-            ->map(function ($sport) {
+            ->map(function ($program) {
                 return [
-                    'sport' => $sport->name,
-                    'attendances' => $sport->attendances_count,
+                    'program' => $program->name,
+                    'attendances' => $program->attendances_count,
                 ];
             })
             ->toArray(),
@@ -140,16 +140,16 @@ class ReportService
             'admission_revenue' => $verifiedPayments->clone()->where('type', 'admission')->sum('amount'),
             'monthly_revenue' => $verifiedPayments->clone()->where('type', 'monthly')->sum('amount'),
             'bulk_revenue' => $verifiedPayments->clone()->where('type', 'bulk')->sum('amount'),
-            'by_sport' => Sport::all()->map(function ($sport) use ($startDate, $endDate) {
+            'by_program' => Program::all()->map(function ($program) use ($startDate, $endDate) {
                 $revenue = Payment::whereBetween('created_at', [$startDate, $endDate])
                     ->where('status', PaymentStatus::VERIFIED)
-                    ->whereHas('member.sports', function ($query) use ($sport) {
-                        $query->where('sports.id', $sport->id);
+                    ->whereHas('member.programs', function ($query) use ($program) {
+                        $query->where('programs.id', $program->id);
                     })
                     ->sum('amount');
 
                 return [
-                    'sport' => $sport->name,
+                    'program' => $program->name,
                     'revenue' => $revenue,
                 ];
             })
@@ -180,9 +180,9 @@ class ReportService
                 'today' => Attendance::whereDate('check_in_time', today())->count(),
                 'this_month' => Attendance::whereMonth('check_in_time', now()->month)->count(),
             ],
-            'sports' => [
-                'total' => Sport::count(),
-                'active' => Sport::where('is_active', true)->count(),
+            'programs' => [
+                'total' => Program::count(),
+                'active' => Program::where('is_active', true)->count(),
             ],
         ];
     }

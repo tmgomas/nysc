@@ -3,7 +3,7 @@
 namespace App\Actions;
 
 use App\Models\Payment;
-use App\Models\Sport;
+use App\Models\Program;
 use App\Models\Setting;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
@@ -16,19 +16,19 @@ class GeneratePaymentReferenceAction
      * Format: {YEAR}-{SPORT_CODE}-{NUMBER}
      * Example: 26-SW-0001 (2026, Swimming, 1st payment)
      * 
-     * @param string $sportId The sport ID
+     * @param string $programId The program ID
      * @param CarbonInterface|null $date The payment date (defaults to current date)
      * @return string The generated reference number
      */
-    public function execute(string $sportId, ?CarbonInterface $date = null): string
+    public function execute(string $programId, ?CarbonInterface $date = null): string
     {
         $date = $date ?? now();
         
         // Get sport
-        $sport = Sport::findOrFail($sportId);
+        $program = Program::findOrFail($programId);
         
-        if (!$sport->short_code) {
-            throw new \Exception("Sport '{$sport->name}' does not have a short code configured.");
+        if (!$program->short_code) {
+            throw new \Exception("Program '{$program->name}' does not have a short code configured.");
         }
 
         // Get settings
@@ -40,10 +40,10 @@ class GeneratePaymentReferenceAction
             ? $date->format('Y') 
             : $date->format('y');
 
-        // Get the last payment for this sport in this year
-        $lastPayment = Payment::where('sport_id', $sportId)
+        // Get the last payment for this program in this year
+        $lastPayment = Payment::where('program_id', $programId)
             ->whereYear('created_at', $date->year)
-            ->where('reference_number', 'like', "{$year}-{$sport->short_code}-%")
+            ->where('reference_number', 'like', "{$year}-{$program->short_code}-%")
             ->latest('created_at')
             ->first();
 
@@ -59,7 +59,7 @@ class GeneratePaymentReferenceAction
         // Generate reference number
         $number = str_pad($nextNumber, $digits, '0', STR_PAD_LEFT);
         
-        return "{$year}-{$sport->short_code}-{$number}";
+        return "{$year}-{$program->short_code}-{$number}";
     }
 
     /**
@@ -67,7 +67,7 @@ class GeneratePaymentReferenceAction
      * Format: {YEAR}-ALL-{NUMBER}
      * Example: 26-ALL-0001
      */
-    public function executeForMultipleSports(?CarbonInterface $date = null): string
+    public function executeForMultiplePrograms(?CarbonInterface $date = null): string
     {
         $date = $date ?? now();
         
@@ -81,7 +81,7 @@ class GeneratePaymentReferenceAction
             : $date->format('y');
 
         // Get the last multi-sport payment in this year
-        $lastPayment = Payment::whereNull('sport_id')
+        $lastPayment = Payment::whereNull('program_id')
             ->whereYear('created_at', $date->year)
             ->where('reference_number', 'like', "{$year}-ALL-%")
             ->latest('created_at')

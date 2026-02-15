@@ -16,7 +16,7 @@ class Attendance extends Model
 
     protected $fillable = [
         'member_id',
-        'sport_id',
+        'program_id',
         'check_in_time',
         'check_out_time',
         'duration_minutes',
@@ -38,9 +38,9 @@ class Attendance extends Model
         return $this->belongsTo(Member::class);
     }
 
-    public function sport()
+    public function program()
     {
-        return $this->belongsTo(Sport::class);
+        return $this->belongsTo(Program::class);
     }
 
     public function markedBy()
@@ -54,9 +54,9 @@ class Attendance extends Model
         return $query->whereDate('check_in_time', today());
     }
 
-    public function scopeForSport($query, $sportId)
+    public function scopeForProgram($query, $programId)
     {
-        return $query->where('sport_id', $sportId);
+        return $query->where('program_id', $programId);
     }
 
     public function scopeForMember($query, $memberId)

@@ -40,10 +40,10 @@ class MemberService
                 'registration_date' => now(),
             ]));
 
-            // Enroll in selected sports
-            if (!empty($data['sport_ids'])) {
-                foreach ($data['sport_ids'] as $sportId) {
-                    $member->enrollInSport($sportId, 'active');
+            // Enroll in selected programs
+            if (!empty($data['program_ids'])) {
+                foreach ($data['program_ids'] as $programId) {
+                    $member->enrollInProgram($programId, 'active');
                 }
             }
 
@@ -70,7 +70,7 @@ class MemberService
             $qrCodeUrl = $this->generateQRCode->execute($member);
 
             // Create Admission Fee Payment
-            $admissionFee = $member->sports->sum('admission_fee');
+            $admissionFee = $member->programs->sum('admission_fee');
             if ($admissionFee > 0) {
                 \App\Models\Payment::create([
                     'member_id' => $member->id,
@@ -114,29 +114,29 @@ class MemberService
     }
 
     /**
-     * Update member sports and regenerate schedules
+     * Update member programs and regenerate schedules
      */
-    public function updateSports(Member $member, array $sportIds): Member
+    public function updatePrograms(Member $member, array $programIds): Member
     {
-        return DB::transaction(function () use ($member, $sportIds) {
-            // Get current sport IDs to find additions
-            $currentSportIds = $member->sports()->pluck('sports.id')->toArray();
+        return DB::transaction(function () use ($member, $programIds) {
+            // Get current program IDs to find additions
+            $currentProgramIds = $member->programs()->pluck('programs.id')->toArray();
             
-            // Sync sports with manual UUID generation for pivot table
-            $syncData = collect($sportIds)->mapWithKeys(function ($id) {
+            // Sync programs with manual UUID generation for pivot table
+            $syncData = collect($programIds)->mapWithKeys(function ($id) {
                 return [$id => ['id' => (string) Str::uuid(), 'status' => 'active']];
             })->all();
             
-            $member->sports()->sync($syncData);
+            $member->programs()->sync($syncData);
 
-            // Find newly added sports
-            $addedSportIds = array_diff($sportIds, $currentSportIds);
+            // Find newly added programs
+            $addedProgramIds = array_diff($programIds, $currentProgramIds);
             
-            if (!empty($addedSportIds)) {
-                $addedSports = \App\Models\Sport::whereIn('id', $addedSportIds)->get();
+            if (!empty($addedProgramIds)) {
+                $addedPrograms = \App\Models\Program::whereIn('id', $addedProgramIds)->get();
                 
-                // 1. Create Admission Fee Payment for new sports
-                $additionalAdmissionFee = $addedSports->sum('admission_fee');
+                // 1. Create Admission Fee Payment for new programs
+                $additionalAdmissionFee = $addedPrograms->sum('admission_fee');
                 if ($additionalAdmissionFee > 0) {
                     \App\Models\Payment::create([
                         'member_id' => $member->id,
@@ -147,17 +147,17 @@ class MemberService
                         'due_date' => now()->addDays(7), // Give 7 days to pay
                         'paid_date' => null, // Not paid yet
                         'payment_method' => null, // Will be set when paid
-                        'notes' => 'Admission fee for newly added sports: ' . $addedSports->pluck('name')->implode(', '),
+                        'notes' => 'Admission fee for newly added programs: ' . $addedPrograms->pluck('name')->implode(', '),
                     ]);
                 }
 
-                // 2. Generate schedules for new sports (starting current month)
-                // We reload sports relation to ensure new ones are included
-                $member->load('sports');
+                // 2. Generate schedules for new programs (starting current month)
+                // We reload programs relation to ensure new ones are included
+                $member->load('programs');
                 $this->generatePaymentSchedule->execute($member, 12, \Carbon\Carbon::parse(now()->startOfMonth()));
             }
 
-            // Update future payment schedules amount for existing sports (if fees changed)
+            // Update future payment schedules amount for existing programs (if fees changed)
             // $this->generatePaymentSchedule->updateFutureSchedules($member); 
             // The execute() above handles creation. updateFutureSchedules handles amount updates. 
             // We can leave it or remove it if execute covers it. 
@@ -179,7 +179,7 @@ class MemberService
             'has_overdue' => $member->hasOverduePayments(),
             'monthly_attendance_count' => $member->monthly_attendance_count,
             'total_attendance_count' => $member->total_attendance_count,
-            'active_sports_count' => $member->active_sports_count,
+            'active_programs_count' => $member->active_programs_count,
             'total_monthly_fee' => $member->total_monthly_fee,
             'last_payment' => $member->last_payment,
             'next_due_payment' => $member->next_due_payment,
