@@ -369,7 +369,7 @@ export default function Index({ payments, filters, stats }: Props) {
                                         </div>
                                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                             <CreditCard className="h-4 w-4" />
-                                            {payment.payment_method.replace('_', ' ')}
+                                            {payment.payment_method?.replace('_', ' ') || '-'}
                                         </div>
                                         {payment.month_year && (
                                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -448,7 +448,7 @@ export default function Index({ payments, filters, stats }: Props) {
                                                     </Badge>
                                                 </td>
                                                 <td className="px-6 py-4 text-sm capitalize">
-                                                    {payment.payment_method.replace('_', ' ')}
+                                                    {payment.payment_method?.replace('_', ' ') || '-'}
                                                 </td>
                                                 <td className="px-6 py-4 text-sm">
                                                     {payment.month_year || '-'}

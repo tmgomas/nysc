@@ -282,7 +282,7 @@ export default function Index({ programs, filters, members, currentDate }: Props
                                             <SelectValue placeholder="Select Program" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {programs.map(sport => (
+                                            {programs.map(program => (
                                                 <SelectItem key={program.id} value={program.id}>{program.name}</SelectItem>
                                             ))}
                                         </SelectContent>
