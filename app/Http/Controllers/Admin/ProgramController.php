@@ -63,7 +63,7 @@ class ProgramController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'short_code' => 'nullable|string|max:10|unique:sports,short_code',
+            'short_code' => 'nullable|string|max:10|unique:programs,short_code',
             'description' => 'nullable|string',
             'admission_fee' => 'required|numeric|min:0',
             'monthly_fee' => 'required|numeric|min:0',
@@ -79,11 +79,11 @@ class ProgramController extends Controller
 
         // For class-based sports, redirect to edit page so they can add classes immediately
         if ($validated['schedule_type'] === 'class_based') {
-            return redirect()->route('admin.sports.edit', $program)
+            return redirect()->route('admin.programs.edit', $program)
                 ->with('success', 'Program created successfully. Now add class time slots below.');
         }
 
-        return redirect()->route('admin.sports.index')
+        return redirect()->route('admin.programs.index')
             ->with('success', 'Program created successfully.');
     }
 
@@ -121,7 +121,7 @@ class ProgramController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'short_code' => 'nullable|string|max:10|unique:sports,short_code,' . $program->id,
+            'short_code' => 'nullable|string|max:10|unique:programs,short_code,' . $program->id,
             'description' => 'nullable|string',
             'admission_fee' => 'required|numeric|min:0',
             'monthly_fee' => 'required|numeric|min:0',
@@ -149,7 +149,7 @@ class ProgramController extends Controller
                 ->update(['amount' => $program->monthly_fee]);
         }
 
-        return redirect()->route('admin.sports.index')
+        return redirect()->route('admin.programs.index')
             ->with('success', 'Program updated successfully.');
     }
 
@@ -164,7 +164,7 @@ class ProgramController extends Controller
 
         $program->delete();
 
-        return redirect()->route('admin.sports.index')
+        return redirect()->route('admin.programs.index')
             ->with('success', 'Program deleted successfully.');
     }
 }

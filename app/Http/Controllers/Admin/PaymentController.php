@@ -42,7 +42,7 @@ class PaymentController extends Controller
     {
         $validated = $request->validate([
             'member_id' => 'required|exists:members,id',
-            'program_id' => 'nullable|exists:sports,id',
+            'program_id' => 'nullable|exists:programs,id',
             'type' => 'required|in:admission,monthly,bulk',
             'payment_method' => 'required|in:cash,bank_transfer,online',
             'month_year' => 'nullable|string',

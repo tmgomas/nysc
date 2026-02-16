@@ -6,12 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Notifications\Notifiable;
 use App\Enums\MemberStatus;
 use App\Traits\{HasPayments, HasAttendance, HasPrograms, Loggable};
 
 class Member extends Model
 {
-    use HasFactory, SoftDeletes, HasUuids;
+    use HasFactory, SoftDeletes, HasUuids, Notifiable;
     use HasPayments, HasAttendance, HasPrograms, Loggable;
 
     public $incrementing = false;
@@ -120,4 +121,43 @@ class Member extends Model
     {
         return $query->where('status', 'suspended');
     }
+
+    /**
+     * Route notification for TextLK SMS channel
+     * Text.lk expects phone numbers in format: 947XXXXXXXX (without + prefix)
+     */
+    public function routeNotificationForTextlk($notification): ?string
+    {
+        if (empty($this->contact_number)) {
+            return null;
+        }
+
+        $phone = $this->contact_number;
+        
+        // Remove + prefix if present
+        if (str_starts_with($phone, '+')) {
+            $phone = substr($phone, 1);
+        }
+        
+        // Remove leading 0 and add 94 country code if needed
+        if (str_starts_with($phone, '0')) {
+            $phone = '94' . substr($phone, 1);
+        }
+        
+        // If doesn't start with 94, assume it's a local number
+        if (!str_starts_with($phone, '94')) {
+            $phone = '94' . $phone;
+        }
+        
+        return $phone;
+    }
+
+    /**
+     * Check if member prefers SMS notifications
+     */
+    public function prefersSms(): bool
+    {
+        return $this->preferred_contact_method === 'sms';
+    }
 }
+

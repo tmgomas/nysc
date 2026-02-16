@@ -88,7 +88,7 @@ class CreatePendingAdmissionPaymentAction
                 'programs_count' => $enrolledPrograms->count(),
             ]);
 
-            return $payment->fresh(['items.sport']);
+            return $payment->fresh(['items.program']);
         });
     }
 }

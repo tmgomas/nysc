@@ -29,7 +29,7 @@ class MarkPaymentAsPaidAction
         return DB::transaction(function () use ($payment, $paymentMethod, $referenceNumber) {
             // Load payment items if not loaded
             if (!$payment->relationLoaded('items')) {
-                $payment->load('items.sport');
+                $payment->load('items.program');
             }
 
             // Generate reference number if not provided
@@ -91,7 +91,7 @@ class MarkPaymentAsPaidAction
                 'items_count' => $payment->items->count(),
             ]);
 
-            return $payment->fresh(['items.sport', 'member']);
+            return $payment->fresh(['items.program', 'member']);
         });
     }
 }

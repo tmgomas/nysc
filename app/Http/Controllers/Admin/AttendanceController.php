@@ -63,7 +63,7 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'date' => 'required|date',
-            'program_id' => 'required|exists:sports,id',
+            'program_id' => 'required|exists:programs,id',
             'attendances' => 'required|array',
             'attendances.*.member_id' => 'required|exists:members,id',
             'attendances.*.present' => 'required|boolean',
@@ -113,7 +113,7 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'date' => 'required|date',
-            'program_id' => 'nullable|exists:sports,id', // Made optional
+            'program_id' => 'nullable|exists:programs,id', // Made optional
             'member_number' => 'required|string',
             'method' => 'nullable|in:qr_code,nfc,rfid', // Added method parameter
         ]);
@@ -240,7 +240,7 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'date' => 'required|date',
-            'program_id' => 'required|exists:sports,id',
+            'program_id' => 'required|exists:programs,id',
             'attendances' => 'required|array',
             'attendances.*.member_id' => 'required|exists:members,id',
             'attendances.*.present' => 'required|boolean',

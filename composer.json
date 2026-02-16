@@ -19,6 +19,7 @@
         "laravel/wayfinder": "^0.1.9",
         "maatwebsite/excel": "^3.1",
         "spatie/laravel-permission": "^6.24",
+        "textlk/textlk-laravel": "^1.1",
         "tightenco/ziggy": "^2.6"
     },
     "require-dev": {
@@ -35,7 +36,8 @@
         "psr-4": {
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
-            "Database\\Seeders\\": "database/seeders/"
+            "Database\\Seeders\\": "database/seeders/",
+            "TextLK\\Laravel\\": "vendor/textlk/textlk-laravel/src/Laravel/"
         }
     },
     "autoload-dev": {
@@ -93,7 +95,9 @@
     },
     "extra": {
         "laravel": {
-            "dont-discover": []
+            "dont-discover": [
+                "textlk/textlk-laravel"
+            ]
         }
     },
     "config": {

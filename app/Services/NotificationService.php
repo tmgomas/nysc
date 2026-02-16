@@ -3,23 +3,63 @@
 namespace App\Services;
 
 use App\Models\{Member, Payment, User};
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Notification;
+use App\Notifications\{
+    WelcomeMemberNotification,
+    RegistrationReceivedNotification,
+    PaymentReminderNotification,
+    PaymentConfirmationNotification,
+    ApprovalNotification,
+    OverduePaymentNotification
+};
+use Illuminate\Support\Facades\Log;
+use Exception;
 
 class NotificationService
 {
     /**
-     * Send welcome email to new member
+     * Send registration received notification
+     */
+    public function sendRegistrationReceived(Member $member): void
+    {
+        try {
+            // We notify the member directly since user account might not exist yet
+            // But wait, member model has Notifiable trait?
+            // Yes, Member model should be Notifiable. If not, we might need to rely on email/phone directly.
+            // Let's check Member model. Assuming it is Notifiable.
+            $member->notify(new RegistrationReceivedNotification($member));
+            
+            Log::info("Registration received notification sent to {$member->email}", [
+                'member_id' => $member->id,
+                'member_number' => $member->member_number,
+                'channels' => $member->preferred_contact_method === 'sms' ? ['mail', 'sms'] : ['mail'],
+            ]);
+        } catch (Exception $e) {
+            Log::error("Failed to send registration received notification to {$member->email}", [
+                'member_id' => $member->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Send welcome email/SMS to new member (Credentials)
      */
     public function sendWelcomeEmail(Member $member, string $temporaryPassword): void
     {
-        // TODO: Implement actual email sending
-        // Mail::to($member->user->email)->send(new WelcomeEmail($member, $temporaryPassword));
-        
-        \Log::info("Welcome email sent to {$member->user->email}", [
-            'member_id' => $member->id,
-            'member_number' => $member->member_number,
-        ]);
+        try {
+            $member->user->notify(new WelcomeMemberNotification($member, $temporaryPassword));
+            
+            Log::info("Welcome notification sent to {$member->user->email}", [
+                'member_id' => $member->id,
+                'member_number' => $member->member_number,
+                'channels' => $member->preferred_contact_method === 'sms' ? ['mail', 'sms'] : ['mail'],
+            ]);
+        } catch (Exception $e) {
+            Log::error("Failed to send welcome notification to {$member->user->email}", [
+                'member_id' => $member->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -27,9 +67,19 @@ class NotificationService
      */
     public function sendApprovalNotification(Member $member): void
     {
-        \Log::info("Approval notification sent to {$member->user->email}", [
-            'member_id' => $member->id,
-        ]);
+        try {
+            $member->user->notify(new ApprovalNotification($member));
+            
+            Log::info("Approval notification sent to {$member->user->email}", [
+                'member_id' => $member->id,
+                'channels' => $member->preferred_contact_method === 'sms' ? ['mail', 'sms'] : ['mail'],
+            ]);
+        } catch (Exception $e) {
+            Log::error("Failed to send approval notification to {$member->user->email}", [
+                'member_id' => $member->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -48,11 +98,21 @@ class NotificationService
      */
     public function sendPaymentReminder(Member $member, float $amount, string $dueDate): void
     {
-        \Log::info("Payment reminder sent to {$member->user->email}", [
-            'member_id' => $member->id,
-            'amount' => $amount,
-            'due_date' => $dueDate,
-        ]);
+        try {
+            $member->user->notify(new PaymentReminderNotification($amount, $dueDate));
+            
+            Log::info("Payment reminder sent to {$member->user->email}", [
+                'member_id' => $member->id,
+                'amount' => $amount,
+                'due_date' => $dueDate,
+                'channels' => $member->preferred_contact_method === 'sms' ? ['mail', 'sms'] : ['mail'],
+            ]);
+        } catch (Exception $e) {
+            Log::error("Failed to send payment reminder to {$member->user->email}", [
+                'member_id' => $member->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -60,10 +120,20 @@ class NotificationService
      */
     public function sendOverdueNotice(Member $member, float $amount): void
     {
-        \Log::info("Overdue notice sent to {$member->user->email}", [
-            'member_id' => $member->id,
-            'amount' => $amount,
-        ]);
+        try {
+            $member->user->notify(new OverduePaymentNotification($amount));
+            
+            Log::info("Overdue notice sent to {$member->user->email}", [
+                'member_id' => $member->id,
+                'amount' => $amount,
+                'channels' => $member->preferred_contact_method === 'sms' ? ['mail', 'sms'] : ['mail'],
+            ]);
+        } catch (Exception $e) {
+            Log::error("Failed to send overdue notice to {$member->user->email}", [
+                'member_id' => $member->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -71,10 +141,20 @@ class NotificationService
      */
     public function sendPaymentConfirmation(Payment $payment): void
     {
-        \Log::info("Payment confirmation sent to {$payment->member->user->email}", [
-            'payment_id' => $payment->id,
-            'amount' => $payment->amount,
-        ]);
+        try {
+            $payment->member->user->notify(new PaymentConfirmationNotification($payment));
+            
+            Log::info("Payment confirmation sent to {$payment->member->user->email}", [
+                'payment_id' => $payment->id,
+                'amount' => $payment->amount,
+                'channels' => $payment->member->preferred_contact_method === 'sms' ? ['mail', 'sms'] : ['mail'],
+            ]);
+        } catch (Exception $e) {
+            Log::error("Failed to send payment confirmation to {$payment->member->user->email}", [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

@@ -102,7 +102,7 @@ class MemberController extends Controller
 
     public function show(Member $member)
     {
-        $member->load(['user', 'programs', 'payments.sport', 'payments.items.sport', 'attendances', 'paymentSchedules.sport']);
+        $member->load(['user', 'programs', 'payments.program', 'payments.items.program', 'attendances', 'paymentSchedules.program']);
         $stats = $this->memberService->getStatistics($member);
 
         return Inertia::render('Admin/Members/Show', [
@@ -144,7 +144,7 @@ class MemberController extends Controller
     {
         $validated = $request->validate([
             'program_ids' => 'required|array', // Allow empty array if they want to remove all? No, logical min 1 usually, but let's stick to array.
-            'program_ids.*' => 'exists:sports,id',
+            'program_ids.*' => 'exists:programs,id',
         ]);
 
         $this->memberService->updatePrograms($member, $validated['program_ids']);

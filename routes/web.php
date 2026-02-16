@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\{
     ProgramController as AdminProgramController,
     ReportController as AdminReportController,
     SettingController as AdminSettingController,
+    SmsTemplateController as AdminSmsTemplateController,
     QRCodeController as AdminQRCodeController
 };
 
@@ -114,6 +115,10 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
     Route::post('settings', [AdminSettingController::class, 'update'])->name('settings.update');
     Route::get('settings/{key}', [AdminSettingController::class, 'show'])->name('settings.show');
     Route::put('settings/{key}', [AdminSettingController::class, 'updateSingle'])->name('settings.update-single');
+    
+    // SMS Templates
+    Route::get('sms-templates', [AdminSmsTemplateController::class, 'index'])->name('sms-templates.index');
+    Route::put('sms-templates/{id}', [AdminSmsTemplateController::class, 'update'])->name('sms-templates.update');
     
     // QR Codes
     Route::prefix('qr-codes')->name('qr-codes.')->group(function () {

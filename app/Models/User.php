@@ -61,6 +61,20 @@ class User extends Authenticatable
         return $this->hasOne(Member::class);
     }
 
+    /**
+     * Route notification for TextLK SMS channel.
+     * Delegates to the associated member's phone number.
+     */
+    public function routeNotificationForTextlk($notification): ?string
+    {
+        $member = $this->member;
+        if (!$member || empty($member->contact_number)) {
+            return null;
+        }
+
+        return $member->routeNotificationForTextlk($notification);
+    }
+
     public function coach()
     {
         return $this->hasOne(Coach::class);

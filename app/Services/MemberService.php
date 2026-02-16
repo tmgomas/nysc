@@ -23,7 +23,8 @@ class MemberService
         protected CreateMemberAccountAction $createMemberAccount,
         protected GeneratePaymentScheduleAction $generatePaymentSchedule,
         protected SuspendMemberAction $suspendMember,
-        protected GenerateQRCodeAction $generateQRCode
+        protected GenerateQRCodeAction $generateQRCode,
+        protected NotificationService $notificationService
     ) {}
 
     /**
@@ -46,6 +47,9 @@ class MemberService
                     $member->enrollInProgram($programId, 'active');
                 }
             }
+
+            // Send registration received notification
+            $this->notificationService->sendRegistrationReceived($member);
 
             return $member;
         });
@@ -87,12 +91,21 @@ class MemberService
                 ]);
             }
 
+            // Send welcome notification with temporary password
+            $temporaryPassword = $user->temporary_password ?? null;
+            if ($temporaryPassword) {
+                $this->notificationService->sendWelcomeEmail($member->fresh(), $temporaryPassword);
+            }
+
+            // Send approval notification
+            $this->notificationService->sendApprovalNotification($member->fresh());
+
             return [
                 'member' => $member->fresh(),
                 'user' => $user,
                 'schedules_count' => count($schedules),
                 'qr_code_url' => $qrCodeUrl,
-                'temporary_password' => $user->temporary_password ?? null,
+                'temporary_password' => $temporaryPassword,
             ];
         });
     }

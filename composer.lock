@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "583baba715f372a0a4ad733d192072b7",
+    "content-hash": "8f058ea98900fb1288700fb4f4e5056f",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -7140,6 +7140,97 @@
                 }
             ],
             "time": "2026-01-01T22:13:48+00:00"
+        },
+        {
+            "name": "textlk/textlk-laravel",
+            "version": "v1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/textlk/textlk-laravel.git",
+                "reference": "f26ac2f6311bdf0b50ba6052504ef90a4bd4e2e8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/textlk/textlk-laravel/zipball/f26ac2f6311bdf0b50ba6052504ef90a4bd4e2e8",
+                "reference": "f26ac2f6311bdf0b50ba6052504ef90a4bd4e2e8",
+                "shasum": ""
+            },
+            "require": {
+                "textlk/textlk-php": "^1.0.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "TextLK\\Laravel\\TextLKServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "TextLK\\Laravel\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Text.lk"
+                }
+            ],
+            "description": "Text.lk - SMS Gateway Sri Lanka",
+            "support": {
+                "issues": "https://github.com/textlk/textlk-laravel/issues",
+                "source": "https://github.com/textlk/textlk-laravel/tree/v1.1.0"
+            },
+            "time": "2025-12-31T10:58:09+00:00"
+        },
+        {
+            "name": "textlk/textlk-php",
+            "version": "v1.0.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/textlk/textlk-php.git",
+                "reference": "4a65f09a21d5ec98a090f327f5d19b8e81a55add"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/textlk/textlk-php/zipball/4a65f09a21d5ec98a090f327f5d19b8e81a55add",
+                "reference": "4a65f09a21d5ec98a090f327f5d19b8e81a55add",
+                "shasum": ""
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "TextLK\\TextLKServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "TextLK\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Chamara Indrajith",
+                    "email": "chamaraindrajith@coderog.com",
+                    "role": "Senior Software Engineer"
+                }
+            ],
+            "description": "PHP SDK for Text.lk - SMS Gateway Sri Lanka",
+            "support": {
+                "issues": "https://github.com/textlk/textlk-php/issues",
+                "source": "https://github.com/textlk/textlk-php/tree/v1.0.4"
+            },
+            "time": "2024-02-13T10:19:18+00:00"
         },
         {
             "name": "tightenco/ziggy",

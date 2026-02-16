@@ -24,7 +24,9 @@ import {
     FileText,
     UserCircle,
     Calendar,
-    MapPin
+    MapPin,
+    Settings,
+    MessageSquare
 } from 'lucide-react';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -77,6 +79,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: 'Reports',
             href: '/admin/reports/members',
             icon: FileText,
+        },
+        {
+            title: 'Settings',
+            href: '/admin/settings',
+            icon: Settings,
+        },
+        {
+            title: 'SMS Templates',
+            href: '/admin/sms-templates',
+            icon: MessageSquare,
         },
     ];
 

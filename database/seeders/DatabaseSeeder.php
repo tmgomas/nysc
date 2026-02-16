@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
             ProgramShortCodeSeeder::class,
             UserSeeder::class,
             MemberSeeder::class,
+            SettingSeeder::class,
+            SmsTemplateSeeder::class,
         ]);
     }
 }
