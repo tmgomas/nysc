@@ -30,7 +30,7 @@ class PaymentConfirmationNotification extends Notification implements ShouldQueu
         $channels = ['mail'];
         
         // Add SMS channel if member prefers SMS
-        if ($notifiable->member->preferred_contact_method === 'sms') {
+        if ($notifiable->preferred_contact_method === 'sms') {
             $channels[] = \TextLK\Laravel\TextLKSMSChannel::class;
         }
         
@@ -61,10 +61,21 @@ class PaymentConfirmationNotification extends Notification implements ShouldQueu
      */
     public function toTextlk(object $notifiable): TextLKSMSMessage
     {
-        $sportName = $this->payment->items->first()?->sport?->name ?? 'Membership';
+        $sportName = $this->payment->program ? $this->payment->program->name : 'Membership';
         $amount = number_format($this->payment->amount, 2);
         
-        $message = "Payment received! Rs.{$amount} for {$sportName}. Receipt #{$this->payment->id}. Thank you!";
+        $template = \App\Models\SmsTemplate::where('key', 'payment.received')->first();
+        
+        if ($template) {
+            $content = $template->content;
+            $content = str_replace('{amount}', $amount, $content);
+            $content = str_replace('{description}', $sportName, $content);
+            $content = str_replace('{receipt_number}', $this->payment->receipt_number ?? $this->payment->id, $content);
+            
+            $message = $content;
+        } else {
+            $message = "Payment received! Rs.{$amount} for {$sportName}. Receipt #{$this->payment->id}. Thank you!";
+        }
         
         return (new TextLKSMSMessage())
             ->message($message)

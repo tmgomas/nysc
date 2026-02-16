@@ -106,6 +106,26 @@ class ProcessPaymentAction
                     'type' => $type->value,
                 ]);
 
+                // Send notification
+                try {
+                    $member->notify(new \App\Notifications\PaymentConfirmationNotification($payment));
+                } catch (\Exception $e) {
+                    Log::error('Failed to send payment notification', [
+                        'payment_id' => $payment->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+
+                // Send notification
+                try {
+                    $member->notify(new \App\Notifications\PaymentConfirmationNotification($payment));
+                } catch (\Exception $e) {
+                    Log::error('Failed to send payment notification', [
+                        'payment_id' => $payment->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+
                 return $payment;
 
             } catch (\Exception $e) {
