@@ -139,10 +139,12 @@ class PaymentController extends Controller
         $member = Member::findOrFail($validated['member_id']);
         $method = PaymentMethod::from($validated['payment_method']);
 
+        $sharedReceiptNumber = (new \App\Actions\GenerateReceiptNumberAction())->execute(now());
+
         // Process all schedules in a transaction
         $processedCount = 0;
         
-        \DB::transaction(function () use ($member, $validated, $method, &$processedCount) {
+        \DB::transaction(function () use ($member, $validated, $method, $sharedReceiptNumber, &$processedCount) {
             foreach ($validated['schedule_ids'] as $scheduleId) {
                 $schedule = \App\Models\MemberPaymentSchedule::where('id', $scheduleId)
                     ->where('member_id', $member->id)
@@ -157,7 +159,8 @@ class PaymentController extends Controller
                         $method->value,
                         null,
                         null,
-                        $schedule->program_id
+                        $schedule->program_id,
+                        $sharedReceiptNumber
                     );
                     $processedCount++;
                 }

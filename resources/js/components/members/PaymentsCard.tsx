@@ -27,7 +27,7 @@ import {
     Square
 } from 'lucide-react';
 import type { Member } from './types';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Fragment } from 'react';
 
 interface PaymentsCardProps {
     member: Member;
@@ -241,126 +241,258 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
 
                     {(pendingSchedules.length > 0 || pendingPayments.length > 0) ? (
                         <div className="space-y-6">
-                            {/* Pending Payments (Admission/Initial) - Mobile Cards */}
+                            {/* Pending Payments (Admission/Initial) */}
                             {pendingPayments.length > 0 && (
-                                <div className="space-y-3">
+                                <div className="space-y-4">
                                     <h5 className="text-xs font-semibold text-muted-foreground uppercase">Initial Payments</h5>
-                                    {pendingPayments.map(payment => {
-                                        const isExpanded = expandedPayments.has(payment.id);
-                                        const hasItems = payment.items && payment.items.length > 0;
-                                        const overdue = payment.due_date && isOverdue(payment.due_date);
 
-                                        return (
-                                            <div
-                                                key={payment.id}
-                                                className={`border rounded-lg overflow-hidden transition-all ${overdue ? 'border-red-200 bg-red-50/50' : 'border-amber-200 bg-amber-50/50'
-                                                    }`}
-                                            >
-                                                <div className="p-4">
-                                                    <div className="flex items-start justify-between gap-4">
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-2 mb-2">
-                                                                <Badge variant={overdue ? "destructive" : "secondary"} className="text-xs">
-                                                                    {payment.type.toUpperCase()}
-                                                                </Badge>
-                                                                {payment.receipt_number && (
-                                                                    <span className="text-xs font-mono text-muted-foreground flex items-center gap-1">
-                                                                        <Receipt className="h-3 w-3" />
-                                                                        {payment.receipt_number}
-                                                                    </span>
-                                                                )}
-                                                                {overdue && (
-                                                                    <Badge variant="destructive" className="text-xs">
-                                                                        <AlertCircle className="h-3 w-3 mr-1" />
-                                                                        Overdue
-                                                                    </Badge>
-                                                                )}
-                                                            </div>
+                                    {/* Desktop Table View */}
+                                    <div className="hidden md:block border rounded-lg overflow-hidden">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead className="w-[50px]"></TableHead>
+                                                    <TableHead>Type</TableHead>
+                                                    <TableHead>Due Date</TableHead>
+                                                    <TableHead>Status</TableHead>
+                                                    <TableHead className="text-right">Amount</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {pendingPayments.map(payment => {
+                                                    const isExpanded = expandedPayments.has(payment.id);
+                                                    const hasItems = payment.items && payment.items.length > 0;
+                                                    const overdue = payment.due_date && isOverdue(payment.due_date);
 
-                                                            {payment.notes && (
-                                                                <p className="text-sm text-muted-foreground mb-2">{payment.notes}</p>
-                                                            )}
-
-                                                            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                                                                {payment.due_date && (
-                                                                    <span className="flex items-center gap-1">
-                                                                        <Calendar className="h-3 w-3" />
-                                                                        Due: {formatDate(payment.due_date)}
-                                                                    </span>
-                                                                )}
-                                                                {hasItems && (
-                                                                    <Badge variant="outline" className="text-xs">
-                                                                        {payment.items?.length} {payment.items?.length === 1 ? 'item' : 'items'}
-                                                                    </Badge>
-                                                                )}
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="flex flex-col items-end gap-2">
-                                                            <div className="text-right">
-                                                                <div className="text-2xl font-bold text-amber-600">
-                                                                    Rs. {Number(payment.amount).toLocaleString()}
-                                                                </div>
-                                                            </div>
-
-                                                            {hasItems && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    onClick={() => togglePaymentExpansion(payment.id)}
-                                                                    className="h-7 text-xs"
-                                                                >
-                                                                    {isExpanded ? (
-                                                                        <>
-                                                                            <ChevronUp className="h-3 w-3 mr-1" />
-                                                                            Hide Details
-                                                                        </>
-                                                                    ) : (
-                                                                        <>
-                                                                            <ChevronDown className="h-3 w-3 mr-1" />
-                                                                            View Details
-                                                                        </>
-                                                                    )}
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Expandable Payment Items */}
-                                                {hasItems && isExpanded && (
-                                                    <div className="border-t bg-white/50">
-                                                        <div className="p-4 space-y-2">
-                                                            <div className="text-xs font-semibold text-muted-foreground mb-3">Payment Breakdown:</div>
-                                                            {payment.items?.map(item => (
-                                                                <div key={item.id} className="flex items-center justify-between py-2 px-3 rounded bg-muted/30">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
-                                                                        <div>
-                                                                            <div className="text-sm font-medium">
-                                                                                {item.description || `${item.type} - ${item.program?.name}`}
-                                                                            </div>
-                                                                            {item.month_year && (
-                                                                                <div className="text-xs text-muted-foreground">{item.month_year}</div>
+                                                    return (
+                                                        <Fragment key={payment.id}>
+                                                            <TableRow className={`hover:bg-muted/50 border-b-0 ${overdue ? 'bg-red-50/30' : ''}`}>
+                                                                <TableCell>
+                                                                    {hasItems && (
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-8 w-8"
+                                                                            onClick={() => togglePaymentExpansion(payment.id)}
+                                                                        >
+                                                                            {isExpanded ? (
+                                                                                <ChevronUp className="h-4 w-4" />
+                                                                            ) : (
+                                                                                <ChevronDown className="h-4 w-4" />
                                                                             )}
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-3">
-                                                                        <Badge variant="secondary" className="text-xs">
-                                                                            {item.program?.name || 'General'}
+                                                                        </Button>
+                                                                    )}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex flex-col gap-1.5 items-start">
+                                                                        {hasItems && (
+                                                                            <div className="flex gap-1 flex-wrap">
+                                                                                {Array.from(new Set(payment.items?.map(item => item.program?.name).filter(Boolean))).map((programName, i) => (
+                                                                                    <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 h-4 flex items-center">
+                                                                                        {String(programName)}
+                                                                                    </Badge>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                        <Badge variant={overdue ? "destructive" : "secondary"} className="text-xs">
+                                                                            {payment.type.toUpperCase()}
                                                                         </Badge>
-                                                                        <div className="font-mono text-sm font-medium">
-                                                                            Rs. {Number(item.amount).toLocaleString()}
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                                                                        <Calendar className="h-3 w-3" />
+                                                                        {payment.due_date ? formatDate(payment.due_date) : '-'}
+                                                                    </span>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    {overdue ? (
+                                                                        <Badge variant="destructive" className="text-xs">
+                                                                            <AlertCircle className="h-3 w-3 mr-1" />
+                                                                            Overdue
+                                                                        </Badge>
+                                                                    ) : (
+                                                                        <Badge variant="outline" className="text-xs text-amber-600 border-amber-200 bg-amber-50">
+                                                                            Pending
+                                                                        </Badge>
+                                                                    )}
+                                                                </TableCell>
+                                                                <TableCell className="text-right font-mono font-bold text-amber-600">
+                                                                    Rs. {Number(payment.amount).toLocaleString()}
+                                                                </TableCell>
+                                                            </TableRow>
+                                                            {isExpanded && hasItems && (
+                                                                <TableRow className="bg-muted/30 hover:bg-muted/30">
+                                                                    <TableCell colSpan={5} className="p-0">
+                                                                        <div className="p-4 pl-14">
+                                                                            <div className="space-y-2">
+                                                                                <div className="text-xs font-semibold text-muted-foreground mb-2">Payment Breakdown:</div>
+                                                                                <div className="grid gap-2">
+                                                                                    {payment.items?.map(item => (
+                                                                                        <div key={item.id} className="flex items-center justify-between p-2 rounded bg-background border text-sm">
+                                                                                            <div className="flex items-center gap-3">
+                                                                                                <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                                                                                                <div>
+                                                                                                    <div className="font-medium">
+                                                                                                        {item.description || `${item.type} - ${item.program?.name}`}
+                                                                                                    </div>
+                                                                                                    {item.month_year && (
+                                                                                                        <div className="text-xs text-muted-foreground">{item.month_year}</div>
+                                                                                                    )}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div className="flex items-center gap-4">
+                                                                                                <Badge variant="secondary" className="text-xs">
+                                                                                                    {item.program?.name || 'General'}
+                                                                                                </Badge>
+                                                                                                <div className="font-mono font-medium">
+                                                                                                    Rs. {Number(item.amount).toLocaleString()}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </div>
+                                                                            </div>
                                                                         </div>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            )}
+                                                        </Fragment>
+                                                    );
+                                                })}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+
+                                    {/* Mobile Card View */}
+                                    <div className="md:hidden space-y-3">
+                                        {pendingPayments.map(payment => {
+                                            const isExpanded = expandedPayments.has(payment.id);
+                                            const hasItems = payment.items && payment.items.length > 0;
+                                            const overdue = payment.due_date && isOverdue(payment.due_date);
+
+                                            return (
+                                                <div
+                                                    key={payment.id}
+                                                    className={`border rounded-lg overflow-hidden transition-all bg-card shadow-sm ${overdue ? 'border-red-200' : 'border-amber-200'}`}
+                                                >
+                                                    <div className="p-4">
+                                                        <div className="flex items-start justify-between gap-4">
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                                                    {overdue ? (
+                                                                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-5 flex items-center">
+                                                                            <AlertCircle className="h-3 w-3 mr-1" />
+                                                                            OVERDUE
+                                                                        </Badge>
+                                                                    ) : (
+                                                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 flex items-center text-amber-600 border-amber-200 bg-amber-50">
+                                                                            PENDING
+                                                                        </Badge>
+                                                                    )}
+                                                                    {hasItems && Array.from(new Set(payment.items?.map(item => item.program?.name).filter(Boolean))).map((programName, i) => (
+                                                                        <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 h-5 flex items-center bg-primary/10 hover:bg-primary/20">
+                                                                            {String(programName)}
+                                                                        </Badge>
+                                                                    ))}
+                                                                    <Badge variant="outline" className="text-xs">
+                                                                        {payment.type.toUpperCase()}
+                                                                    </Badge>
+                                                                    {payment.receipt_number && (
+                                                                        <span className="text-xs font-mono text-muted-foreground flex items-center gap-1">
+                                                                            <Receipt className="h-3 w-3" />
+                                                                            {payment.receipt_number}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+
+                                                                {payment.notes && (
+                                                                    <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{payment.notes}</p>
+                                                                )}
+
+                                                                <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                                                                    {payment.due_date && (
+                                                                        <span className="flex items-center gap-1">
+                                                                            <Calendar className="h-3 w-3" />
+                                                                            Due: {formatDate(payment.due_date)}
+                                                                        </span>
+                                                                    )}
+                                                                    {hasItems && (
+                                                                        <span className="flex items-center gap-1">
+                                                                            <Badge variant="outline" className="text-xs">
+                                                                                {payment.items?.length} {payment.items?.length === 1 ? 'item' : 'items'}
+                                                                            </Badge>
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="flex flex-col items-end gap-2">
+                                                                <div className="text-right">
+                                                                    <div className="text-xl font-bold text-amber-600">
+                                                                        Rs. {Number(payment.amount).toLocaleString()}
                                                                     </div>
                                                                 </div>
-                                                            ))}
+
+                                                                {hasItems && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        onClick={() => togglePaymentExpansion(payment.id)}
+                                                                        className="h-7 text-xs"
+                                                                    >
+                                                                        {isExpanded ? (
+                                                                            <>
+                                                                                <ChevronUp className="h-3 w-3 mr-1" />
+                                                                                Hide
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <ChevronDown className="h-3 w-3 mr-1" />
+                                                                                Details
+                                                                            </>
+                                                                        )}
+                                                                    </Button>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
+
+                                                    {/* Expandable Payment Items */}
+                                                    {hasItems && isExpanded && (
+                                                        <div className="border-t bg-muted/20">
+                                                            <div className="p-4 space-y-2">
+                                                                <div className="text-xs font-semibold text-muted-foreground mb-3">Payment Breakdown:</div>
+                                                                {payment.items?.map(item => (
+                                                                    <div key={item.id} className="flex items-center justify-between py-2 px-3 rounded bg-card">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                                                                            <div>
+                                                                                <div className="text-sm font-medium">
+                                                                                    {item.description || `${item.type} - ${item.program?.name}`}
+                                                                                </div>
+                                                                                {item.month_year && (
+                                                                                    <div className="text-xs text-muted-foreground">{item.month_year}</div>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-3">
+                                                                            <Badge variant="secondary" className="text-xs">
+                                                                                {item.program?.name || 'General'}
+                                                                            </Badge>
+                                                                            <div className="font-mono text-sm font-medium">
+                                                                                Rs. {Number(item.amount).toLocaleString()}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             )}
 
@@ -452,7 +584,7 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
                                                                                     Overdue
                                                                                 </Badge>
                                                                             ) : (
-                                                                                <Badge variant="outline" className="text-xs">
+                                                                                <Badge variant="outline" className="text-xs text-amber-600 border-amber-200 bg-amber-50">
                                                                                     Pending
                                                                                 </Badge>
                                                                             )}
@@ -484,14 +616,20 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
                                                                     )}
                                                                     <div className="flex-1">
                                                                         <div className="flex items-center justify-between mb-2">
-                                                                            <Badge variant="secondary" className="text-xs">
-                                                                                {schedule.program?.name || 'General'}
-                                                                            </Badge>
-                                                                            {overdue && (
-                                                                                <Badge variant="destructive" className="text-xs">
-                                                                                    Overdue
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Badge variant="secondary" className="text-xs">
+                                                                                    {schedule.program?.name || 'General'}
                                                                                 </Badge>
-                                                                            )}
+                                                                                {overdue ? (
+                                                                                    <Badge variant="destructive" className="text-xs">
+                                                                                        Overdue
+                                                                                    </Badge>
+                                                                                ) : (
+                                                                                    <Badge variant="outline" className="text-xs text-amber-600 border-amber-200 bg-amber-50">
+                                                                                        Pending
+                                                                                    </Badge>
+                                                                                )}
+                                                                            </div>
                                                                         </div>
                                                                         <div className="flex items-center justify-between">
                                                                             <div className="text-xs text-muted-foreground">
@@ -543,6 +681,7 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
+                                            <TableHead className="w-[50px]"></TableHead>
                                             <TableHead>Type</TableHead>
                                             <TableHead>Receipt</TableHead>
                                             <TableHead>Date</TableHead>
@@ -554,56 +693,123 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
                                     <TableBody>
                                         {recentPayments.map(payment => {
                                             const hasItems = payment.items && payment.items.length > 0;
+                                            const isExpanded = expandedPayments.has(payment.id);
+
                                             return (
-                                                <TableRow key={payment.id} className="hover:bg-muted/50">
-                                                    <TableCell>
-                                                        <Badge variant="outline" className="text-xs">
-                                                            {payment.type.toUpperCase()}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {payment.receipt_number ? (
-                                                            <span className="text-xs font-mono flex items-center gap-1">
-                                                                <Receipt className="h-3 w-3" />
-                                                                {payment.receipt_number}
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-xs text-muted-foreground">-</span>
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <span className="text-sm text-muted-foreground">
-                                                            {formatDate(payment.paid_date || payment.created_at)}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {payment.payment_method ? (
-                                                            <div className="flex items-center gap-1.5">
-                                                                {getPaymentMethodIcon(payment.payment_method)}
-                                                                <span className="text-sm capitalize">
-                                                                    {getPaymentMethodLabel(payment.payment_method)}
-                                                                </span>
-                                                            </div>
-                                                        ) : (
-                                                            <span className="text-xs text-muted-foreground">N/A</span>
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge
-                                                            variant={payment.status === 'verified' ? 'default' : 'secondary'}
-                                                            className="text-xs"
-                                                        >
-                                                            {payment.status === 'verified' ? (
-                                                                <><CheckCircle2 className="h-3 w-3 mr-1" />VERIFIED</>
-                                                            ) : (
-                                                                'PAID'
+                                                <>
+                                                    <TableRow key={payment.id} className="hover:bg-muted/50 border-b-0">
+                                                        <TableCell>
+                                                            {hasItems && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8"
+                                                                    onClick={() => togglePaymentExpansion(payment.id)}
+                                                                >
+                                                                    {isExpanded ? (
+                                                                        <ChevronUp className="h-4 w-4" />
+                                                                    ) : (
+                                                                        <ChevronDown className="h-4 w-4" />
+                                                                    )}
+                                                                </Button>
                                                             )}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="text-right font-mono font-semibold text-green-600">
-                                                        Rs. {Number(payment.amount).toLocaleString()}
-                                                    </TableCell>
-                                                </TableRow>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex flex-col gap-1.5 items-start">
+                                                                {hasItems && (
+                                                                    <div className="flex gap-1 flex-wrap">
+                                                                        {Array.from(new Set(payment.items?.map(item => item.program?.name).filter(Boolean))).map((programName, i) => (
+                                                                            <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 h-4 flex items-center">
+                                                                                {String(programName)}
+                                                                            </Badge>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                                <Badge variant="outline" className="text-xs">
+                                                                    {payment.type.toUpperCase()}
+                                                                </Badge>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {payment.receipt_number ? (
+                                                                <span className="text-xs font-mono flex items-center gap-1">
+                                                                    <Receipt className="h-3 w-3" />
+                                                                    {payment.receipt_number}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-xs text-muted-foreground">-</span>
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <span className="text-sm text-muted-foreground">
+                                                                {formatDate(payment.paid_date || payment.created_at)}
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {payment.payment_method ? (
+                                                                <div className="flex items-center gap-1.5">
+                                                                    {getPaymentMethodIcon(payment.payment_method)}
+                                                                    <span className="text-sm capitalize">
+                                                                        {getPaymentMethodLabel(payment.payment_method)}
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-xs text-muted-foreground">N/A</span>
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Badge
+                                                                variant={payment.status === 'verified' ? 'default' : 'secondary'}
+                                                                className="text-xs"
+                                                            >
+                                                                {payment.status === 'verified' ? (
+                                                                    <><CheckCircle2 className="h-3 w-3 mr-1" />VERIFIED</>
+                                                                ) : (
+                                                                    'PAID'
+                                                                )}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="text-right font-mono font-semibold text-green-600">
+                                                            Rs. {Number(payment.amount).toLocaleString()}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                    {isExpanded && hasItems && (
+                                                        <TableRow className="bg-muted/30 hover:bg-muted/30">
+                                                            <TableCell colSpan={7} className="p-0">
+                                                                <div className="p-4 pl-14">
+                                                                    <div className="space-y-2">
+                                                                        <div className="text-xs font-semibold text-muted-foreground mb-2">Payment Breakdown:</div>
+                                                                        <div className="grid gap-2">
+                                                                            {payment.items?.map(item => (
+                                                                                <div key={item.id} className="flex items-center justify-between p-2 rounded bg-background border text-sm">
+                                                                                    <div className="flex items-center gap-3">
+                                                                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                                                                                        <div>
+                                                                                            <div className="font-medium">
+                                                                                                {item.description || `${item.type} - ${item.program?.name}`}
+                                                                                            </div>
+                                                                                            {item.month_year && (
+                                                                                                <div className="text-xs text-muted-foreground">{item.month_year}</div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div className="flex items-center gap-4">
+                                                                                        <Badge variant="secondary" className="text-xs">
+                                                                                            {item.program?.name || 'General'}
+                                                                                        </Badge>
+                                                                                        <div className="font-mono font-medium">
+                                                                                            Rs. {Number(item.amount).toLocaleString()}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )}
+                                                </>
                                             );
                                         })}
                                     </TableBody>
@@ -635,6 +841,11 @@ export function PaymentsCard({ member, onRecordPayment }: PaymentsCardProps) {
                                                                     'PAID'
                                                                 )}
                                                             </Badge>
+                                                            {hasItems && Array.from(new Set(payment.items?.map(item => item.program?.name).filter(Boolean))).map((programName, i) => (
+                                                                <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 h-5 flex items-center bg-primary/10 hover:bg-primary/20">
+                                                                    {String(programName)}
+                                                                </Badge>
+                                                            ))}
                                                             <Badge variant="outline" className="text-xs">
                                                                 {payment.type.toUpperCase()}
                                                             </Badge>

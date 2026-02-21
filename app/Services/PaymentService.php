@@ -61,7 +61,8 @@ class PaymentService
         string $paymentMethod,
         ?string $receiptUrl = null,
         ?string $referenceNumber = null,
-        ?string $programId = null
+        ?string $programId = null,
+        ?string $receiptNumber = null
     ): Payment {
         // Option 1: Pay for specific program
         if ($programId) {
@@ -79,15 +80,17 @@ class PaymentService
                 1,
                 $receiptUrl,
                 $referenceNumber,
-                $programId
+                $programId,
+                $receiptNumber
             );
         }
 
         // Option 2: Pay for ALL active programs (Split into individual records)
         $programs = $member->activePrograms;
         $payments = [];
+        $sharedReceiptNumber = $receiptNumber ?? (new \App\Actions\GenerateReceiptNumberAction())->execute(now());
 
-        DB::transaction(function () use ($member, $programs, $monthYear, $paymentMethod, $receiptUrl, $referenceNumber, &$payments) {
+        DB::transaction(function () use ($member, $programs, $monthYear, $paymentMethod, $receiptUrl, $referenceNumber, $sharedReceiptNumber, &$payments) {
             foreach ($programs as $program) {
                 // Check if already paid for this month to avoid duplicates
                 $isPaid = MemberPaymentSchedule::where('member_id', $member->id)
@@ -107,7 +110,8 @@ class PaymentService
                     1,
                     $receiptUrl,
                     $referenceNumber,
-                    $program->id
+                    $program->id,
+                    $sharedReceiptNumber
                 );
             }
         });

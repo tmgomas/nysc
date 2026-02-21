@@ -73,23 +73,7 @@ class MemberService
             // Generate QR code
             $qrCodeUrl = $this->generateQRCode->execute($member);
 
-            // Create Admission Fee Payment
-            $admissionFee = $member->programs->sum('admission_fee');
-            if ($admissionFee > 0) {
-                \App\Models\Payment::create([
-                    'member_id' => $member->id,
-                    'type' => \App\Enums\PaymentType::ADMISSION,
-                    'amount' => $admissionFee,
-                    'month_year' => now()->format('Y-m'),
-                    'status' => \App\Enums\PaymentStatus::VERIFIED,
-                    'paid_date' => now(),
-                    'due_date' => now(),
-                    'payment_method' => \App\Enums\PaymentMethod::CASH,
-                    'verified_by' => \Illuminate\Support\Facades\Auth::id(),
-                    'verified_at' => now(),
-                    'notes' => 'Admission fee collected upon registration approval',
-                ]);
-            }
+            // Admission fee payment is now handled by ApproveMemberRegistrationAction -> CreatePendingAdmissionPaymentAction
 
             // Send welcome notification with temporary password
             $temporaryPassword = $user->temporary_password ?? null;
@@ -151,7 +135,10 @@ class MemberService
                 // 1. Create Admission Fee Payment for new programs
                 $additionalAdmissionFee = $addedPrograms->sum('admission_fee');
                 if ($additionalAdmissionFee > 0) {
-                    \App\Models\Payment::create([
+                    $receiptGenerator = new \App\Actions\GenerateReceiptNumberAction();
+                    $receiptNumber = $receiptGenerator->execute(now());
+                    
+                    $payment = \App\Models\Payment::create([
                         'member_id' => $member->id,
                         'type' => \App\Enums\PaymentType::ADMISSION,
                         'amount' => $additionalAdmissionFee,
@@ -160,8 +147,23 @@ class MemberService
                         'due_date' => now()->addDays(7), // Give 7 days to pay
                         'paid_date' => null, // Not paid yet
                         'payment_method' => null, // Will be set when paid
+                        'receipt_number' => $receiptNumber,
                         'notes' => 'Admission fee for newly added programs: ' . $addedPrograms->pluck('name')->implode(', '),
                     ]);
+
+                    // Add items for the new programs so UI can render breakdowns
+                    foreach ($addedPrograms as $program) {
+                        if ($program->admission_fee > 0) {
+                            \App\Models\PaymentItem::create([
+                                'payment_id' => $payment->id,
+                                'program_id' => $program->id,
+                                'type' => \App\Enums\PaymentType::ADMISSION,
+                                'amount' => $program->admission_fee,
+                                'month_year' => null,
+                                'description' => "{$program->name} - Admission Fee",
+                            ]);
+                        }
+                    }
                 }
 
                 // 2. Generate schedules for new programs (starting current month)

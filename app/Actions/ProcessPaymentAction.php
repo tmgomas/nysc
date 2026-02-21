@@ -42,7 +42,8 @@ class ProcessPaymentAction
         int $monthsCount = 1,
         ?string $receiptUrl = null,
         ?string $referenceNumber = null,
-        ?string $programId = null
+        ?string $programId = null,
+        ?string $receiptNumber = null
     ): Payment {
         // Validate payment amount
         $this->validateAmount($amount);
@@ -69,9 +70,8 @@ class ProcessPaymentAction
                         : $referenceGenerator->executeForMultiplePrograms($dueDate);
                 }
 
-                // Generate receipt number
-                $receiptGenerator = new GenerateReceiptNumberAction();
-                $receiptNumber = $receiptGenerator->execute(now());
+                // Generate receipt number if not provided
+                $finalReceiptNumber = $receiptNumber ?? (new GenerateReceiptNumberAction())->execute(now());
 
                 // Create payment record
                 $payment = Payment::create([
@@ -87,7 +87,7 @@ class ProcessPaymentAction
                     'payment_method' => $paymentMethod,
                     'receipt_url' => $receiptUrl,
                     'reference_number' => $referenceNumber,
-                    'receipt_number' => $receiptNumber,
+                    'receipt_number' => $finalReceiptNumber,
                 ]);
 
                 // Update payment schedules if monthly or bulk payment
