@@ -20,6 +20,9 @@ import 'features/coach/data/datasources/coach_remote_datasource.dart';
 import 'features/coach/data/repositories/coach_repository.dart';
 import 'features/coach/presentation/cubit/coach_dashboard_cubit.dart';
 import 'features/coach/presentation/cubit/coach_attendance_cubit.dart';
+import 'features/absences/data/datasources/absence_remote_datasource.dart';
+import 'features/absences/data/repositories/absence_repository.dart';
+import 'features/absences/presentation/cubit/absence_cubit.dart';
 
 final getIt = GetIt.instance;
 
@@ -97,4 +100,17 @@ Future<void> setupDependencies() async {
   // ── Coach: Cubits ─────────────────────────────────────
   getIt.registerFactory(() => CoachDashboardCubit(getIt<CoachRepository>()));
   getIt.registerFactory(() => CoachAttendanceCubit(getIt<CoachRepository>()));
+
+  // ── Absences: Data Sources ────────────────────────────
+  getIt.registerLazySingleton<AbsenceRemoteDataSource>(
+    () => AbsenceRemoteDataSource(getIt<ApiClient>()),
+  );
+
+  // ── Absences: Repository ──────────────────────────────
+  getIt.registerLazySingleton<AbsenceRepository>(
+    () => AbsenceRepository(getIt<AbsenceRemoteDataSource>()),
+  );
+
+  // ── Absences: Cubit ───────────────────────────────────
+  getIt.registerFactory(() => AbsenceCubit(getIt<AbsenceRepository>()));
 }

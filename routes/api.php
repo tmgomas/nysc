@@ -24,6 +24,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/payments', [MemberPaymentController::class, 'index'])->name('payments.index');
         Route::get('/attendance', [MemberAttendanceController::class, 'index'])->name('attendance.index');
         Route::get('/schedule', [MemberScheduleController::class, 'index'])->name('schedule.index');
+
+        // Class Assignments & Absences
+        Route::get('/classes', [\App\Http\Controllers\Api\ClassAbsenceApiController::class, 'myClasses'])->name('classes.index');
+        Route::get('/absences', [\App\Http\Controllers\Api\ClassAbsenceApiController::class, 'myAbsences'])->name('absences.index');
+        Route::post('/absences', [\App\Http\Controllers\Api\ClassAbsenceApiController::class, 'reportAbsence'])->name('absences.store');
+        Route::get('/absences/{absence}/makeup-slots', [\App\Http\Controllers\Api\ClassAbsenceApiController::class, 'availableMakeupSlots'])->name('absences.makeup-slots');
+        Route::post('/absences/{absence}/select-makeup', [\App\Http\Controllers\Api\ClassAbsenceApiController::class, 'selectMakeup'])->name('absences.select-makeup');
     });
 
     // Coach routes

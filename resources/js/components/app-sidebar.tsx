@@ -24,6 +24,7 @@ import {
     FileText,
     UserCircle,
     Calendar,
+    CalendarX,
     MapPin,
     Settings,
     MessageSquare
@@ -69,6 +70,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: 'Schedule',
             href: '/admin/schedule',
             icon: Calendar,
+        },
+        {
+            title: 'Class Absences',
+            href: '/admin/class-absences',
+            icon: CalendarX,
         },
         {
             title: 'Locations',

@@ -1,13 +1,85 @@
+export interface ScheduleDay {
+    day: string;
+    start_time: string;
+    end_time: string;
+}
+
 export interface Program {
     id: string;
     name: string;
     admission_fee: number;
     monthly_fee: number;
+    schedule_type?: string | null;
+    schedule?: ScheduleDay[] | null;
+    weekly_limit?: number | null;
+    location?: {
+        name: string;
+    } | null;
     pivot: {
         status: string;
         enrolled_at: string;
         program_reference?: string;
     };
+}
+
+export interface ProgramClass {
+    id: string;
+    program_id: string;
+    label: string;
+    day_of_week: string;
+    start_time: string;
+    end_time: string;
+    capacity: number | null;
+    is_active: boolean;
+    formatted_time?: string;
+    program?: { id: string; name: string };
+    coach?: { id: string; name: string } | null;
+    assigned_count?: number;
+    available_spots?: number;
+    is_full?: boolean;
+}
+
+export interface MemberProgramClass {
+    id: string;
+    member_id: string;
+    program_class_id: string;
+    assigned_at: string;
+    status: 'active' | 'dropped';
+    notes?: string | null;
+    program_class: ProgramClass;
+}
+
+export interface UpcomingClass {
+    id: string;
+    program_class_id: string;
+    program_name: string;
+    label: string;
+    day_of_week: string;
+    date: string;
+    start_time: string;
+    end_time: string;
+    formatted_time: string;
+    coach_name: string | null;
+}
+
+export interface ClassAbsence {
+    id: string;
+    member_id: string;
+    program_class_id: string;
+    absent_date: string;
+    reason?: string | null;
+    status: 'pending' | 'approved' | 'rejected' | 'makeup_selected' | 'completed' | 'expired' | 'no_makeup';
+    approved_by?: string | null;
+    approved_at?: string | null;
+    admin_notes?: string | null;
+    makeup_class_id?: string | null;
+    makeup_date?: string | null;
+    makeup_deadline?: string | null;
+    days_left?: number | null;
+    program_class?: ProgramClass;
+    makeup_class?: ProgramClass | null;
+    member?: { id: string; full_name: string; member_number: string };
+    approved_by_user?: { name: string } | null;
 }
 
 export interface User {
@@ -102,6 +174,8 @@ export interface Member {
     // Relations
     user?: User;
     programs: Program[];
+    program_classes?: MemberProgramClass[];
+    absences?: ClassAbsence[];
 
     // Meta
     created_at: string;

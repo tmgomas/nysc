@@ -44,17 +44,20 @@ import MemberRFIDCard from '@/components/RFID/MemberRFIDCard';
 import { ApproveDialog } from '@/components/members/dialogs/ApproveDialog';
 import { ManageProgramsDialog } from '@/components/members/dialogs/ManageProgramsDialog';
 import { PaymentDialog } from '@/components/members/dialogs/PaymentDialog';
+import { ClassAssignmentCard } from '@/components/members/ClassAssignmentCard';
 
 // Import types
-import type { Member, MemberStatsData as Stats, AvailableProgram } from '@/components/members/types';
+import type { Member, MemberStatsData as Stats, AvailableProgram, ProgramClass, UpcomingClass } from '@/components/members/types';
 
 interface Props {
     member: Member;
     stats: Stats;
     availablePrograms: AvailableProgram[];
+    availableClasses?: ProgramClass[];
+    upcomingClasses?: UpcomingClass[];
 }
 
-export default function Show({ member, stats, availablePrograms }: Props) {
+export default function Show({ member, stats, availablePrograms, availableClasses = [], upcomingClasses = [] }: Props) {
     // Dialog states
     const [isApproveOpen, setIsApproveOpen] = useState(false);
     const [isEditProgramsOpen, setIsEditProgramsOpen] = useState(false);
@@ -514,6 +517,32 @@ export default function Show({ member, stats, availablePrograms }: Props) {
                                                     </span>
                                                 </div>
                                             )}
+                                            {(() => {
+                                                // Normalize both formats to array of days
+                                                let days: string[] = [];
+                                                if (Array.isArray(program.schedule) && program.schedule.length > 0) {
+                                                    // class_based array format
+                                                    days = program.schedule
+                                                        .map((s: any) => s.day || '')
+                                                        .filter(Boolean);
+                                                } else if (program.schedule && typeof program.schedule === 'object' && !Array.isArray(program.schedule)) {
+                                                    // practice_days object format: {Monday: {start,end}, ...}
+                                                    days = Object.keys(program.schedule as object);
+                                                }
+
+                                                const order: Record<string, number> = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, sunday: 7 };
+                                                const sorted = [...days].sort((a, b) => (order[a.toLowerCase()] ?? 8) - (order[b.toLowerCase()] ?? 8));
+
+                                                return sorted.length > 0 ? (
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {sorted.map((day, idx) => (
+                                                            <span key={idx} className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">
+                                                                {day.charAt(0).toUpperCase() + day.slice(1, 3)}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                ) : null;
+                                            })()}
                                         </div>
                                     ))}
                                     <Button
@@ -526,6 +555,7 @@ export default function Show({ member, stats, availablePrograms }: Props) {
                                     </Button>
                                 </CardContent>
                             </Card>
+
 
                             {/* Additional Info */}
                             <Card>
@@ -619,6 +649,18 @@ export default function Show({ member, stats, availablePrograms }: Props) {
                                     >
                                         <Dumbbell className="h-4 w-4 mr-2" />
                                         Programs
+                                    </TabsTrigger>
+                                    <TabsTrigger
+                                        value="classes"
+                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                                    >
+                                        <Calendar className="h-4 w-4 mr-2" />
+                                        Classes
+                                        {(member.absences ?? []).filter(a => a.status === 'pending').length > 0 && (
+                                            <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-yellow-500 text-white font-bold">
+                                                {(member.absences ?? []).filter(a => a.status === 'pending').length}
+                                            </span>
+                                        )}
                                     </TabsTrigger>
                                 </TabsList>
 
@@ -739,6 +781,15 @@ export default function Show({ member, stats, availablePrograms }: Props) {
                                     <ProgramsEnrollmentCard
                                         member={member}
                                         onManageClick={() => setIsEditProgramsOpen(true)}
+                                    />
+                                </TabsContent>
+
+                                {/* Classes Tab */}
+                                <TabsContent value="classes" className="mt-6">
+                                    <ClassAssignmentCard
+                                        member={member}
+                                        availableClasses={availableClasses}
+                                        upcomingClasses={upcomingClasses}
                                     />
                                 </TabsContent>
                             </Tabs>

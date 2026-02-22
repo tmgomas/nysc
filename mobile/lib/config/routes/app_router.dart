@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart';
@@ -6,6 +7,10 @@ import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/coach/presentation/pages/coach_home_page.dart';
+import '../../features/absences/presentation/pages/my_classes_page.dart';
+import '../../features/absences/presentation/pages/my_absences_page.dart';
+import '../../features/absences/presentation/cubit/absence_cubit.dart';
+import '../../injection_container.dart';
 
 /// GoRouter configuration with auth + role-based redirect.
 class AppRouter {
@@ -59,6 +64,20 @@ class AppRouter {
       GoRoute(
         path: '/coach',
         builder: (context, state) => const CoachHomePage(),
+      ),
+      GoRoute(
+        path: '/member/classes',
+        builder: (context, state) => BlocProvider(
+          create: (_) => getIt<AbsenceCubit>(),
+          child: const MyClassesPage(),
+        ),
+      ),
+      GoRoute(
+        path: '/member/absences',
+        builder: (context, state) => BlocProvider(
+          create: (_) => getIt<AbsenceCubit>(),
+          child: const MyAbsencesPage(),
+        ),
       ),
     ],
   );

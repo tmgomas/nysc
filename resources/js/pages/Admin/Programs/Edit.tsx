@@ -86,6 +86,17 @@ export default function EditProgram({ program, coaches, locations }: Props) {
     const [cancellingClass, setCancellingClass] = useState<ProgramClassItem | null>(null);
     const [cancelForm, setCancelForm] = useState({ cancelled_date: '', reason: '' });
 
+    // Practice schedule period state
+    const [practiceSchedulePeriod, setPracticeSchedulePeriod] = useState<{
+        valid_from: string;
+        valid_to: string;
+        preset: string;
+    }>({
+        valid_from: '',
+        valid_to: '',
+        preset: '',
+    });
+
     const openCancelDialog = (cls: ProgramClassItem) => {
         setCancellingClass(cls);
         setCancelForm({ cancelled_date: '', reason: '' });
@@ -177,6 +188,80 @@ export default function EditProgram({ program, coaches, locations }: Props) {
 
         setClassForm((prev) => ({ ...prev, valid_from: from, valid_to: to }));
     };
+
+    const applyPracticePreset = (preset: string) => {
+        const now = new Date();
+        let from = '';
+        let to = '';
+
+        switch (preset) {
+            case 'current_year':
+                from = `${now.getFullYear()}-01-01`;
+                to = `${now.getFullYear()}-12-31`;
+                break;
+            case '6_months': {
+                from = now.toISOString().split('T')[0];
+                const sixM = new Date(now);
+                sixM.setMonth(sixM.getMonth() + 6);
+                to = sixM.toISOString().split('T')[0];
+                break;
+            }
+            case '3_months': {
+                from = now.toISOString().split('T')[0];
+                const threeM = new Date(now);
+                threeM.setMonth(threeM.getMonth() + 3);
+                to = threeM.toISOString().split('T')[0];
+                break;
+            }
+            case '1_month': {
+                from = now.toISOString().split('T')[0];
+                const oneM = new Date(now);
+                oneM.setMonth(oneM.getMonth() + 1);
+                to = oneM.toISOString().split('T')[0];
+                break;
+            }
+            case 'custom':
+                from = '';
+                to = '';
+                break;
+        }
+
+        setPracticeSchedulePeriod({ preset, valid_from: from, valid_to: to });
+    };
+
+    const handleGeneratePracticeSchedule = () => {
+        if (selectedDays.length === 0) {
+            toast.error('Please select at least one practice day first');
+            return;
+        }
+        if (!practiceSchedulePeriod.valid_from || !practiceSchedulePeriod.valid_to) {
+            toast.error('Please select a schedule period');
+            return;
+        }
+
+        // Submit all selected days in one request (backend creates one row per day)
+        router.post(
+            `/admin/programs/${program.id}/classes`,
+            {
+                label: 'Practice',
+                days: selectedDays,
+                start_time: scheduleObj[selectedDays[0]]?.start || '16:00',
+                end_time: scheduleObj[selectedDays[0]]?.end || '18:00',
+                recurrence: 'weekly',
+                valid_from: practiceSchedulePeriod.valid_from,
+                valid_to: practiceSchedulePeriod.valid_to,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success(`Practice schedule generated for ${selectedDays.length} day(s)!`);
+                    setPracticeSchedulePeriod({ preset: '', valid_from: '', valid_to: '' });
+                },
+                onError: () => toast.error('Failed to generate schedule'),
+            }
+        );
+    };
+
 
     const toggleDay = (day: string) => {
         const current = { ...(data.schedule as Record<string, ScheduleDay>) };
@@ -556,7 +641,7 @@ export default function EditProgram({ program, coaches, locations }: Props) {
                                             <div>
                                                 <Label className="text-base font-medium">Practice Days & Times</Label>
                                                 <p className="text-sm text-muted-foreground mt-1">
-                                                    Click a day to toggle it on/off.
+                                                    Click a day to toggle it on/off, then set times.
                                                 </p>
                                             </div>
 
@@ -618,6 +703,94 @@ export default function EditProgram({ program, coaches, locations }: Props) {
                                                     <p className="text-sm text-muted-foreground">
                                                         Click on days above to set practice times
                                                     </p>
+                                                </div>
+                                            )}
+
+                                            {/* ── Schedule Period Generator ── */}
+                                            {selectedDays.length > 0 && (
+                                                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <Calendar className="h-4 w-4 text-primary" />
+                                                        <Label className="text-sm font-semibold text-primary">Generate Practice Schedule</Label>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Select a period to auto-add these practice days to the schedule table (same as Class-Based slots).
+                                                    </p>
+
+                                                    {/* Preset Buttons */}
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {[
+                                                            { label: 'Current Year', value: 'current_year' },
+                                                            { label: '6 Months', value: '6_months' },
+                                                            { label: '3 Months', value: '3_months' },
+                                                            { label: '1 Month', value: '1_month' },
+                                                            { label: 'Custom', value: 'custom' },
+                                                        ].map((preset) => (
+                                                            <Button
+                                                                key={preset.value}
+                                                                type="button"
+                                                                size="sm"
+                                                                variant={practiceSchedulePeriod.preset === preset.value ? 'default' : 'outline'}
+                                                                onClick={() => applyPracticePreset(preset.value)}
+                                                            >
+                                                                {preset.label}
+                                                            </Button>
+                                                        ))}
+                                                    </div>
+
+                                                    {/* Date Range inputs */}
+                                                    {practiceSchedulePeriod.preset && (
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            <div className="space-y-1">
+                                                                <Label className="text-xs text-muted-foreground">From</Label>
+                                                                <Input
+                                                                    type="date"
+                                                                    value={practiceSchedulePeriod.valid_from}
+                                                                    onChange={(e) =>
+                                                                        setPracticeSchedulePeriod((p) => ({
+                                                                            ...p,
+                                                                            valid_from: e.target.value,
+                                                                        }))
+                                                                    }
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <Label className="text-xs text-muted-foreground">To</Label>
+                                                                <Input
+                                                                    type="date"
+                                                                    value={practiceSchedulePeriod.valid_to}
+                                                                    onChange={(e) =>
+                                                                        setPracticeSchedulePeriod((p) => ({
+                                                                            ...p,
+                                                                            valid_to: e.target.value,
+                                                                        }))
+                                                                    }
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Generate button & summary */}
+                                                    {practiceSchedulePeriod.valid_from && practiceSchedulePeriod.valid_to && (
+                                                        <div className="flex items-start justify-between gap-4 pt-1 border-t border-primary/20">
+                                                            <p className="text-xs text-muted-foreground">
+                                                                Will add <strong>{selectedDays.length}</strong> day slot(s):{' '}
+                                                                <strong>{selectedDays.join(', ')}</strong>
+                                                                <br />
+                                                                Period: <strong>{practiceSchedulePeriod.valid_from}</strong> →{' '}
+                                                                <strong>{practiceSchedulePeriod.valid_to}</strong>
+                                                            </p>
+                                                            <Button
+                                                                type="button"
+                                                                size="sm"
+                                                                onClick={handleGeneratePracticeSchedule}
+                                                                className="shrink-0"
+                                                            >
+                                                                <Calendar className="h-3.5 w-3.5 mr-1.5" />
+                                                                Generate
+                                                            </Button>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>

@@ -116,42 +116,73 @@ class MemberService
     public function updatePrograms(Member $member, array $programIds): Member
     {
         return DB::transaction(function () use ($member, $programIds) {
-            // Get current program IDs to find additions
-            $currentProgramIds = $member->programs()->pluck('programs.id')->toArray();
+            // Get current enrolled programs with their pivot data
+            $currentPrograms = $member->programs()->get();
+            $currentProgramIds = $currentPrograms->pluck('id')->toArray();
             
-            // Sync programs with manual UUID generation for pivot table
-            $syncData = collect($programIds)->mapWithKeys(function ($id) {
-                return [$id => ['id' => (string) Str::uuid(), 'status' => 'active']];
-            })->all();
+            // Build sync data preserving existing attributes, assigning refs for new ones
+            $syncData = [];
+            $registrationReferenceGenerator = new \App\Actions\GenerateRegistrationReferenceAction();
+            
+            foreach ($programIds as $id) {
+                if (in_array($id, $currentProgramIds)) {
+                    // Existing program: Keep existing pivot data so we don't wipe it!
+                    $existingPivot = $currentPrograms->firstWhere('id', $id)->pivot;
+                    $syncData[$id] = [
+                        'id' => $existingPivot->id,
+                        'status' => $existingPivot->status ?? 'active',
+                        'program_reference' => $existingPivot->program_reference
+                    ];
+                } else {
+                    // New program added: Generate unique ID and program_reference
+                    $programReference = $registrationReferenceGenerator->execute(
+                        $id, 
+                        $member->registration_date ?? now()
+                    );
+                    
+                    $syncData[$id] = [
+                        'id' => (string) Str::uuid(), 
+                        'status' => 'active',
+                        'program_reference' => $programReference
+                    ];
+                }
+            }
             
             $member->programs()->sync($syncData);
 
-            // Find newly added programs
+            // Find newly added programs so we can invoice them
             $addedProgramIds = array_diff($programIds, $currentProgramIds);
             
             if (!empty($addedProgramIds)) {
                 $addedPrograms = \App\Models\Program::whereIn('id', $addedProgramIds)->get();
                 
-                // 1. Create Admission Fee Payment for new programs
-                $additionalAdmissionFee = $addedPrograms->sum('admission_fee');
-                if ($additionalAdmissionFee > 0) {
+                // 1. Create Initial Payment (Admission Fee + First Month)
+                $totalAmount = 0;
+                $currentMonth = now()->format('Y-m');
+                
+                foreach ($addedPrograms as $program) {
+                    $totalAmount += $program->admission_fee + $program->monthly_fee;
+                }
+                
+                if ($totalAmount > 0) {
                     $receiptGenerator = new \App\Actions\GenerateReceiptNumberAction();
                     $receiptNumber = $receiptGenerator->execute(now());
                     
                     $payment = \App\Models\Payment::create([
                         'member_id' => $member->id,
                         'type' => \App\Enums\PaymentType::ADMISSION,
-                        'amount' => $additionalAdmissionFee,
-                        'month_year' => now()->format('Y-m'),
+                        'amount' => $totalAmount,
+                        'month_year' => $currentMonth,
+                        'months_count' => 1,
                         'status' => \App\Enums\PaymentStatus::PENDING,
                         'due_date' => now()->addDays(7), // Give 7 days to pay
                         'paid_date' => null, // Not paid yet
                         'payment_method' => null, // Will be set when paid
                         'receipt_number' => $receiptNumber,
-                        'notes' => 'Admission fee for newly added programs: ' . $addedPrograms->pluck('name')->implode(', '),
+                        'notes' => 'Admission and first month fee for newly added programs: ' . $addedPrograms->pluck('name')->implode(', '),
                     ]);
 
-                    // Add items for the new programs so UI can render breakdowns
+                    // Add line items for the new programs so UI can render breakdowns
                     foreach ($addedPrograms as $program) {
                         if ($program->admission_fee > 0) {
                             \App\Models\PaymentItem::create([
@@ -163,21 +194,25 @@ class MemberService
                                 'description' => "{$program->name} - Admission Fee",
                             ]);
                         }
+                        if ($program->monthly_fee > 0) {
+                            \App\Models\PaymentItem::create([
+                                'payment_id' => $payment->id,
+                                'program_id' => $program->id,
+                                'type' => \App\Enums\PaymentType::MONTHLY,
+                                'amount' => $program->monthly_fee,
+                                'month_year' => $currentMonth,
+                                'description' => "{$program->name} - Monthly Fee ({$currentMonth})",
+                            ]);
+                        }
                     }
                 }
 
-                // 2. Generate schedules for new programs (starting current month)
-                // We reload programs relation to ensure new ones are included
+                // 2. Generate monthly schedules for new programs starting from NEXT month 
+                //    (since current month is covered by the combined payment above)
                 $member->load('programs');
-                $this->generatePaymentSchedule->execute($member, 12, \Carbon\Carbon::parse(now()->startOfMonth()));
+                $nextMonth = \Carbon\Carbon::parse(now()->addMonth()->startOfMonth());
+                $this->generatePaymentSchedule->execute($member, 12, $nextMonth);
             }
-
-            // Update future payment schedules amount for existing programs (if fees changed)
-            // $this->generatePaymentSchedule->updateFutureSchedules($member); 
-            // The execute() above handles creation. updateFutureSchedules handles amount updates. 
-            // We can leave it or remove it if execute covers it. 
-            // execute() ONLY creates if not existing. So we typically don't need updateFutureSchedules unless we suspect fee changes at the same time.
-            // But let's keep it safely or just rely on execute filling gaps.
             
             return $member->fresh();
         });

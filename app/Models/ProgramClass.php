@@ -52,6 +52,38 @@ class ProgramClass extends Model
         return $this->hasMany(ClassCancellation::class);
     }
 
+    public function assignedMembers()
+    {
+        return $this->hasMany(MemberProgramClass::class)
+                    ->where('status', 'active');
+    }
+
+    public function absences()
+    {
+        return $this->hasMany(ClassAbsence::class, 'program_class_id');
+    }
+
+    public function makeupAbsences()
+    {
+        return $this->hasMany(ClassAbsence::class, 'makeup_class_id');
+    }
+
+    // Count of members currently assigned to this slot
+    public function getAssignedCountAttribute(): int
+    {
+        return $this->assignedMembers()->count();
+    }
+
+    // Available slots remaining (regular + makeup)
+    public function getAvailableSlotsAttribute(): int
+    {
+        if (!$this->capacity) return PHP_INT_MAX;
+        $makeupCount = $this->makeupAbsences()
+            ->whereIn('status', ['makeup_selected', 'completed'])
+            ->count();
+        return max(0, $this->capacity - $this->assigned_count - $makeupCount);
+    }
+
     // Scopes
     public function scopeActive($query)
     {

@@ -6,6 +6,8 @@ import '../../../profile/presentation/cubit/profile_cubit.dart';
 import '../../../payments/presentation/cubit/payments_cubit.dart';
 import '../../../schedule/presentation/cubit/schedule_cubit.dart';
 import '../../../attendance/presentation/cubit/attendance_cubit.dart';
+import '../../../absences/presentation/cubit/absence_cubit.dart';
+import '../../../absences/presentation/pages/my_classes_page.dart';
 import 'dashboard_page.dart';
 import '../../../schedule/presentation/pages/schedule_page.dart';
 import '../../../payments/presentation/pages/payments_page.dart';
@@ -24,7 +26,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
-  static const _titles = ['Dashboard', 'Schedule', 'Payments', 'Profile'];
+  static const _titles = ['Dashboard', 'Classes', 'Schedule', 'Payments', 'Profile'];
 
   @override
   Widget build(BuildContext context) {
@@ -34,12 +36,15 @@ class _HomePageState extends State<HomePage> {
         BlocProvider(create: (_) => getIt<PaymentsCubit>()),
         BlocProvider(create: (_) => getIt<ScheduleCubit>()),
         BlocProvider(create: (_) => getIt<AttendanceCubit>()),
+        BlocProvider(create: (_) => getIt<AbsenceCubit>()),
       ],
       child: Builder(
         builder: (context) {
           return Scaffold(
             appBar: AppBar(
               title: Text(_titles[_currentIndex]),
+              backgroundColor: const Color(0xFF1565C0),
+              foregroundColor: Colors.white,
               actions: [
                 IconButton(
                   icon: const Icon(Icons.logout),
@@ -53,6 +58,7 @@ class _HomePageState extends State<HomePage> {
               index: _currentIndex,
               children: const [
                 DashboardPage(),
+                MyClassesPage(),
                 SchedulePage(),
                 PaymentsPage(),
                 ProfilePage(),
@@ -67,6 +73,11 @@ class _HomePageState extends State<HomePage> {
                   icon: Icon(Icons.home_outlined),
                   selectedIcon: Icon(Icons.home),
                   label: 'Home',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.fitness_center_outlined),
+                  selectedIcon: Icon(Icons.fitness_center),
+                  label: 'Classes',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.calendar_today_outlined),

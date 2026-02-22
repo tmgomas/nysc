@@ -24,4 +24,12 @@ class ApiConstants {
   static const String coachScheduleToday = '/coach/schedule/today';
   static const String coachAttendance = '/coach/attendance';
   static const String coachAttendanceMark = '/coach/attendance/mark';
+
+  // Absences & Class Assignments
+  static const String memberClasses  = '/member/classes';
+  static const String memberAbsences = '/member/absences';
+  static String memberMakeupSlots(String absenceId) =>
+      '/member/absences/$absenceId/makeup-slots';
+  static String memberSelectMakeup(String absenceId) =>
+      '/member/absences/$absenceId/select-makeup';
 }

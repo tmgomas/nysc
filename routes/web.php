@@ -87,6 +87,16 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
     Route::post('programs/{program}/classes/{class}/cancel-date', [\App\Http\Controllers\Admin\ProgramClassController::class, 'cancelDate'])->name('programs.classes.cancel-date');
     Route::delete('programs/{program}/classes/{class}/cancellations/{cancellation}', [\App\Http\Controllers\Admin\ProgramClassController::class, 'restoreDate'])->name('programs.classes.restore-date');
 
+    // Class Assignments (assign members to specific class slots)
+    Route::post('class-assignments/assign', [\App\Http\Controllers\Admin\ClassAbsenceController::class, 'assignMember'])->name('class-assignments.assign');
+    Route::post('class-assignments/unassign', [\App\Http\Controllers\Admin\ClassAbsenceController::class, 'unassignMember'])->name('class-assignments.unassign');
+
+    // Class Absences
+    Route::get('class-absences', [\App\Http\Controllers\Admin\ClassAbsenceController::class, 'index'])->name('class-absences.index');
+    Route::post('class-absences/{absence}/approve', [\App\Http\Controllers\Admin\ClassAbsenceController::class, 'approve'])->name('class-absences.approve');
+    Route::post('class-absences/{absence}/reject', [\App\Http\Controllers\Admin\ClassAbsenceController::class, 'reject'])->name('class-absences.reject');
+    Route::get('class-absences/{absence}/makeup-slots', [\App\Http\Controllers\Admin\ClassAbsenceController::class, 'availableMakeupSlots'])->name('class-absences.makeup-slots');
+
     // Locations
     Route::resource('locations', \App\Http\Controllers\Admin\LocationController::class)->except(['show', 'create', 'edit']);
 
