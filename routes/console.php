@@ -8,5 +8,4 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// Expire makeup deadlines daily at midnight
-Schedule::command('absences:expire-deadlines')->daily()->at('00:05');
+

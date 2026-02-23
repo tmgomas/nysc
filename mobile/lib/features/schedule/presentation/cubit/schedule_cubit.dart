@@ -1,9 +1,39 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../../../profile/data/repositories/member_repository.dart';
-import '../../domain/entities/schedule_class.dart';
+import '../../data/models/schedule_models.dart';
+import '../../data/repositories/schedule_repository.dart';
+import '../../domain/entities/member_program.dart';
 
-// ── States ─────────────────────────────────────────────
+// ── Programs States ─────────────────────────────────────
+abstract class ProgramsState extends Equatable {
+  const ProgramsState();
+  @override
+  List<Object?> get props => [];
+}
+
+class ProgramsInitial extends ProgramsState {
+  const ProgramsInitial();
+}
+
+class ProgramsLoading extends ProgramsState {
+  const ProgramsLoading();
+}
+
+class ProgramsLoaded extends ProgramsState {
+  final List<MemberProgram> programs;
+  const ProgramsLoaded(this.programs);
+  @override
+  List<Object?> get props => [programs];
+}
+
+class ProgramsError extends ProgramsState {
+  final String message;
+  const ProgramsError(this.message);
+  @override
+  List<Object?> get props => [message];
+}
+
+// ── Schedule States ─────────────────────────────────────
 abstract class ScheduleState extends Equatable {
   const ScheduleState();
   @override
@@ -19,20 +49,10 @@ class ScheduleLoading extends ScheduleState {
 }
 
 class ScheduleLoaded extends ScheduleState {
-  final List<ScheduleClass> classes;
-  const ScheduleLoaded(this.classes);
-
-  /// Group classes by day of week.
-  Map<String, List<ScheduleClass>> get groupedByDay {
-    final map = <String, List<ScheduleClass>>{};
-    for (final c in classes) {
-      map.putIfAbsent(c.dayOfWeek, () => []).add(c);
-    }
-    return map;
-  }
-
+  final ScheduleResponseModel schedule;
+  const ScheduleLoaded(this.schedule);
   @override
-  List<Object?> get props => [classes];
+  List<Object?> get props => [schedule];
 }
 
 class ScheduleError extends ScheduleState {
@@ -42,18 +62,34 @@ class ScheduleError extends ScheduleState {
   List<Object?> get props => [message];
 }
 
-// ── Cubit ──────────────────────────────────────────────
+// ── Programs Cubit ──────────────────────────────────────
+class ProgramsCubit extends Cubit<ProgramsState> {
+  final ScheduleRepository repository;
+
+  ProgramsCubit(this.repository) : super(const ProgramsInitial());
+
+  Future<void> loadPrograms() async {
+    emit(const ProgramsLoading());
+    final result = await repository.getPrograms();
+    result.fold(
+      (failure) => emit(ProgramsError(failure.message)),
+      (programs) => emit(ProgramsLoaded(programs)),
+    );
+  }
+}
+
+// ── Schedule Cubit ──────────────────────────────────────
 class ScheduleCubit extends Cubit<ScheduleState> {
-  final MemberRepository repository;
+  final ScheduleRepository repository;
 
   ScheduleCubit(this.repository) : super(const ScheduleInitial());
 
-  Future<void> loadSchedule() async {
+  Future<void> loadSchedule({int days = 30}) async {
     emit(const ScheduleLoading());
-    final result = await repository.getSchedule();
+    final result = await repository.getSchedule(days: days);
     result.fold(
       (failure) => emit(ScheduleError(failure.message)),
-      (classes) => emit(ScheduleLoaded(classes)),
+      (schedule) => emit(ScheduleLoaded(schedule)),
     );
   }
 }

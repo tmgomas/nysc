@@ -14,15 +14,16 @@ import 'features/profile/data/datasources/member_remote_datasource.dart';
 import 'features/profile/data/repositories/member_repository.dart';
 import 'features/profile/presentation/cubit/profile_cubit.dart';
 import 'features/payments/presentation/cubit/payments_cubit.dart';
-import 'features/schedule/presentation/cubit/schedule_cubit.dart';
+
 import 'features/attendance/presentation/cubit/attendance_cubit.dart';
 import 'features/coach/data/datasources/coach_remote_datasource.dart';
 import 'features/coach/data/repositories/coach_repository.dart';
 import 'features/coach/presentation/cubit/coach_dashboard_cubit.dart';
 import 'features/coach/presentation/cubit/coach_attendance_cubit.dart';
-import 'features/absences/data/datasources/absence_remote_datasource.dart';
-import 'features/absences/data/repositories/absence_repository.dart';
-import 'features/absences/presentation/cubit/absence_cubit.dart';
+import 'features/schedule/data/datasources/schedule_remote_datasource.dart';
+import 'features/schedule/data/repositories/schedule_repository.dart';
+import 'features/schedule/presentation/cubit/schedule_cubit.dart';
+
 
 final getIt = GetIt.instance;
 
@@ -84,7 +85,7 @@ Future<void> setupDependencies() async {
   // ── Feature Cubits ────────────────────────────────────
   getIt.registerFactory(() => ProfileCubit(getIt<MemberRepository>()));
   getIt.registerFactory(() => PaymentsCubit(getIt<MemberRepository>()));
-  getIt.registerFactory(() => ScheduleCubit(getIt<MemberRepository>()));
+
   getIt.registerFactory(() => AttendanceCubit(getIt<MemberRepository>()));
 
   // ── Coach: Data Sources ───────────────────────────────
@@ -101,16 +102,17 @@ Future<void> setupDependencies() async {
   getIt.registerFactory(() => CoachDashboardCubit(getIt<CoachRepository>()));
   getIt.registerFactory(() => CoachAttendanceCubit(getIt<CoachRepository>()));
 
-  // ── Absences: Data Sources ────────────────────────────
-  getIt.registerLazySingleton<AbsenceRemoteDataSource>(
-    () => AbsenceRemoteDataSource(getIt<ApiClient>()),
+  // ── Schedule: Data Sources ────────────────────────────
+  getIt.registerLazySingleton<ScheduleRemoteDataSource>(
+    () => ScheduleRemoteDataSource(getIt<ApiClient>()),
   );
 
-  // ── Absences: Repository ──────────────────────────────
-  getIt.registerLazySingleton<AbsenceRepository>(
-    () => AbsenceRepository(getIt<AbsenceRemoteDataSource>()),
+  // ── Schedule: Repository ──────────────────────────────
+  getIt.registerLazySingleton<ScheduleRepository>(
+    () => ScheduleRepository(getIt<ScheduleRemoteDataSource>()),
   );
 
-  // ── Absences: Cubit ───────────────────────────────────
-  getIt.registerFactory(() => AbsenceCubit(getIt<AbsenceRepository>()));
+  // ── Schedule: Cubits ──────────────────────────────────
+  getIt.registerFactory(() => ProgramsCubit(getIt<ScheduleRepository>()));
+  getIt.registerFactory(() => ScheduleCubit(getIt<ScheduleRepository>()));
 }

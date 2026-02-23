@@ -106,4 +106,56 @@ class CoachService
         $coach->update(['is_active' => false]);
         return $coach->fresh();
     }
+
+    /**
+     * Get dashboard data for coach
+     */
+    public function getDashboardData(Coach $coach): array
+    {
+        $programIds = $coach->programs()->pluck('programs.id');
+
+        $todayAttendanceCount = \App\Models\Attendance::whereIn('program_id', $programIds)
+            ->whereDate('check_in_time', today())
+            ->count();
+
+        $programs = Program::whereIn('id', $programIds)
+            ->withCount(['members' => fn ($q) => $q->where('member_programs.status', 'active')])
+            ->get()
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'short_code' => $p->short_code,
+                'active_members_count' => $p->members_count,
+            ]);
+
+        return [
+            'today_attendance_count' => $todayAttendanceCount,
+            'programs' => $programs,
+        ];
+    }
+
+    /**
+     * Get today's classes for coach
+     */
+    public function getTodayClasses(Coach $coach): array
+    {
+        $programIds = $coach->programs()->pluck('programs.id');
+        $todayName = strtolower(now()->format('l'));
+
+        $classes = \App\Models\ProgramClass::whereIn('program_id', $programIds)
+            ->where('is_active', true)
+            ->where('day_of_week', $todayName)
+            ->with('program')
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'program_name' => $c->program->name,
+                'start_time' => $c->start_time,
+                'end_time' => $c->end_time,
+            ]);
+
+        return [
+            'classes' => $classes,
+        ];
+    }
 }

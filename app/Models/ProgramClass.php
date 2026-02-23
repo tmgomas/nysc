@@ -58,30 +58,17 @@ class ProgramClass extends Model
                     ->where('status', 'active');
     }
 
-    public function absences()
-    {
-        return $this->hasMany(ClassAbsence::class, 'program_class_id');
-    }
-
-    public function makeupAbsences()
-    {
-        return $this->hasMany(ClassAbsence::class, 'makeup_class_id');
-    }
-
     // Count of members currently assigned to this slot
     public function getAssignedCountAttribute(): int
     {
         return $this->assignedMembers()->count();
     }
 
-    // Available slots remaining (regular + makeup)
+    // Available slots remaining
     public function getAvailableSlotsAttribute(): int
     {
         if (!$this->capacity) return PHP_INT_MAX;
-        $makeupCount = $this->makeupAbsences()
-            ->whereIn('status', ['makeup_selected', 'completed'])
-            ->count();
-        return max(0, $this->capacity - $this->assigned_count - $makeupCount);
+        return max(0, $this->capacity - $this->assigned_count);
     }
 
     // Scopes

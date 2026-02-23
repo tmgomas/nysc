@@ -8,6 +8,10 @@ use Illuminate\Http\Request;
 
 class ProfileController extends Controller
 {
+    public function __construct(
+        protected \App\Services\MemberService $memberService
+    ) {}
+
     public function show(Request $request)
     {
         $member = $request->user()->member;
@@ -16,7 +20,7 @@ class ProfileController extends Controller
             return response()->json(['message' => 'Member profile not found.'], 404);
         }
 
-        $member->load('programs.location');
+        $member->load(['programs.location']);
 
         return response()->json([
             'member' => new MemberResource($member),
@@ -40,11 +44,11 @@ class ProfileController extends Controller
             'jersey_size' => 'sometimes|string|max:10',
         ]);
 
-        $member->update($validated);
+        $member = $this->memberService->updateProfile($member, $validated);
 
         return response()->json([
             'message' => 'Profile updated successfully.',
-            'member' => new MemberResource($member->fresh('programs.location')),
+            'member' => new MemberResource($member->load(['programs.location'])),
         ]);
     }
 }

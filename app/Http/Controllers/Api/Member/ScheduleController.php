@@ -3,13 +3,24 @@
 namespace App\Http\Controllers\Api\Member;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\Api\ProgramResource;
-use App\Models\ProgramClass;
+use App\Services\ScheduleService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 
 class ScheduleController extends Controller
 {
+    public function __construct(
+        protected ScheduleService $scheduleService
+    ) {}
+
+    /**
+     * GET /api/member/schedule?days=30
+     *
+     * Returns upcoming class schedule for the authenticated member,
+     * grouped by date and filtered for holidays & cancellations.
+     *
+     * Query params:
+     *   days (int, 1-90, default 30) – how many days ahead to look
+     */
     public function index(Request $request)
     {
         $member = $request->user()->member;
@@ -18,32 +29,11 @@ class ScheduleController extends Controller
             return response()->json(['message' => 'Member profile not found.'], 404);
         }
 
-        $programIds = $member->programs()->pluck('programs.id');
+        $days = (int) $request->get('days', 30);
+        $days = max(1, min(90, $days)); // clamp between 1 and 90
 
-        $classes = ProgramClass::whereIn('program_id', $programIds)
-            ->where('is_active', true)
-            ->with(['program.location'])
-            ->get()
-            ->map(function ($class) {
-                return [
-                    'id' => $class->id,
-                    'program' => [
-                        'id' => $class->program->id,
-                        'name' => $class->program->name,
-                        'short_code' => $class->program->short_code,
-                    ],
-                    'day_of_week' => $class->day_of_week,
-                    'start_time' => $class->start_time,
-                    'end_time' => $class->end_time,
-                    'location' => $class->program->location ? [
-                        'id' => $class->program->location->id,
-                        'name' => $class->program->location->name,
-                    ] : null,
-                ];
-            });
+        $schedule = $this->scheduleService->getUpcomingSchedule($member, $days);
 
-        return response()->json([
-            'schedule' => $classes,
-        ]);
+        return response()->json($schedule);
     }
 }

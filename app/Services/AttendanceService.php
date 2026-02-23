@@ -145,4 +145,60 @@ class AttendanceService
             }),
         ];
     }
+
+    /**
+     * Get member attendance history
+     */
+    public function getMemberAttendanceHistory(Member $member, int $perPage = 20)
+    {
+        return $member->attendances()
+            ->with('program')
+            ->orderByDesc('check_in_time')
+            ->paginate($perPage);
+    }
+
+    /**
+     * Get attendance history for coach's programs
+     */
+    public function getCoachAttendanceHistory($coach, $date = null)
+    {
+        $programIds = $coach->programs()->pluck('programs.id');
+        $date = $date ?? today();
+
+        return Attendance::whereIn('program_id', $programIds)
+            ->whereDate('check_in_time', $date)
+            ->with(['member', 'program'])
+            ->orderByDesc('check_in_time')
+            ->get();
+    }
+
+    /**
+     * Toggle attendance (Check-in/Check-out) for coach
+     */
+    public function toggleCoachAttendance(Member $member, Program $program, $markedBy, $method = 'manual')
+    {
+        // Check if member is enrolled
+        if (!$member->isActivelyEnrolledIn($program->id)) {
+            throw new \Exception('Member is not actively enrolled in this program');
+        }
+
+        // Check if already checked in today
+        $existing = Attendance::where('member_id', $member->id)
+            ->where('program_id', $program->id)
+            ->whereDate('check_in_time', today())
+            ->whereNull('check_out_time')
+            ->first();
+
+        if ($existing) {
+            return $this->checkOut($existing);
+        }
+
+        return Attendance::create([
+            'member_id' => $member->id,
+            'program_id' => $program->id,
+            'check_in_time' => now(),
+            'marked_by' => $markedBy,
+            'method' => $method,
+        ]);
+    }
 }

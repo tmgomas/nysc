@@ -1,7 +1,7 @@
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../payments/data/models/payment_model.dart';
-import '../../../schedule/data/models/schedule_class_model.dart';
+
 import '../../../attendance/data/models/attendance_record_model.dart';
 import '../models/member_profile_model.dart';
 
@@ -36,13 +36,7 @@ class MemberRemoteDataSource {
         .toList();
   }
 
-  Future<List<ScheduleClassModel>> getSchedule() async {
-    final response = await apiClient.get(ApiConstants.memberSchedule);
-    final data = response.data['schedule'] as List<dynamic>;
-    return data
-        .map((s) => ScheduleClassModel.fromJson(s as Map<String, dynamic>))
-        .toList();
-  }
+
 
   Future<List<AttendanceRecordModel>> getAttendance({int page = 1}) async {
     final response = await apiClient.get(

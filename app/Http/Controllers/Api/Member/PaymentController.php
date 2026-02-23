@@ -8,6 +8,10 @@ use Illuminate\Http\Request;
 
 class PaymentController extends Controller
 {
+    public function __construct(
+        protected \App\Services\PaymentService $paymentService
+    ) {}
+
     public function index(Request $request)
     {
         $member = $request->user()->member;
@@ -16,10 +20,7 @@ class PaymentController extends Controller
             return response()->json(['message' => 'Member profile not found.'], 404);
         }
 
-        $payments = $member->payments()
-            ->with(['program', 'items.program'])
-            ->orderByDesc('created_at')
-            ->paginate(20);
+        $payments = $this->paymentService->getMemberPayments($member);
 
         return PaymentResource::collection($payments);
     }

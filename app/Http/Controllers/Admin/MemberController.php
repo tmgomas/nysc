@@ -11,7 +11,8 @@ use Inertia\Inertia;
 class MemberController extends Controller
 {
     public function __construct(
-        protected MemberService $memberService
+        protected \App\Services\MemberService $memberService,
+        protected \App\Services\ScheduleService $scheduleService
     ) {}
 
     public function index(Request $request)
@@ -111,8 +112,6 @@ class MemberController extends Controller
             'paymentSchedules.program',
             'programClasses.programClass.program',
             'programClasses.programClass.coach',
-            'absences.programClass.program',
-            'absences.makeupClass',
         ]);
 
         $stats = $this->memberService->getStatistics($member);
@@ -128,89 +127,21 @@ class MemberController extends Controller
             ->get()
             ->map(function ($cls) {
                 $assignedCount = $cls->assignedMembers()->count();
-                $makeupCount   = \App\Models\ClassAbsence::where('makeup_class_id', $cls->id)
-                    ->whereIn('status', ['makeup_selected', 'completed'])
-                    ->count();
                 $cls->setAttribute('assigned_count', $assignedCount);
-                $cls->setAttribute('available_spots', $cls->capacity ? max(0, $cls->capacity - $assignedCount - $makeupCount) : null);
-                $cls->setAttribute('is_full', $cls->capacity ? ($assignedCount + $makeupCount) >= $cls->capacity : false);
+                $cls->setAttribute('available_spots', $cls->capacity ? max(0, $cls->capacity - $assignedCount) : null);
+                $cls->setAttribute('is_full', $cls->capacity ? $assignedCount >= $cls->capacity : false);
                 $cls->setAttribute('formatted_time', $cls->formatted_time);
                 return $cls;
             });
 
-        // Compute upcoming classes for the member
-        $now = \Carbon\Carbon::now();
-        $upcomingClasses = collect();
-        $classIds = $member->programClasses->where('status', 'active')->pluck('program_class_id')->unique();
-
-        $cancellations = \App\Models\ClassCancellation::whereIn('program_class_id', $classIds)
-            ->where('cancelled_date', '>=', $now->toDateString())
-            ->get()
-            ->groupBy(function($item) {
-                return $item->program_class_id . '_' . $item->cancelled_date->toDateString();
-            });
-
-        $holidays = \App\Models\Holiday::where('date', '>=', $now->copy()->subYear()->toDateString())->get();
-        $holidayDates = collect();
-        for($i=0; $i<60; $i++) {
-            $checkDate = $now->copy()->addDays($i);
-            $isHoliday = $holidays->contains(function ($h) use ($checkDate) {
-                if ($h->date->toDateString() === $checkDate->toDateString()) return true;
-                if ($h->is_recurring && $h->date->month === $checkDate->month && $h->date->day === $checkDate->day) return true;
-                return false;
-            });
-            if ($isHoliday) {
-                $holidayDates->push($checkDate->toDateString());
-            }
-        }
-
-        foreach ($member->programClasses->where('status', 'active') as $memberClass) {
-            $cls = $memberClass->programClass;
-            if (!$cls || !$cls->is_active) continue;
-            
-            $dayOfWeek = strtolower($cls->day_of_week);
-            $classTime = \Carbon\Carbon::parse($cls->start_time);
-            $nextDate = \Carbon\Carbon::parse("next " . $dayOfWeek);
-            
-            if (strtolower($now->englishDayOfWeek) === $dayOfWeek) {
-                if ($classTime->format('H:i:s') > $now->format('H:i:s')) {
-                    $nextDate = \Carbon\Carbon::today();
-                }
-            }
-            
-            $found = 0;
-            $checkDate = $nextDate->copy();
-            
-            while($found < 4 && $checkDate->diffInDays($now) <= 60) {
-                $dateStr = $checkDate->toDateString();
-                $isCancelled = $cancellations->has($cls->id . '_' . $dateStr);
-                $isHoliday = $holidayDates->contains($dateStr);
-                
-                if (!$isCancelled && (!$isHoliday || ($isHoliday && false /* optionally could check if program ignores holidays */ ))) {
-                    if (!$isHoliday) {
-                       $upcomingClasses->push([
-                           'id' => $cls->id . '-' . $dateStr,
-                           'program_class_id' => $cls->id,
-                           'program_name' => $cls->program->name,
-                           'label' => $cls->label ?? $cls->day_of_week,
-                           'day_of_week' => $cls->day_of_week,
-                           'date' => $dateStr,
-                           'start_time' => $cls->start_time,
-                           'end_time' => $cls->end_time,
-                           'formatted_time' => $cls->formatted_time,
-                           'coach_name' => $cls->coach ? $cls->coach->name : null,
-                       ]);
-                       $found++;
-                    }
-                }
-                
-                $checkDate->addWeek();
-            }
-        }
+        // Compute upcoming classes for the member using Service
+        $scheduleData = $this->scheduleService->getUpcomingSchedule($member, 30);
         
-        $upcomingClasses = $upcomingClasses->sortBy(function($item) {
-            return $item['date'] . ' ' . $item['start_time'];
-        })->values()->take(5);
+        // Flatten the grouped results for the admin view which expects a flat list
+        $upcomingClasses = collect($scheduleData['upcoming_classes'])
+            ->pluck('classes')
+            ->flatten(1)
+            ->take(5);
 
         return Inertia::render('Admin/Members/Show', [
             'member'            => $member,
@@ -253,7 +184,7 @@ class MemberController extends Controller
     public function updatePrograms(Request $request, Member $member)
     {
         $validated = $request->validate([
-            'program_ids' => 'required|array', // Allow empty array if they want to remove all? No, logical min 1 usually, but let's stick to array.
+            'program_ids' => 'required|array',
             'program_ids.*' => 'exists:programs,id',
         ]);
 
@@ -261,5 +192,71 @@ class MemberController extends Controller
 
         return redirect()->back()
             ->with('success', 'Member programs updated successfully');
+    }
+
+    /**
+     * Assign a member to a specific class slot
+     */
+    public function assignClass(Request $request)
+    {
+        $validated = $request->validate([
+            'member_id'        => 'required|exists:members,id',
+            'program_class_id' => 'required|exists:program_classes,id',
+            'notes'            => 'nullable|string',
+        ]);
+
+        $member = Member::findOrFail($validated['member_id']);
+        $class  = \App\Models\ProgramClass::findOrFail($validated['program_class_id']);
+
+        // Must be enrolled in the program
+        $isEnrolled = $member->programs()
+            ->where('programs.id', $class->program_id)
+            ->wherePivot('status', 'active')
+            ->exists();
+
+        if (!$isEnrolled) {
+            return redirect()->back()->with('error', "Member is not enrolled in this program.");
+        }
+
+        // Check capacity
+        if ($class->capacity && $class->assigned_count >= $class->capacity) {
+            return redirect()->back()->with('error', "Class is at full capacity ({$class->capacity}).");
+        }
+
+        // Check not already assigned
+        $alreadyAssigned = \App\Models\MemberProgramClass::where('member_id', $member->id)
+            ->where('program_class_id', $class->id)
+            ->exists();
+
+        if ($alreadyAssigned) {
+            return redirect()->back()->with('error', 'Member is already assigned to this class slot.');
+        }
+
+        \App\Models\MemberProgramClass::create([
+            'member_id'        => $member->id,
+            'program_class_id' => $class->id,
+            'assigned_by'      => \Illuminate\Support\Facades\Auth::id(),
+            'notes'            => $validated['notes'] ?? null,
+            'status'           => 'active',
+        ]);
+
+        return redirect()->back()->with('success', "Member assigned to class successfully.");
+    }
+
+    /**
+     * Remove member from a class slot
+     */
+    public function unassignClass(Request $request)
+    {
+        $validated = $request->validate([
+            'member_id'        => 'required|exists:members,id',
+            'program_class_id' => 'required|exists:program_classes,id',
+        ]);
+
+        \App\Models\MemberProgramClass::where('member_id', $validated['member_id'])
+            ->where('program_class_id', $validated['program_class_id'])
+            ->update(['status' => 'dropped']);
+
+        return redirect()->back()->with('success', 'Member removed from class slot.');
     }
 }

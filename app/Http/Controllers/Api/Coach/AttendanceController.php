@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Auth;
 
 class AttendanceController extends Controller
 {
+    public function __construct(
+        protected \App\Services\AttendanceService $attendanceService
+    ) {}
+
     public function index(Request $request)
     {
         $coach = $request->user()->coach;
@@ -19,13 +23,7 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'Coach profile not found.'], 404);
         }
 
-        $programIds = $coach->programs()->pluck('programs.id');
-
-        $attendances = Attendance::whereIn('program_id', $programIds)
-            ->whereDate('check_in_time', $request->get('date', today()))
-            ->with(['member', 'program'])
-            ->orderByDesc('check_in_time')
-            ->get();
+        $attendances = $this->attendanceService->getCoachAttendanceHistory($coach, $request->get('date'));
 
         return AttendanceResource::collection($attendances);
     }
@@ -44,49 +42,28 @@ class AttendanceController extends Controller
             'method' => 'sometimes|string|in:manual,qr_code,nfc,rfid',
         ]);
 
-        // Check if member is enrolled in this program
-        $member = Member::find($validated['member_id']);
-        $isEnrolled = $member->programs()
-            ->where('programs.id', $validated['program_id'])
-            ->where('member_programs.status', 'active')
-            ->exists();
+        try {
+            $member = Member::findOrFail($validated['member_id']);
+            $program = \App\Models\Program::findOrFail($validated['program_id']);
 
-        if (! $isEnrolled) {
+            $attendance = $this->attendanceService->toggleCoachAttendance(
+                $member,
+                $program,
+                $request->user()->id,
+                $validated['method'] ?? 'manual'
+            );
+
+            $isCheckOut = !is_null($attendance->check_out_time);
+
             return response()->json([
-                'message' => 'Member is not enrolled in this program.',
+                'message' => $isCheckOut ? 'Member checked out successfully.' : 'Member checked in successfully.',
+                'attendance' => new AttendanceResource($attendance->load(['member', 'program'])),
+            ], $isCheckOut ? 200 : 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
             ], 422);
         }
-
-        // Check if already checked in today for this program
-        $existingToday = Attendance::where('member_id', $validated['member_id'])
-            ->where('program_id', $validated['program_id'])
-            ->whereDate('check_in_time', today())
-            ->whereNull('check_out_time')
-            ->first();
-
-        if ($existingToday) {
-            // Check out instead
-            $existingToday->check_out_time = now();
-            $existingToday->save();
-
-            return response()->json([
-                'message' => 'Member checked out successfully.',
-                'attendance' => new AttendanceResource($existingToday->load(['member', 'program'])),
-            ]);
-        }
-
-        // Create new check-in
-        $attendance = Attendance::create([
-            'member_id' => $validated['member_id'],
-            'program_id' => $validated['program_id'],
-            'check_in_time' => now(),
-            'marked_by' => $request->user()->id,
-            'method' => $validated['method'] ?? 'manual',
-        ]);
-
-        return response()->json([
-            'message' => 'Member checked in successfully.',
-            'attendance' => new AttendanceResource($attendance->load(['member', 'program'])),
-        ], 201);
     }
 }

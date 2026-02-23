@@ -236,4 +236,13 @@ class MemberService
             'last_attendance' => $member->last_attendance,
         ];
     }
+
+    /**
+     * Update member profile
+     */
+    public function updateProfile(Member $member, array $data): Member
+    {
+        $member->update($data);
+        return $member->fresh();
+    }
 }

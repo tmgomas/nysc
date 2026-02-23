@@ -8,6 +8,10 @@ use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
 {
+    public function __construct(
+        protected \App\Services\AttendanceService $attendanceService
+    ) {}
+
     public function index(Request $request)
     {
         $member = $request->user()->member;
@@ -16,10 +20,7 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'Member profile not found.'], 404);
         }
 
-        $attendances = $member->attendances()
-            ->with('program')
-            ->orderByDesc('check_in_time')
-            ->paginate(20);
+        $attendances = $this->attendanceService->getMemberAttendanceHistory($member);
 
         return AttendanceResource::collection($attendances);
     }

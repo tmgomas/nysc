@@ -15,21 +15,14 @@ class ApiConstants {
 
   // Member
   static const String memberProfile = '/member/profile';
+  static const String memberPrograms = '/member/programs';
+  static const String memberSchedule = '/member/schedule';
   static const String memberPayments = '/member/payments';
   static const String memberAttendance = '/member/attendance';
-  static const String memberSchedule = '/member/schedule';
 
   // Coach
   static const String coachDashboard = '/coach/dashboard';
   static const String coachScheduleToday = '/coach/schedule/today';
   static const String coachAttendance = '/coach/attendance';
   static const String coachAttendanceMark = '/coach/attendance/mark';
-
-  // Absences & Class Assignments
-  static const String memberClasses  = '/member/classes';
-  static const String memberAbsences = '/member/absences';
-  static String memberMakeupSlots(String absenceId) =>
-      '/member/absences/$absenceId/makeup-slots';
-  static String memberSelectMakeup(String absenceId) =>
-      '/member/absences/$absenceId/select-makeup';
 }

@@ -208,5 +208,14 @@ class PaymentService
                 ->limit(10)
                 ->get(),
         ];
+    /**
+     * Get payment history for member
+     */
+    public function getMemberPayments(Member $member, int $perPage = 20)
+    {
+        return $member->payments()
+            ->with(['program', 'items.program'])
+            ->orderByDesc('created_at')
+            ->paginate($perPage);
     }
 }

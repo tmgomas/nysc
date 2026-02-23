@@ -111,11 +111,6 @@ class Member extends Model
         return $this->hasMany(MemberProgramClass::class);
     }
 
-    public function absences()
-    {
-        return $this->hasMany(ClassAbsence::class);
-    }
-
     // Scopes
     public function scopeActive($query)
     {

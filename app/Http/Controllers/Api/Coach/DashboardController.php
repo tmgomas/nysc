@@ -10,6 +10,10 @@ use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        protected \App\Services\CoachService $coachService
+    ) {}
+
     public function index(Request $request)
     {
         $coach = $request->user()->coach;
@@ -18,26 +22,9 @@ class DashboardController extends Controller
             return response()->json(['message' => 'Coach profile not found.'], 404);
         }
 
-        $programIds = $coach->programs()->pluck('programs.id');
+        $data = $this->coachService->getDashboardData($coach);
 
-        $todayAttendanceCount = Attendance::whereIn('program_id', $programIds)
-            ->whereDate('check_in_time', today())
-            ->count();
-
-        $programs = Program::whereIn('id', $programIds)
-            ->withCount(['members' => fn ($q) => $q->where('member_programs.status', 'active')])
-            ->get()
-            ->map(fn ($p) => [
-                'id' => $p->id,
-                'name' => $p->name,
-                'short_code' => $p->short_code,
-                'active_members_count' => $p->members_count,
-            ]);
-
-        return response()->json([
-            'today_attendance_count' => $todayAttendanceCount,
-            'programs' => $programs,
-        ]);
+        return response()->json($data);
     }
 
     public function today(Request $request)
@@ -48,23 +35,8 @@ class DashboardController extends Controller
             return response()->json(['message' => 'Coach profile not found.'], 404);
         }
 
-        $programIds = $coach->programs()->pluck('programs.id');
-        $todayName = strtolower(now()->format('l'));
+        $data = $this->coachService->getTodayClasses($coach);
 
-        $classes = \App\Models\ProgramClass::whereIn('program_id', $programIds)
-            ->where('is_active', true)
-            ->where('day_of_week', $todayName)
-            ->with('program')
-            ->get()
-            ->map(fn ($c) => [
-                'id' => $c->id,
-                'program_name' => $c->program->name,
-                'start_time' => $c->start_time,
-                'end_time' => $c->end_time,
-            ]);
-
-        return response()->json([
-            'classes' => $classes,
-        ]);
+        return response()->json($data);
     }
 }
