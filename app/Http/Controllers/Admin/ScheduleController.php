@@ -52,9 +52,11 @@ class ScheduleController extends Controller
     {
         $start = $request->input('start', now()->startOfMonth()->toDateString());
         $end = $request->input('end', now()->endOfMonth()->toDateString());
+        $programId = $request->input('program_id'); // optional filter
 
         $programs = Program::active()
             ->select('id', 'name', 'schedule_type', 'schedule', 'short_code', 'location_id')
+            ->when($programId, fn($q) => $q->where('id', $programId))
             ->with(['classes' => function ($query) {
                 $query->with('coach:id,name', 'cancellations');
             }, 'location:id,name'])

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,6 +50,8 @@ interface ProgramClass {
     start_time: string;
     end_time: string;
     capacity: number | null;
+    valid_from: string | null;
+    valid_to: string | null;
     coach?: { id: string; name: string } | null;
 }
 
@@ -124,6 +126,11 @@ export default function ScheduleIndex({ programs, holidays, specialBookings, loc
     const [eventDetail, setEventDetail] = useState<any>(null);
     const [currentTitle, setCurrentTitle] = useState('');
 
+    // Re-fetch events when program filter changes
+    useEffect(() => {
+        calendarRef.current?.getApi().refetchEvents();
+    }, [selectedProgram]);
+
     // Cancel date from calendar
     const [cancelReason, setCancelReason] = useState('');
     const [cancelling, setCancelling] = useState(false);
@@ -141,6 +148,8 @@ export default function ScheduleIndex({ programs, holidays, specialBookings, loc
                 setEventDetail(null);
                 setCancelReason('');
                 setCancelling(false);
+                // Refresh calendar to show cancellation immediately
+                calendarRef.current?.getApi().refetchEvents();
             },
             onError: () => setCancelling(false),
         });
@@ -157,90 +166,22 @@ export default function ScheduleIndex({ programs, holidays, specialBookings, loc
         start_time: '', end_time: '', reason: '', cancels_classes: true,
     });
 
-    // Build events from programs data (recurring events for calendar display)
-    const buildEvents = () => {
-        const events: any[] = [];
-        const filteredPrograms = selectedProgram === 'all'
-            ? programs
-            : programs.filter((s) => s.id === selectedProgram);
-
-        filteredPrograms.forEach((program) => {
-            const color = getProgramColor(program.id, programs.indexOf(program));
-
-            if (program.schedule_type === 'class_based') {
-                program.classes.forEach((cls) => {
-                    events.push({
-                        id: cls.id,
-                        title: program.name + (cls.label ? ` - ${cls.label}` : ''),
-                        daysOfWeek: [dayToNumber(cls.day_of_week)],
-                        startTime: cls.start_time,
-                        endTime: cls.end_time,
-                        backgroundColor: color,
-                        borderColor: color,
-                        extendedProps: {
-                            program_id: program.id,
-                            class_id: cls.id,
-                            sport_name: program.name,
-                            coach: cls.coach?.name,
-                            capacity: cls.capacity,
-                            label: cls.label,
-                            type: 'class',
-                        },
-                    });
-                });
-            } else {
-                const schedule = program.schedule || {};
-                Object.entries(schedule).forEach(([day, times]) => {
-                    events.push({
-                        id: `${program.id}-${day}`,
-                        title: `${program.name} Practice`,
-                        daysOfWeek: [dayToNumber(day)],
-                        startTime: times.start || '16:00',
-                        endTime: times.end || '18:00',
-                        backgroundColor: color,
-                        borderColor: color,
-                        extendedProps: {
-                            sport_name: program.name,
-                            type: 'practice',
-                        },
-                    });
-                });
-            }
+    // Build events from SERVER — handles cancellations, holidays, valid_from/valid_to
+    // FullCalendar will call this each time the view date range changes
+    const fetchEvents = (fetchInfo: any, successCallback: Function, failureCallback: Function) => {
+        const params = new URLSearchParams({
+            start: fetchInfo.startStr.split('T')[0],
+            end: fetchInfo.endStr.split('T')[0],
+            ...(selectedProgram !== 'all' ? { program_id: selectedProgram } : {}),
         });
 
-        // Add holiday events as all-day background
-        holidays.forEach((h) => {
-            events.push({
-                id: `holiday-${h.id}`,
-                title: `🎉 ${h.name}`,
-                start: h.date,
-                allDay: true,
-                backgroundColor: '#fbbf24',
-                borderColor: '#f59e0b',
-                display: 'background',
-                extendedProps: { type: 'holiday' },
-            });
-        });
-
-        // Add special bookings
-        specialBookings.forEach((b) => {
-            events.push({
-                id: `booking-${b.id}`,
-                title: `📌 ${b.title}`,
-                start: b.start_date + (b.start_time ? `T${b.start_time}` : ''),
-                end: b.end_date + (b.end_time ? `T${b.end_time}` : ''),
-                allDay: !b.start_time,
-                backgroundColor: '#f87171',
-                borderColor: '#ef4444',
-                extendedProps: {
-                    type: 'booking',
-                    location: b.location?.name,
-                    reason: b.reason,
-                },
-            });
-        });
-
-        return events;
+        fetch(`/admin/schedule/events?${params}`)
+            .then((res) => {
+                if (!res.ok) throw new Error('Failed to fetch events');
+                return res.json();
+            })
+            .then((data) => successCallback(data))
+            .catch(() => failureCallback());
     };
 
     const handleEventClick = (info: any) => {
@@ -434,7 +375,7 @@ export default function ScheduleIndex({ programs, holidays, specialBookings, loc
                                         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                                         initialView="timeGridWeek"
                                         headerToolbar={false}
-                                        events={buildEvents()}
+                                        events={fetchEvents}
                                         eventClick={handleEventClick}
                                         slotMinTime="06:00:00"
                                         slotMaxTime="22:00:00"
@@ -711,6 +652,21 @@ export default function ScheduleIndex({ programs, holidays, specialBookings, loc
                         )}
                         {eventDetail?.label && (
                             <Badge variant="secondary">{eventDetail.label}</Badge>
+                        )}
+                        {/* Valid period */}
+                        {(eventDetail?.valid_from || eventDetail?.valid_to) && (
+                            <div className="flex items-center gap-3 text-sm text-muted-foreground border rounded-md px-3 py-2 bg-muted/30">
+                                <Calendar className="h-4 w-4 shrink-0" />
+                                <span>
+                                    {eventDetail.valid_from
+                                        ? `From: ${new Date(eventDetail.valid_from + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}`
+                                        : 'From: —'}
+                                    {' · '}
+                                    {eventDetail.valid_to
+                                        ? `Until: ${new Date(eventDetail.valid_to + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}`
+                                        : 'Until: ongoing'}
+                                </span>
+                            </div>
                         )}
                     </div>
                     {/* Cancel date button — only for class events */}
