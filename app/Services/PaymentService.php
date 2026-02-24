@@ -208,6 +208,8 @@ class PaymentService
                 ->limit(10)
                 ->get(),
         ];
+    }
+
     /**
      * Get payment history for member
      */
@@ -219,3 +221,4 @@ class PaymentService
             ->paginate($perPage);
     }
 }
+
