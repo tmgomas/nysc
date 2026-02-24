@@ -71,11 +71,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             href: '/admin/schedule',
             icon: Calendar,
         },
-        {
-            title: 'Class Absences',
-            href: '/admin/class-absences',
-            icon: CalendarX,
-        },
+        // TODO: Class Absences page not yet implemented — route/controller/page pending
+        // {
+        //     title: 'Class Absences',
+        //     href: '/admin/class-absences',
+        //     icon: CalendarX,
+        // },
         {
             title: 'Locations',
             href: '/admin/locations',

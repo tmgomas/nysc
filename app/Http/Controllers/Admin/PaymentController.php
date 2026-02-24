@@ -20,12 +20,18 @@ class PaymentController extends Controller
         $payments = Payment::with(['member.user'])
             ->when($request->status, fn($q, $status) => $q->where('status', $status))
             ->when($request->type, fn($q, $type) => $q->where('type', $type))
+            ->when($request->search, function ($q, $search) {
+                $q->whereHas('member', function ($mq) use ($search) {
+                    $mq->where('member_number', 'like', "%{$search}%")
+                       ->orWhereHas('user', fn($uq) => $uq->where('name', 'like', "%{$search}%"));
+                });
+            })
             ->latest()
             ->paginate(15);
 
         return Inertia::render('Admin/Payments/Index', [
             'payments' => $payments,
-            'filters' => $request->only(['status', 'type']),
+            'filters' => $request->only(['status', 'type', 'search']),
         ]);
     }
 
