@@ -20,7 +20,9 @@ jobs:
             cd /var/www/nysc
             git pull origin main
             composer install --no-dev --optimize-autoloader
-            npm install && npm run build
+            npm install
+            export NODE_OPTIONS="--max-old-space-size=2048"
+            npm run build
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
