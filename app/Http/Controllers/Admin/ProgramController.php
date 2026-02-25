@@ -167,4 +167,34 @@ class ProgramController extends Controller
         return redirect()->route('admin.programs.index')
             ->with('success', 'Program deleted successfully.');
     }
+
+    /**
+     * Cancel a specific practice date occurrence.
+     */
+    public function cancelPracticeDate(Request $request, \App\Models\Program $program)
+    {
+        $validated = $request->validate([
+            'cancelled_date' => 'required|date',
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        $program->practiceCancellations()->firstOrCreate(
+            ['cancelled_date' => $validated['cancelled_date']],
+            ['reason' => $validated['reason'] ?? null]
+        );
+
+        return back()->with('success', 'Practice date cancelled successfully.');
+    }
+
+    /**
+     * Restore a cancelled practice date.
+     */
+    public function restorePracticeDate(\App\Models\Program $program, \App\Models\PracticeCancellation $cancellation)
+    {
+        if ($cancellation->program_id === $program->id) {
+            $cancellation->delete();
+        }
+
+        return back()->with('success', 'Practice date restored successfully.');
+    }
 }

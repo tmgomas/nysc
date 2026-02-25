@@ -61,6 +61,11 @@ class Program extends Model
         return $this->hasMany(ProgramClass::class);
     }
 
+    public function practiceCancellations()
+    {
+        return $this->hasMany(PracticeCancellation::class);
+    }
+
     public function location()
     {
         return $this->belongsTo(Location::class);

@@ -59,7 +59,7 @@ class ScheduleController extends Controller
             ->when($programId, fn($q) => $q->where('id', $programId))
             ->with(['classes' => function ($query) {
                 $query->with('coach:id,name', 'cancellations');
-            }, 'location:id,name'])
+            }, 'location:id,name', 'practiceCancellations'])
             ->get();
 
         // Pre-load holidays in range
@@ -159,6 +159,11 @@ class ScheduleController extends Controller
             } else {
                 // Practice days from schedule JSON
                 $schedule = $program->schedule ?? [];
+                
+                $cancelledPracticeDates = $program->practiceCancellations->pluck('cancelled_date')
+                    ->map(fn($d) => Carbon::parse($d)->toDateString())
+                    ->toArray();
+
                 foreach ($schedule as $day => $times) {
                     $period = CarbonPeriod::create($start, $end);
                     foreach ($period as $date) {
@@ -168,8 +173,13 @@ class ScheduleController extends Controller
                         $isCancelled = false;
                         $cancelReason = null;
 
+                        if (in_array($dateStr, $cancelledPracticeDates)) {
+                            $isCancelled = true;
+                            $cancelReason = 'Cancelled';
+                        }
+
                         // Check holiday
-                        if (in_array($dateStr, $holidayDates)) {
+                        if (!$isCancelled && in_array($dateStr, $holidayDates)) {
                             $isCancelled = true;
                             $holiday = $this->findHolidayForDate($holidays, $dateStr);
                             $cancelReason = 'Holiday: ' . ($holiday?->name ?? '');
@@ -271,7 +281,7 @@ class ScheduleController extends Controller
                     ->where('day_of_week', $today)
                     ->with('coach:id,name', 'cancellations')
                     ->orderBy('start_time');
-            }])
+            }, 'practiceCancellations'])
             ->withCount(['members' => function ($query) {
                 $query->where('member_programs.status', 'active');
             }])
@@ -330,7 +340,12 @@ class ScheduleController extends Controller
                     $isCancelled = false;
                     $cancelReason = null;
 
-                    if ($holiday) {
+                    if ($program->practiceCancellations->contains(fn($c) => Carbon::parse($c->cancelled_date)->toDateString() === $todayDate)) {
+                        $isCancelled = true;
+                        $cancelReason = 'Cancelled';
+                    }
+
+                    if (!$isCancelled && $holiday) {
                         $isCancelled = true;
                         $cancelReason = 'Holiday: ' . $holiday->name;
                     }

@@ -87,6 +87,9 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
     Route::post('programs/{program}/classes/{class}/cancel-date', [\App\Http\Controllers\Admin\ProgramClassController::class, 'cancelDate'])->name('programs.classes.cancel-date');
     Route::delete('programs/{program}/classes/{class}/cancellations/{cancellation}', [\App\Http\Controllers\Admin\ProgramClassController::class, 'restoreDate'])->name('programs.classes.restore-date');
 
+    Route::post('programs/{program}/practices/cancel-date', [\App\Http\Controllers\Admin\ProgramController::class, 'cancelPracticeDate'])->name('programs.practices.cancel-date');
+    Route::delete('programs/{program}/practices/cancellations/{cancellation}', [\App\Http\Controllers\Admin\ProgramController::class, 'restorePracticeDate'])->name('programs.practices.restore-date');
+
     // Class Assignments (assign members to specific class slots)
     Route::post('class-assignments/assign', [AdminMemberController::class, 'assignClass'])->name('class-assignments.assign');
     Route::post('class-assignments/unassign', [AdminMemberController::class, 'unassignClass'])->name('class-assignments.unassign');

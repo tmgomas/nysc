@@ -136,15 +136,26 @@ export default function ScheduleIndex({ programs, holidays, specialBookings, loc
     const [cancelling, setCancelling] = useState(false);
 
     const handleCancelFromCalendar = () => {
-        if (!eventDetail?.program_id || !eventDetail?.class_id || !eventDetail?.clicked_date) return;
+        if (!eventDetail?.program_id || !eventDetail?.clicked_date) return;
+
+        let url = '';
+        if (eventDetail.type === 'class') {
+            if (!eventDetail.class_id) return;
+            url = `/admin/programs/${eventDetail.program_id}/classes/${eventDetail.class_id}/cancel-date`;
+        } else if (eventDetail.type === 'practice') {
+            url = `/admin/programs/${eventDetail.program_id}/practices/cancel-date`;
+        } else {
+            return;
+        }
+
         setCancelling(true);
-        router.post(`/admin/programs/${eventDetail.program_id}/classes/${eventDetail.class_id}/cancel-date`, {
+        router.post(url, {
             cancelled_date: eventDetail.clicked_date,
             reason: cancelReason || null,
         }, {
             preserveScroll: true,
             onSuccess: () => {
-                toast.success('Class cancelled for that date');
+                toast.success(eventDetail.type === 'class' ? 'Class cancelled for that date' : 'Practice cancelled for that date');
                 setEventDetail(null);
                 setCancelReason('');
                 setCancelling(false);
@@ -669,11 +680,11 @@ export default function ScheduleIndex({ programs, holidays, specialBookings, loc
                             </div>
                         )}
                     </div>
-                    {/* Cancel date button — only for class events */}
-                    {eventDetail?.type === 'class' && eventDetail?.clicked_date && (
+                    {/* Cancel date button — for class and practice events */}
+                    {(eventDetail?.type === 'class' || eventDetail?.type === 'practice') && eventDetail?.clicked_date && (
                         <div className="border-t pt-4 space-y-3">
                             <p className="text-sm text-muted-foreground">
-                                Cancel class on <strong>{new Date(eventDetail.clicked_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</strong>
+                                Cancel {eventDetail.type === 'class' ? 'class' : 'practice'} on <strong>{new Date(eventDetail.clicked_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</strong>
                             </p>
                             <Input
                                 value={cancelReason}
