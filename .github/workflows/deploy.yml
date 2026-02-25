@@ -23,7 +23,8 @@ jobs:
             php artisan down || true
             
             # Fetch latest code
-            git pull origin master --ff-only
+            git fetch origin master
+            git reset --hard origin/master
             
             # Install backend dependencies
             composer install --no-interaction --no-dev --optimize-autoloader
