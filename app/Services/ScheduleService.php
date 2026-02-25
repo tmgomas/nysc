@@ -196,6 +196,7 @@ class ScheduleService
         $program,
         Carbon $from,
         Carbon $until,
+        Collection $practiceCancellations,
         array $holidayLookup,
         Collection &$occurrences
     ): void {
