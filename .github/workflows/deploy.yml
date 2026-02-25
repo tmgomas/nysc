@@ -3,7 +3,7 @@ name: Deploy to Production
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   deploy:
@@ -18,15 +18,37 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /var/www/nysc
-            git pull origin main
-            composer install --no-dev --optimize-autoloader
+            
+            # Enable maintenance mode
+            php artisan down || true
+            
+            # Fetch latest code
+            git pull origin master --ff-only
+            
+            # Install backend dependencies
+            composer install --no-interaction --no-dev --optimize-autoloader
+            
+            # Install frontend dependencies and build
             npm install
             export NODE_OPTIONS="--max-old-space-size=2048"
             npm run build
+            
+            # Clear and rebuild cache
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
+            
+            # Run database migrations
             php artisan migrate --force
+            
+            # Set permissions
             chown -R www-data:www-data /var/www/nysc/storage
+            chown -R www-data:www-data /var/www/nysc/bootstrap/cache
+            
+            # Reload web server
             systemctl reload nginx
+            
+            # Disable maintenance mode
+            php artisan up
+            
             echo "✅ Deploy complete!"
