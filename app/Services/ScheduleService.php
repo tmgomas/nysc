@@ -46,7 +46,6 @@ class ScheduleService
 
         $holidayLookup = $this->buildHolidayLookup($holidays, $now, $days);
 
-        // ── Pre-compute cancellations for class_based slots ───────────
         $classIds = $member->programClasses
             ->where('status', 'active')
             ->pluck('program_class_id')
@@ -61,6 +60,19 @@ class ScheduleService
                 ->groupBy(fn($item) => $item->program_class_id . '_' . $item->cancelled_date->toDateString());
         }
 
+        // ── Pre-compute cancellations for practice_days slots ──────────
+        $activePrograms = $member->programs->filter(fn($p) => $p->pivot?->status === 'active');
+        $practiceProgramIds = $activePrograms->where('schedule_type', 'practice_days')->pluck('id');
+
+        $practiceCancellations = collect();
+        if ($practiceProgramIds->isNotEmpty()) {
+            $practiceCancellations = \App\Models\PracticeCancellation::whereIn('program_id', $practiceProgramIds)
+                ->whereDate('cancelled_date', '>=', $now->toDateString())
+                ->whereDate('cancelled_date', '<=', $until->toDateString())
+                ->get()
+                ->groupBy(fn($item) => $item->program_id . '_' . $item->cancelled_date->toDateString());
+        }
+
         // ── Generate occurrences from both program types ──────────────
         $occurrences = collect();
 
@@ -70,7 +82,7 @@ class ScheduleService
             if ($program->schedule_type === 'practice_days') {
                 // ── TIER 1: Practice-days programs ──
                 $this->generatePracticeDayOccurrences(
-                    $program, $now, $until, $holidayLookup, $occurrences
+                    $program, $now, $until, $practiceCancellations, $holidayLookup, $occurrences
                 );
             } else {
                 // ── TIER 2: Class-based — only enrolled slots ──
@@ -219,8 +231,22 @@ class ScheduleService
                 $dateStr     = $cursor->toDateString();
                 $holidayName = $holidayLookup[$dateStr] ?? null;
 
-                // For practice_days, holidays simply mark the session (no explicit cancellations table)
-                $status = $holidayName ? 'cancelled' : 'scheduled';
+                // Check for explicit cancellations
+                $cancelKey = $program->id . '_' . $dateStr;
+                $isCancelled = false;
+                $reason = null;
+
+                if ($practiceCancellations->has($cancelKey)) {
+                    $isCancelled = true;
+                    $reason = $practiceCancellations->get($cancelKey)->first()?->reason ?? 'Cancelled';
+                }
+
+                if ($holidayName) {
+                    $isCancelled = true;
+                    $reason = "Holiday: {$holidayName}";
+                }
+
+                $status = $isCancelled ? 'cancelled' : 'scheduled';
 
                 $occurrences->push([
                     'id'                  => $program->id . '-practice-' . $day . '-' . $dateStr,
@@ -237,9 +263,10 @@ class ScheduleService
                     'location'            => $program->location?->name,
                     'schedule_type'       => 'practice_days',
                     'status'              => $status,
-                    'cancellation_reason' => $holidayName ? "Holiday: {$holidayName}" : null,
+                    'cancellation_reason' => $reason,
                     'is_holiday'          => ! is_null($holidayName),
                     'holiday_name'        => $holidayName,
+                    'is_cancelled'        => $isCancelled,
                 ]);
 
                 $cursor->addWeek();
