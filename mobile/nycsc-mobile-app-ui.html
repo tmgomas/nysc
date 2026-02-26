@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NYCSC Mobile App UI</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  /* NYCSC Brand */
+  --primary: #1565C0;
+  --primary-light: #1E88E5;
+  --primary-glow: rgba(21,101,192,0.35);
+  --teal: #26A69A;
+  --teal-glow: rgba(38,166,154,0.3);
+
+  /* Dark Sporty Base */
+  --bg: #080C14;
+  --bg2: #0D1220;
+  --surface: rgba(255,255,255,0.05);
+  --surface2: rgba(255,255,255,0.08);
+  --glass: rgba(13,18,32,0.7);
+  --glass-border: rgba(255,255,255,0.1);
+  --glass-border-bright: rgba(255,255,255,0.18);
+
+  /* Text */
+  --text: #F0F4FF;
+  --text2: #A0AABF;
+  --text3: #5A6480;
+
+  /* Status */
+  --success: #43A047;
+  --warning: #FFA726;
+  --error: #E53935;
+  --info: #29B6F6;
+
+  /* Misc */
+  --font: 'Inter', sans-serif;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-lg: 24px;
+}
+
+body {
+  background: #0D1220;
+  font-family: var(--font);
+  min-height: 100vh;
+  padding: 48px 24px 60px;
+}
+
+/* ─── LAYOUT ─────────────────────────────── */
+.app-title {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.app-title h1 {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.app-title h1 span { color: var(--primary-light); }
+.app-title p { color: var(--text2); font-size: 14px; margin-top: 6px; }
+
+.screens-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 36px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.screen-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.screen-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ─── PHONE SHELL ─────────────────────────── */
+.phone {
+  width: 375px;
+  height: 812px;
+  background: var(--bg);
+  border-radius: 44px;
+  overflow: hidden;
+  border: 2px solid rgba(255,255,255,0.1);
+  box-shadow:
+    0 50px 120px rgba(0,0,0,0.7),
+    0 0 0 1px rgba(255,255,255,0.03),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  position: relative;
+  flex-shrink: 0;
+}
+.screen {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  display: flex;
+  flex-direction: column;
+}
+.screen::-webkit-scrollbar { display: none; }
+
+/* ─── STATUS BAR ──────────────────────────── */
+.sb {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+.sb-icons { display: flex; gap: 5px; align-items: center; font-size: 13px; }
+
+/* ─── BOTTOM NAV ──────────────────────────── */
+.bnav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 10px 4px 24px;
+  background: rgba(8,12,20,0.95);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+.bni {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  min-width: 56px;
+}
+.bni-icon { font-size: 20px; line-height: 1; }
+.bni-lbl { font-size: 10px; font-weight: 500; color: var(--text3); }
+.bni.on .bni-lbl { color: var(--primary-light); }
+.bni.on .bni-icon { filter: drop-shadow(0 0 8px #1E88E5); }
+.bni-dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  margin-top: -2px;
+}
+
+/* ─── SHARED COMPONENTS ───────────────────── */
+/* Glass Card */
+.g-card {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(16px);
+  border-radius: var(--radius);
+}
+.g-card.glowing {
+  border-color: rgba(21,101,192,0.4);
+  box-shadow: 0 0 24px rgba(21,101,192,0.12), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.g-card.teal-glow {
+  border-color: rgba(38,166,154,0.4);
+  box-shadow: 0 0 20px rgba(38,166,154,0.1);
+}
+
+/* Pill badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.badge.primary { background: rgba(21,101,192,0.2); color: #64B5F6; border: 1px solid rgba(21,101,192,0.3); }
+.badge.teal { background: rgba(38,166,154,0.15); color: #4DB6AC; border: 1px solid rgba(38,166,154,0.3); }
+.badge.success { background: rgba(67,160,71,0.15); color: #81C784; border: 1px solid rgba(67,160,71,0.3); }
+.badge.warning { background: rgba(255,167,38,0.15); color: #FFB74D; border: 1px solid rgba(255,167,38,0.3); }
+.badge.error { background: rgba(229,57,53,0.15); color: #EF9A9A; border: 1px solid rgba(229,57,53,0.25); }
+.badge.info { background: rgba(41,182,246,0.12); color: #4FC3F7; border: 1px solid rgba(41,182,246,0.25); }
+
+/* Input */
+.inp-wrap { position: relative; margin-bottom: 14px; }
+.inp-label { font-size: 11px; font-weight: 600; color: var(--text2); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; display: block; }
+.inp {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1.5px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-sm);
+  padding: 13px 16px 13px 44px;
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+}
+.inp::placeholder { color: var(--text3); }
+.inp.focused { border-color: rgba(21,101,192,0.6); background: rgba(21,101,192,0.05); }
+.inp-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; opacity: 0.5; }
+.inp-right { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; color: var(--text3); }
+
+/* Buttons */
+.btn {
+  width: 100%;
+  padding: 15px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  position: relative;
+  overflow: hidden;
+}
+.btn.primary {
+  background: linear-gradient(135deg, #1565C0, #1E88E5);
+  color: white;
+  box-shadow: 0 8px 28px rgba(21,101,192,0.35);
+}
+.btn.ghost {
+  background: rgba(255,255,255,0.05);
+  border: 1.5px solid var(--glass-border-bright);
+  color: var(--text);
+}
+.btn.teal-btn {
+  background: linear-gradient(135deg, #00897B, #26A69A);
+  color: white;
+  box-shadow: 0 6px 20px rgba(38,166,154,0.3);
+}
+
+/* Section title */
+.sec-hd {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.sec-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.sec-link { font-size: 12px; font-weight: 600; color: var(--primary-light); }
+
+/* Avatar */
+.avatar {
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1565C0, #26A69A);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+/* Divider */
+.divider { height: 1px; background: var(--glass-border); margin: 14px 0; }
+
+/* Gradient overlay for hero sections */
+.hero-grad {
+  background: linear-gradient(160deg, rgba(21,101,192,0.25) 0%, rgba(38,166,154,0.12) 50%, transparent 100%);
+}
+
+/* ═══════════════════════════════════════════ */
+/* SCREEN 1: LOGIN                             */
+/* ═══════════════════════════════════════════ */
+.login-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+.login-orb1 {
+  position: absolute;
+  top: -80px; left: -60px;
+  width: 280px; height: 280px;
+  background: radial-gradient(circle, rgba(21,101,192,0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: orb 6s ease-in-out infinite;
+}
+.login-orb2 {
+  position: absolute;
+  top: 60px; right: -80px;
+  width: 220px; height: 220px;
+  background: radial-gradient(circle, rgba(38,166,154,0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: orb 6s ease-in-out infinite 3s;
+}
+.login-mesh {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+@keyframes orb {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(10px,15px) scale(1.05); }
+}
+
+.login-content { position: relative; z-index: 1; }
+.login-logo-section {
+  padding: 32px 28px 24px;
+  text-align: center;
+}
+.nycsc-emblem {
+  width: 72px; height: 72px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(21,101,192,0.8), rgba(38,166,154,0.6));
+  border: 1px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(20px);
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  box-shadow: 0 12px 40px rgba(21,101,192,0.3), 0 0 0 1px rgba(255,255,255,0.08);
+}
+.nycsc-wordmark {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.nycsc-wordmark span { color: var(--teal); }
+.nycsc-full { font-size: 10px; color: var(--text2); letter-spacing: 0.06em; margin-top: 4px; text-transform: uppercase; }
+
+.login-hero-tag {
+  font-size: 13px;
+  color: var(--text2);
+  margin-top: 20px;
+  font-weight: 400;
+}
+.login-hero-tag strong { color: var(--text); font-weight: 700; }
+
+.login-form {
+  background: rgba(8,12,20,0.7);
+  backdrop-filter: blur(24px);
+  border-top: 1px solid var(--glass-border);
+  border-radius: 28px 28px 0 0;
+  padding: 28px 24px 20px;
+  flex: 1;
+}
+
+.role-tabs {
+  display: flex;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 3px;
+  margin-bottom: 24px;
+}
+.role-tab {
+  flex: 1;
+  padding: 8px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.role-tab.active {
+  background: linear-gradient(135deg, #1565C0, #1E88E5);
+  color: white;
+  box-shadow: 0 4px 12px rgba(21,101,192,0.3);
+}
+
+.login-footer-links {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+.lfl { font-size: 13px; color: var(--text2); text-align: center; }
+.lfl a { color: var(--primary-light); font-weight: 600; }
+
+.social-divider { display: flex; align-items: center; gap: 12px; margin: 18px 0; }
+.sd-line { flex: 1; height: 1px; background: var(--glass-border); }
+.sd-txt { font-size: 11px; color: var(--text3); font-weight: 600; letter-spacing: 0.06em; }
+.soc-row { display: flex; gap: 10px; }
+.soc-btn {
+  flex: 1;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border-bright);
+  border-radius: 10px;
+  padding: 11px 8px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: 12px; font-weight: 600; color: var(--text2);
+}
+
+/* ═══════════════════════════════════════════ */
+/* SCREEN 2: FORGOT PASSWORD                   */
+/* ═══════════════════════════════════════════ */
+.fp-hero {
+  padding: 24px 24px 36px;
+  position: relative;
+  overflow: hidden;
+}
+.fp-orb {
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(21,101,192,0.2) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.fp-icon {
+  width: 64px; height: 64px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(21,101,192,0.3), rgba(38,166,154,0.2));
+  border: 1px solid rgba(21,101,192,0.4);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 24px rgba(21,101,192,0.2);
+}
+.fp-title { font-size: 26px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+.fp-sub { font-size: 13px; color: var(--text2); margin-top: 8px; line-height: 1.6; }
+
+.step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 24px;
+  margin-bottom: 20px;
+}
+.step-dot {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  flex-shrink: 0;
+}
+.step-dot.done { background: var(--primary); color: white; }
+.step-dot.active {
+  background: linear-gradient(135deg, #1565C0, #1E88E5);
+  color: white;
+  box-shadow: 0 0 0 4px rgba(21,101,192,0.2);
+}
+.step-dot.idle { background: rgba(255,255,255,0.08); color: var(--text3); }
+.step-line { flex: 1; height: 2px; background: var(--glass-border); }
+.step-line.done { background: var(--primary); }
+
+.fp-form { padding: 0 24px 24px; flex: 1; }
+.fp-hint-card {
+  background: rgba(41,182,246,0.08);
+  border: 1px solid rgba(41,182,246,0.2);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex; gap: 10px; align-items: flex-start;
+  margin-bottom: 20px;
+}
+.fp-hint-icon { font-size: 18px; flex-shrink: 0; }
+.fp-hint-txt { font-size: 12px; color: #4FC3F7; line-height: 1.5; }
+
+/* OTP style */
+.otp-row { display: flex; gap: 10px; justify-content: center; margin: 20px 0; }
+.otp-box {
+  width: 52px; height: 60px;
+  background: rgba(255,255,255,0.05);
+  border: 2px solid var(--glass-border-bright);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 700; color: var(--text);
+}
+.otp-box.filled { border-color: var(--primary-light); color: var(--primary-light); background: rgba(21,101,192,0.08); }
+.otp-box.active { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(38,166,154,0.15); }
+
+/* ═══════════════════════════════════════════ */
+/* SCREEN 3: HOME DASHBOARD                    */
+/* ═══════════════════════════════════════════ */
+.dash-hero {
+  background: linear-gradient(160deg, rgba(21,101,192,0.3) 0%, rgba(8,12,20,0) 60%);
+  padding: 8px 20px 24px;
+  position: relative;
+  overflow: hidden;
+}
+.dash-hero-mesh {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.dash-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  position: relative;
+}
+.dash-greet-sub { font-size: 11px; color: var(--text2); font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; }
+.dash-greet-name { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; margin-top: 2px; }
+.dash-notif {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid var(--glass-border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  position: relative;
+}
+.dash-notif-dot {
+  position: absolute; top: 8px; right: 8px;
+  width: 8px; height: 8px;
+  background: var(--error);
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+}
+
+/* Member status card */
+.member-card {
+  padding: 18px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(21,101,192,0.5), rgba(38,166,154,0.3));
+  border: 1px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(20px);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.mc-shine {
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 120px; height: 120px;
+  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.mc-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.mc-name { font-size: 16px; font-weight: 700; color: white; }
+.mc-id { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 2px; }
+.mc-chip {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.mc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: rgba(255,255,255,0.1); border-radius: 12px; overflow: hidden; }
+.mc-stat { background: rgba(0,0,0,0.2); padding: 10px 8px; text-align: center; }
+.mc-stat-val { font-size: 18px; font-weight: 800; color: white; }
+.mc-stat-lbl { font-size: 9px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+/* Quick actions */
+.qa-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+.qa-item {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 14px 6px 10px;
+  text-align: center;
+  cursor: pointer;
+}
+.qa-icon { font-size: 22px; margin-bottom: 6px; }
+.qa-lbl { font-size: 10px; font-weight: 600; color: var(--text2); line-height: 1.2; }
+
+/* Upcoming class card */
+.uc-card {
+  padding: 16px;
+  border-radius: 16px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.uc-time-col { text-align: center; width: 46px; flex-shrink: 0; }
+.uc-time { font-size: 15px; font-weight: 800; color: var(--text); }
+.uc-ampm { font-size: 10px; color: var(--text3); font-weight: 600; }
+.uc-divider { width: 1px; height: 44px; background: var(--glass-border); flex-shrink: 0; }
+.uc-info { flex: 1; }
+.uc-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.uc-meta { font-size: 11px; color: var(--text2); margin-top: 3px; }
+.uc-action {
+  width: 36px; height: 36px;
+  background: rgba(21,101,192,0.15);
+  border: 1px solid rgba(21,101,192,0.3);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+
+/* Alert banner */
+.alert-banner {
+  background: rgba(255,167,38,0.1);
+  border: 1px solid rgba(255,167,38,0.25);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex; gap: 10px; align-items: center;
+  margin-bottom: 16px;
+}
+.ab-icon { font-size: 20px; }
+.ab-text { flex: 1; }
+.ab-title { font-size: 13px; font-weight: 700; color: #FFB74D; }
+.ab-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.ab-btn {
+  font-size: 11px; font-weight: 700; color: #FFB74D;
+  background: rgba(255,167,38,0.15);
+  border: 1px solid rgba(255,167,38,0.25);
+  border-radius: 8px;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════ */
+/* SCREEN 4: SCHEDULE                          */
+/* ═══════════════════════════════════════════ */
+.sched-header { padding: 8px 20px 0; }
+.sched-page-title { font-size: 24px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+.sched-page-sub { font-size: 12px; color: var(--text2); margin-top: 3px; }
+
+.week-strip {
+  display: flex;
+  gap: 8px;
+  padding: 16px 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.week-strip::-webkit-scrollbar { display: none; }
+.wd {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  min-width: 44px;
+  padding: 10px 6px;
+  border-radius: 14px;
+  cursor: pointer;
+}
+.wd.active { background: linear-gradient(135deg, #1565C0, #1E88E5); }
+.wd-name { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: var(--text3); text-transform: uppercase; }
+.wd.active .wd-name { color: rgba(255,255,255,0.75); }
+.wd-num { font-size: 18px; font-weight: 800; color: var(--text); }
+.wd.active .wd-num { color: white; }
+.wd-dot { width: 5px; height: 5px; border-radius: 50%; }
+.wd-dot.has { background: var(--teal); }
+.wd.active .wd-dot.has { background: rgba(255,255,255,0.6); }
+
+.sched-list { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
+
+.se-item {
+  display: flex; gap: 12px; align-items: flex-start;
+}
+.se-time-col { width: 48px; flex-shrink: 0; padding-top: 12px; }
+.se-t { font-size: 12px; font-weight: 700; color: var(--text2); }
+.se-ap { font-size: 10px; color: var(--text3); }
+.se-line-col {
+  width: 2px;
+  background: var(--glass-border);
+  margin-top: 16px;
+  position: relative;
+  align-self: stretch;
+  flex-shrink: 0;
+}
+.se-pip {
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  box-shadow: 0 0 0 3px rgba(30,136,229,0.2);
+}
+.se-card {
+  flex: 1;
+  padding: 14px;
+  border-radius: 14px;
+  margin-bottom: 4px;
+}
+.se-card.border-l-primary { border-left: 3px solid var(--primary-light); }
+.se-card.border-l-teal { border-left: 3px solid var(--teal); }
+.se-card.border-l-warning { border-left: 3px solid var(--warning); }
+.se-card.border-l-error { border-left: 3px solid var(--error); }
+.se-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.se-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.se-metas { display: flex; flex-wrap: wrap; gap: 8px; }
+.se-meta-item { font-size: 11px; color: var(--text2); display: flex; align-items: center; gap: 4px; }
+.se-coach-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--glass-border); }
+.se-coach-av { width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #1565C0, #26A69A); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white; }
+.se-coach-name { font-size: 11px; color: var(--text2); }
+.se-coach-name b { color: var(--text); }
+
+/* ═══════════════════════════════════════════ */
+/* SCREEN 5: PAYMENTS                          */
+/* ═══════════════════════════════════════════ */
+.pay-header { padding: 8px 20px 16px; }
+.pay-summary-card {
+  margin: 0 20px 16px;
+  padding: 20px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(21,101,192,0.5), rgba(38,166,154,0.3));
+  border: 1px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(20px);
+  position: relative;
+  overflow: hidden;
+}
+.psc-shine {
+  position: absolute; top: -50px; right: -50px;
+  width: 160px; height: 160px;
+  background: radial-gradient(circle, rgba(255,255,255,0.07) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.psc-label { font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.psc-amount { font-size: 36px; font-weight: 900; color: white; letter-spacing: -0.02em; margin: 6px 0; }
+.psc-amount span { font-size: 20px; font-weight: 600; opacity: 0.7; }
+.psc-due { font-size: 12px; color: rgba(255,255,255,0.6); }
+.psc-row { display: flex; justify-content: space-between; align-items: flex-end; }
+.pay-now-btn {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 13px; font-weight: 700; color: white;
+  display: flex; align-items: center; gap: 6px;
+}
+
+.pay-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 20px 16px;
+  border-bottom: 1px solid var(--glass-border);
+  margin-bottom: 16px;
+}
+.pay-tab {
+  padding: 8px 16px;
+  font-size: 13px; font-weight: 600; color: var(--text3);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+.pay-tab.active { color: var(--primary-light); border-bottom-color: var(--primary-light); }
+
+.pay-list { padding: 0 20px; display: flex; flex-direction: column; gap: 10px; }
+.pay-item {
+  padding: 14px 16px;
+  border-radius: 14px;
+  cursor: pointer;
+}
+.pay-item-top { display: flex; align-items: center; gap: 12px; }
+.pay-item-icon {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.pay-item-icon.pending { background: rgba(255,167,38,0.15); }
+.pay-item-icon.paid { background: rgba(67,160,71,0.12); }
+.pay-item-info { flex: 1; }
+.pay-item-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.pay-item-date { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.pay-item-right { text-align: right; }
+.pay-item-amt { font-size: 15px; font-weight: 800; color: var(--text); }
+.pay-item-status { font-size: 10px; font-weight: 700; margin-top: 2px; }
+.pay-item-status.pending { color: #FFB74D; }
+.pay-item-status.paid { color: #81C784; }
+.pay-expand {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--glass-border);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.pay-break-row { display: flex; justify-content: space-between; align-items: center; }
+.pay-break-name { font-size: 12px; color: var(--text2); }
+.pay-break-val { font-size: 12px; font-weight: 600; color: var(--text); }
+.pay-break-total { display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px solid var(--glass-border); }
+.pay-break-total span:first-child { font-size: 13px; font-weight: 700; color: var(--text); }
+.pay-break-total span:last-child { font-size: 13px; font-weight: 800; color: var(--primary-light); }
+
+/* ═══════════════════════════════════════════ */
+/* SCREEN 6: ATTENDANCE                        */
+/* ═══════════════════════════════════════════ */
+.att-header { padding: 8px 20px 16px; }
+
+.att-summary-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 20px 20px; }
+.att-stat-card { padding: 14px 10px; border-radius: 14px; text-align: center; }
+.att-stat-val { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+.att-stat-lbl { font-size: 10px; font-weight: 600; color: var(--text2); letter-spacing: 0.04em; text-transform: uppercase; }
+
+.att-month-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 20px 14px;
+}
+.att-month-title { font-size: 15px; font-weight: 700; color: var(--text); }
+.att-nav { display: flex; gap: 8px; }
+.att-nav-btn {
+  width: 28px; height: 28px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: var(--text2); cursor: pointer;
+}
+
+.att-grid-header { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 20px; margin-bottom: 8px; }
+.att-gh { font-size: 10px; font-weight: 700; color: var(--text3); text-align: center; letter-spacing: 0.06em; text-transform: uppercase; }
+
+.att-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; padding: 0 20px; }
+.att-cell {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  position: relative;
+  cursor: pointer;
+}
+.att-cell.present { background: rgba(67,160,71,0.2); color: #81C784; }
+.att-cell.absent { background: rgba(229,57,53,0.15); color: #EF9A9A; }
+.att-cell.holiday { background: rgba(41,182,246,0.12); color: #4FC3F7; }
+.att-cell.today { outline: 2px solid var(--primary-light); }
+.att-cell.empty { opacity: 0; pointer-events: none; }
+.att-cell.present::after { content: '✓'; position: absolute; bottom: 2px; right: 3px; font-size: 7px; }
+.att-cell.absent::after { content: '✗'; position: absolute; bottom: 2px; right: 3px; font-size: 7px; }
+
+.att-legend {
+  display: flex; gap: 16px; padding: 14px 20px;
+  flex-wrap: wrap;
+}
+.att-leg-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text2); }
+.att-leg-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+.att-recent { padding: 0 20px 20px; }
+.att-rec-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+.att-rec-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.att-rec-info { flex: 1; }
+.att-rec-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.att-rec-date { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+/* ═══════════════════════════════════════════ */
+/* SCREEN 7: PROFILE                           */
+/* ═══════════════════════════════════════════ */
+.prof-hero {
+  background: linear-gradient(160deg, rgba(21,101,192,0.28) 0%, transparent 60%);
+  padding: 8px 20px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.prof-hero-orb {
+  position: absolute; top: -60px; left: 50%; transform: translateX(-50%);
+  width: 260px; height: 260px;
+  background: radial-gradient(circle, rgba(21,101,192,0.15) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.prof-avatar-wrap {
+  position: relative;
+  width: fit-content;
+  margin: 16px auto 14px;
+}
+.prof-avatar {
+  width: 82px; height: 82px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1565C0, #26A69A);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; font-weight: 800; color: white;
+  border: 3px solid rgba(255,255,255,0.15);
+  box-shadow: 0 8px 28px rgba(21,101,192,0.35);
+}
+.prof-edit-btn {
+  position: absolute; bottom: 2px; right: 2px;
+  width: 26px; height: 26px;
+  background: var(--primary);
+  border-radius: 50%; border: 2px solid var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+}
+.prof-name { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+.prof-role { font-size: 12px; color: var(--text2); margin-top: 4px; }
+.prof-id { font-size: 11px; color: var(--primary-light); margin-top: 3px; font-weight: 600; }
+
+.prof-stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--glass-border); border-radius: 16px; overflow: hidden; margin-top: 18px; }
+.prof-stat { background: rgba(255,255,255,0.04); padding: 14px 8px; text-align: center; }
+.prof-stat-val { font-size: 20px; font-weight: 800; color: var(--text); }
+.prof-stat-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; font-weight: 600; }
+
+.prof-sports {
+  padding: 20px 20px 0;
+}
+.prof-sport-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+.ps-icon { font-size: 22px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
+.ps-info { flex: 1; }
+.ps-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.ps-coach { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+.prof-menu { padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; }
+.prof-sec-lbl { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; margin-top: 8px; }
+.prof-menu-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.pmi-icon-wrap {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; flex-shrink: 0;
+}
+.pmi-text { flex: 1; }
+.pmi-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.pmi-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.pmi-right { font-size: 16px; color: var(--text3); }
+.pmi-badge {
+  background: rgba(21,101,192,0.15);
+  border: 1px solid rgba(21,101,192,0.25);
+  color: var(--primary-light);
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 10px; font-weight: 700;
+}
+.logout-btn {
+  margin: 8px 20px 20px;
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(229,57,53,0.1);
+  border: 1px solid rgba(229,57,53,0.2);
+  color: #EF9A9A;
+  font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  cursor: pointer;
+}
+
+/* ─── ANIMATIONS ─────────────────────────── */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; } }
+.phone .screen > * { animation: fadeUp 0.4s ease both; }
+</style>
+</head>
+<body>
+
+<div class="app-title">
+  <h1>NYCSC <span>Mobile App</span> UI</h1>
+  <p>Dark Sporty + NYCSC Brand · Glassmorphism · Inter Font</p>
+</div>
+
+<div class="screens-grid">
+
+<!-- ═══════════════ SCREEN 1: LOGIN ═══════════════ -->
+<div class="screen-col">
+  <span class="screen-label">01 · Login</span>
+  <div class="phone">
+    <div class="screen">
+      <div class="login-bg">
+        <div class="login-mesh"></div>
+        <div class="login-orb1"></div>
+        <div class="login-orb2"></div>
+      </div>
+
+      <div class="login-content" style="display:flex;flex-direction:column;height:100%;">
+        <!-- Status Bar -->
+        <div class="sb" style="position:relative;z-index:5;">
+          <span>9:41</span>
+          <div class="sb-icons">📶 📡 🔋</div>
+        </div>
+
+        <!-- Logo section -->
+        <div class="login-logo-section">
+          <div class="nycsc-emblem">🏅</div>
+          <div class="nycsc-wordmark">NYC<span>SC</span></div>
+          <div class="nycsc-full">National Youth Corps Sports Council</div>
+          <div class="login-hero-tag" style="margin-top:28px;">
+            <strong>Welcome back, Athlete.</strong><br>Sign in to continue your journey.
+          </div>
+        </div>
+
+        <!-- Form panel -->
+        <div class="login-form" style="margin-top:auto;">
+          <!-- Role selector -->
+          <div class="role-tabs">
+            <div class="role-tab active">Member</div>
+            <div class="role-tab">Coach</div>
+            <div class="role-tab">Admin</div>
+          </div>
+
+          <!-- Email -->
+          <label class="inp-label">Email Address</label>
+          <div class="inp-wrap">
+            <span class="inp-icon">✉️</span>
+            <input class="inp focused" type="email" placeholder="member@nycsc.lk" />
+          </div>
+
+          <!-- Password -->
+          <label class="inp-label">Password</label>
+          <div class="inp-wrap" style="position:relative;">
+            <span class="inp-icon">🔒</span>
+            <input class="inp" type="password" placeholder="••••••••" />
+            <span class="inp-right">👁</span>
+          </div>
+
+          <!-- Remember + forgot -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:18px;height:18px;border-radius:5px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:11px;color:white;">✓</div>
+              <span style="font-size:12px;color:var(--text2);font-weight:500;">Remember me</span>
+            </div>
+            <a style="font-size:12px;font-weight:600;color:var(--primary-light);">Forgot Password?</a>
+          </div>
+
+          <button class="btn primary">Sign In →</button>
+
+          <div class="social-divider">
+            <div class="sd-line"></div>
+            <span class="sd-txt">or continue with</span>
+            <div class="sd-line"></div>
+          </div>
+
+          <div class="soc-row">
+            <div class="soc-btn">🍎 <span>Apple</span></div>
+            <div class="soc-btn">G <span>Google</span></div>
+          </div>
+
+          <div class="login-footer-links" style="margin-top:16px;">
+            <div class="lfl">Don't have an account? <a>Contact Admin</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCREEN 2: FORGOT PASSWORD ═══════════════ -->
+<div class="screen-col">
+  <span class="screen-label">02 · Forgot Password</span>
+  <div class="phone">
+    <div class="screen">
+      <div class="sb">
+        <span>9:41</span>
+        <div class="sb-icons">📶 📡 🔋</div>
+      </div>
+
+      <!-- Back + title -->
+      <div class="fp-hero">
+        <div class="fp-orb"></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid var(--glass-border);display:flex;align-items:center;justify-content:center;font-size:16px;">←</div>
+          <span style="font-size:13px;font-weight:600;color:var(--text2);">Back to Login</span>
+        </div>
+        <div class="fp-icon">🔑</div>
+        <div class="fp-title">Reset Password</div>
+        <div class="fp-sub">Enter your registered email. We'll send a 6-digit OTP to verify your identity.</div>
+      </div>
+
+      <!-- Step indicator -->
+      <div class="step-indicator">
+        <div class="step-dot done">✓</div>
+        <div class="step-line done"></div>
+        <div class="step-dot active">2</div>
+        <div class="step-line"></div>
+        <div class="step-dot idle">3</div>
+      </div>
+      <div style="display:flex;justify-content:space-around;padding:0 20px 20px;font-size:10px;color:var(--text3);font-weight:600;">
+        <span style="color:var(--primary-light);">Email</span>
+        <span style="color:var(--primary-light);">Verify OTP</span>
+        <span>New Password</span>
+      </div>
+
+      <div class="fp-form">
+        <!-- Info hint -->
+        <div class="fp-hint-card">
+          <div class="fp-hint-icon">📬</div>
+          <div class="fp-hint-txt">We sent a 6-digit code to <strong>k.perera@nycsc.lk</strong>. Check your inbox and enter it below.</div>
+        </div>
+
+        <div style="font-size:14px;font-weight:700;color:var(--text);text-align:center;margin-bottom:4px;">Enter OTP Code</div>
+        <div style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:0;">Code expires in <span style="color:var(--warning);font-weight:700;">04:32</span></div>
+
+        <!-- OTP input -->
+        <div class="otp-row">
+          <div class="otp-box filled">8</div>
+          <div class="otp-box filled">4</div>
+          <div class="otp-box filled">2</div>
+          <div class="otp-box active">_</div>
+          <div class="otp-box">—</div>
+          <div class="otp-box">—</div>
+        </div>
+
+        <button class="btn primary" style="margin-bottom:14px;">Verify & Continue →</button>
+        <div style="text-align:center;font-size:13px;color:var(--text2);">Didn't receive? <span style="color:var(--primary-light);font-weight:600;">Resend Code</span></div>
+
+        <div class="divider"></div>
+
+        <!-- New password (step 3 preview) -->
+        <div style="opacity:0.35;">
+          <label class="inp-label">New Password</label>
+          <div class="inp-wrap">
+            <span class="inp-icon">🔒</span>
+            <input class="inp" type="password" placeholder="Min 8 characters" disabled />
+          </div>
+          <label class="inp-label">Confirm Password</label>
+          <div class="inp-wrap">
+            <span class="inp-icon">🔒</span>
+            <input class="inp" type="password" placeholder="Repeat new password" disabled />
+          </div>
+          <button class="btn primary" disabled style="opacity:0.5;">Update Password</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCREEN 3: HOME DASHBOARD ═══════════════ -->
+<div class="screen-col">
+  <span class="screen-label">03 · Dashboard</span>
+  <div class="phone">
+    <div class="screen">
+      <div class="sb">
+        <span>9:41</span>
+        <div class="sb-icons">📶 📡 🔋</div>
+      </div>
+
+      <div class="dash-hero">
+        <div class="dash-hero-mesh"></div>
+        <div class="dash-top" style="position:relative;">
+          <div>
+            <div class="dash-greet-sub">Wednesday, 25 Feb</div>
+            <div class="dash-greet-name">Hi, Kasun 👋</div>
+          </div>
+          <div class="dash-notif">
+            🔔
+            <div class="dash-notif-dot"></div>
+          </div>
+        </div>
+
+        <!-- Member card -->
+        <div class="member-card">
+          <div class="mc-shine"></div>
+          <div class="mc-top">
+            <div>
+              <div class="mc-name">Kasun Perera</div>
+              <div class="mc-id">ID · NYC-2024-0892</div>
+            </div>
+            <div class="mc-chip">Active</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+            <div class="badge teal">🏸 Badminton</div>
+            <div class="badge primary">🏊 Swimming</div>
+          </div>
+          <div class="mc-stats">
+            <div class="mc-stat"><div class="mc-stat-val">94%</div><div class="mc-stat-lbl">Attend.</div></div>
+            <div class="mc-stat"><div class="mc-stat-val">12</div><div class="mc-stat-lbl">Classes</div></div>
+            <div class="mc-stat"><div class="mc-stat-val">LKR 0</div><div class="mc-stat-lbl">Pending</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:0 20px 20px;">
+        <!-- Alert banner -->
+        <div class="alert-banner">
+          <div class="ab-icon">⚠️</div>
+          <div class="ab-text">
+            <div class="ab-title">Payment Due Soon</div>
+            <div class="ab-sub">March membership fee due in 3 days</div>
+          </div>
+          <div class="ab-btn">Pay →</div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="sec-hd"><div class="sec-title">Quick Actions</div></div>
+        <div class="qa-grid">
+          <div class="qa-item">
+            <div class="qa-icon">📅</div>
+            <div class="qa-lbl">Schedule</div>
+          </div>
+          <div class="qa-item">
+            <div class="qa-icon">💳</div>
+            <div class="qa-lbl">Payments</div>
+          </div>
+          <div class="qa-item">
+            <div class="qa-icon">✅</div>
+            <div class="qa-lbl">Attendance</div>
+          </div>
+          <div class="qa-item">
+            <div class="qa-icon">👤</div>
+            <div class="qa-lbl">Profile</div>
+          </div>
+        </div>
+
+        <!-- Upcoming classes -->
+        <div class="sec-hd" style="margin-top:4px;"><div class="sec-title">Upcoming Classes</div><div class="sec-link">View All →</div></div>
+
+        <div class="uc-card g-card glowing">
+          <div class="uc-time-col"><div class="uc-time">08:00</div><div class="uc-ampm">AM</div></div>
+          <div class="uc-divider"></div>
+          <div class="uc-info">
+            <div class="uc-name">Badminton Training</div>
+            <div class="uc-meta">🏟 Court A · Coach Ravi · 90 min</div>
+            <div style="margin-top:6px;"><div class="badge primary">Today</div></div>
+          </div>
+          <div class="uc-action">→</div>
+        </div>
+
+        <div class="uc-card g-card" style="margin-top:0;">
+          <div class="uc-time-col"><div class="uc-time">04:00</div><div class="uc-ampm">PM</div></div>
+          <div class="uc-divider"></div>
+          <div class="uc-info">
+            <div class="uc-name">Swimming Session</div>
+            <div class="uc-meta">🏊 Pool B · Coach Sunil · 60 min</div>
+            <div style="margin-top:6px;"><div class="badge teal">Tomorrow</div></div>
+          </div>
+          <div class="uc-action">→</div>
+        </div>
+      </div>
+
+      <div class="bnav">
+        <div class="bni on"><div class="bni-icon">🏠</div><div class="bni-lbl">Home</div><div class="bni-dot"></div></div>
+        <div class="bni"><div class="bni-icon">📅</div><div class="bni-lbl">Schedule</div></div>
+        <div class="bni"><div class="bni-icon">💳</div><div class="bni-lbl">Payments</div></div>
+        <div class="bni"><div class="bni-icon">✅</div><div class="bni-lbl">Attendance</div></div>
+        <div class="bni"><div class="bni-icon">👤</div><div class="bni-lbl">Profile</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCREEN 4: SCHEDULE ═══════════════ -->
+<div class="screen-col">
+  <span class="screen-label">04 · Schedule</span>
+  <div class="phone">
+    <div class="screen">
+      <div class="sb">
+        <span>9:41</span>
+        <div class="sb-icons">📶 📡 🔋</div>
+      </div>
+
+      <div class="sched-header">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div class="sched-page-title">Schedule</div>
+            <div class="sched-page-sub">February 2026 · 8 classes this month</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid var(--glass-border);display:flex;align-items:center;justify-content:center;font-size:16px;">☰</div>
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(21,101,192,0.15);border:1px solid rgba(21,101,192,0.3);display:flex;align-items:center;justify-content:center;font-size:16px;">📅</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Week strip -->
+      <div class="week-strip">
+        <div class="wd"><div class="wd-name">MON</div><div class="wd-num">23</div><div class="wd-dot"></div></div>
+        <div class="wd"><div class="wd-name">TUE</div><div class="wd-num">24</div><div class="wd-dot has"></div></div>
+        <div class="wd active"><div class="wd-name">WED</div><div class="wd-num">25</div><div class="wd-dot has"></div></div>
+        <div class="wd"><div class="wd-name">THU</div><div class="wd-num">26</div><div class="wd-dot has"></div></div>
+        <div class="wd"><div class="wd-name">FRI</div><div class="wd-num">27</div><div class="wd-dot"></div></div>
+        <div class="wd"><div class="wd-name">SAT</div><div class="wd-num">28</div><div class="wd-dot has"></div></div>
+      </div>
+
+      <!-- Schedule list -->
+      <div class="sched-list">
+        <div class="se-item">
+          <div class="se-time-col"><div class="se-t">08:00</div><div class="se-ap">AM</div></div>
+          <div class="se-line-col"><div class="se-pip"></div></div>
+          <div class="se-card g-card border-l-primary">
+            <div class="se-top">
+              <div class="se-name">Badminton Training</div>
+              <div class="badge primary">Active</div>
+            </div>
+            <div class="se-metas">
+              <div class="se-meta-item">⏱ 90 min</div>
+              <div class="se-meta-item">📍 Court A</div>
+              <div class="se-meta-item">👥 14 members</div>
+            </div>
+            <div class="se-coach-row">
+              <div class="se-coach-av">R</div>
+              <div class="se-coach-name">Coach <b>Ravi Mendis</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="se-item">
+          <div class="se-time-col"><div class="se-t">11:30</div><div class="se-ap">AM</div></div>
+          <div class="se-line-col"><div class="se-pip" style="background:var(--warning);box-shadow:0 0 0 3px rgba(255,167,38,0.2);"></div></div>
+          <div class="se-card g-card border-l-warning">
+            <div class="se-top">
+              <div class="se-name">Athletics Practice</div>
+              <div class="badge warning">⚠️ Rescheduled</div>
+            </div>
+            <div class="se-metas">
+              <div class="se-meta-item">⏱ 60 min</div>
+              <div class="se-meta-item">📍 Track Field</div>
+            </div>
+            <div class="se-coach-row">
+              <div class="se-coach-av" style="background:linear-gradient(135deg,#E65100,#FF8F00);">S</div>
+              <div class="se-coach-name">Coach <b>Sampath Silva</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="se-item">
+          <div class="se-time-col"><div class="se-t">04:00</div><div class="se-ap">PM</div></div>
+          <div class="se-line-col"><div class="se-pip" style="background:var(--teal);box-shadow:0 0 0 3px rgba(38,166,154,0.2);"></div></div>
+          <div class="se-card g-card border-l-teal">
+            <div class="se-top">
+              <div class="se-name">Swimming Session</div>
+              <div class="badge teal">Confirmed</div>
+            </div>
+            <div class="se-metas">
+              <div class="se-meta-item">⏱ 75 min</div>
+              <div class="se-meta-item">📍 Pool B</div>
+              <div class="se-meta-item">👥 8</div>
+            </div>
+            <div class="se-coach-row">
+              <div class="se-coach-av" style="background:linear-gradient(135deg,#00695C,#26A69A);">K</div>
+              <div class="se-coach-name">Coach <b>Kumara Bandara</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="se-item">
+          <div class="se-time-col"><div class="se-t">06:30</div><div class="se-ap">PM</div></div>
+          <div class="se-line-col"><div class="se-pip" style="background:var(--error);box-shadow:0 0 0 3px rgba(229,57,53,0.2);"></div></div>
+          <div class="se-card g-card border-l-error">
+            <div class="se-top">
+              <div class="se-name">Volleyball Match</div>
+              <div class="badge error">Cancelled</div>
+            </div>
+            <div class="se-metas">
+              <div class="se-meta-item">⏱ 120 min</div>
+              <div class="se-meta-item">📍 Hall C</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:16px;"></div>
+      <div class="bnav">
+        <div class="bni"><div class="bni-icon">🏠</div><div class="bni-lbl">Home</div></div>
+        <div class="bni on"><div class="bni-icon">📅</div><div class="bni-lbl">Schedule</div><div class="bni-dot"></div></div>
+        <div class="bni"><div class="bni-icon">💳</div><div class="bni-lbl">Payments</div></div>
+        <div class="bni"><div class="bni-icon">✅</div><div class="bni-lbl">Attendance</div></div>
+        <div class="bni"><div class="bni-icon">👤</div><div class="bni-lbl">Profile</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCREEN 5: PAYMENTS ═══════════════ -->
+<div class="screen-col">
+  <span class="screen-label">05 · Payments</span>
+  <div class="phone">
+    <div class="screen">
+      <div class="sb">
+        <span>9:41</span>
+        <div class="sb-icons">📶 📡 🔋</div>
+      </div>
+
+      <div class="pay-header">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div class="sched-page-title">Payments</div>
+            <div class="sched-page-sub">2 pending · 5 completed</div>
+          </div>
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid var(--glass-border);display:flex;align-items:center;justify-content:center;">🔔</div>
+        </div>
+      </div>
+
+      <!-- Summary card -->
+      <div class="pay-summary-card">
+        <div class="psc-shine"></div>
+        <div class="psc-row">
+          <div>
+            <div class="psc-label">Total Outstanding</div>
+            <div class="psc-amount"><span>LKR</span> 7,500</div>
+            <div class="psc-due">Due by March 5, 2026</div>
+          </div>
+          <div class="pay-now-btn">💳 Pay Now</div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="pay-tabs">
+        <div class="pay-tab active">Pending (2)</div>
+        <div class="pay-tab">History</div>
+        <div class="pay-tab">Invoice</div>
+      </div>
+
+      <!-- Pending items -->
+      <div class="pay-list">
+        <!-- Expanded item -->
+        <div class="pay-item g-card glowing">
+          <div class="pay-item-top">
+            <div class="pay-item-icon pending">📋</div>
+            <div class="pay-item-info">
+              <div class="pay-item-name">March Membership Fee</div>
+              <div class="pay-item-date">Due: 05 Mar 2026</div>
+            </div>
+            <div class="pay-item-right">
+              <div class="pay-item-amt">LKR 5,000</div>
+              <div class="pay-item-status pending">● Pending</div>
+            </div>
+          </div>
+          <!-- Expanded breakdown -->
+          <div class="pay-expand">
+            <div class="pay-break-row">
+              <span class="pay-break-name">Badminton Monthly</span>
+              <span class="pay-break-val">LKR 2,500</span>
+            </div>
+            <div class="pay-break-row">
+              <span class="pay-break-name">Swimming Monthly</span>
+              <span class="pay-break-val">LKR 2,000</span>
+            </div>
+            <div class="pay-break-row">
+              <span class="pay-break-name">Admin Fee</span>
+              <span class="pay-break-val">LKR 500</span>
+            </div>
+            <div class="pay-break-total">
+              <span>Total</span>
+              <span>LKR 5,000</span>
+            </div>
+            <button class="btn primary" style="margin-top:8px;padding:11px;">Pay LKR 5,000 →</button>
+          </div>
+        </div>
+
+        <div class="pay-item g-card">
+          <div class="pay-item-top">
+            <div class="pay-item-icon pending">🏅</div>
+            <div class="pay-item-info">
+              <div class="pay-item-name">Tournament Registration</div>
+              <div class="pay-item-date">Due: 28 Feb 2026</div>
+            </div>
+            <div class="pay-item-right">
+              <div class="pay-item-amt">LKR 2,500</div>
+              <div class="pay-item-status pending">● Pending</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:0 2px 8px;">Recent Payments</div>
+
+        <div class="pay-item g-card">
+          <div class="pay-item-top">
+            <div class="pay-item-icon paid">✅</div>
+            <div class="pay-item-info">
+              <div class="pay-item-name">February Membership</div>
+              <div class="pay-item-date">Paid: 02 Feb 2026 · REF #NYC2024892</div>
+            </div>
+            <div class="pay-item-right">
+              <div class="pay-item-amt">LKR 5,000</div>
+              <div class="pay-item-status paid">● Paid</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:16px;"></div>
+      <div class="bnav">
+        <div class="bni"><div class="bni-icon">🏠</div><div class="bni-lbl">Home</div></div>
+        <div class="bni"><div class="bni-icon">📅</div><div class="bni-lbl">Schedule</div></div>
+        <div class="bni on"><div class="bni-icon">💳</div><div class="bni-lbl">Payments</div><div class="bni-dot"></div></div>
+        <div class="bni"><div class="bni-icon">✅</div><div class="bni-lbl">Attendance</div></div>
+        <div class="bni"><div class="bni-icon">👤</div><div class="bni-lbl">Profile</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCREEN 6: ATTENDANCE ═══════════════ -->
+<div class="screen-col">
+  <span class="screen-label">06 · Attendance</span>
+  <div class="phone">
+    <div class="screen">
+      <div class="sb">
+        <span>9:41</span>
+        <div class="sb-icons">📶 📡 🔋</div>
+      </div>
+
+      <div class="att-header">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div class="sched-page-title">Attendance</div>
+            <div class="sched-page-sub">February 2026 · Badminton</div>
+          </div>
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid var(--glass-border);display:flex;align-items:center;justify-content:center;">⬇️</div>
+        </div>
+      </div>
+
+      <!-- Summary stats -->
+      <div class="att-summary-row">
+        <div class="att-stat-card g-card" style="border-color:rgba(67,160,71,0.3);">
+          <div class="att-stat-val" style="color:#81C784;">17</div>
+          <div class="att-stat-lbl">Present</div>
+        </div>
+        <div class="att-stat-card g-card" style="border-color:rgba(229,57,53,0.25);">
+          <div class="att-stat-val" style="color:#EF9A9A;">2</div>
+          <div class="att-stat-lbl">Absent</div>
+        </div>
+        <div class="att-stat-card g-card" style="border-color:rgba(41,182,246,0.25);">
+          <div class="att-stat-val" style="color:#4FC3F7;">89%</div>
+          <div class="att-stat-lbl">Rate</div>
+        </div>
+      </div>
+
+      <!-- Month navigation -->
+      <div class="att-month-header">
+        <div class="att-month-title">February 2026</div>
+        <div class="att-nav">
+          <div class="att-nav-btn">‹</div>
+          <div class="att-nav-btn">›</div>
+        </div>
+      </div>
+
+      <!-- Day headers -->
+      <div class="att-grid-header" style="padding:0 20px;margin-bottom:6px;">
+        <div class="att-gh">Su</div><div class="att-gh">Mo</div><div class="att-gh">Tu</div>
+        <div class="att-gh">We</div><div class="att-gh">Th</div><div class="att-gh">Fr</div><div class="att-gh">Sa</div>
+      </div>
+
+      <!-- Calendar grid -->
+      <div class="att-grid">
+        <div class="att-cell empty"></div>
+        <div class="att-cell empty"></div>
+        <div class="att-cell empty"></div>
+        <div class="att-cell empty"></div>
+        <div class="att-cell empty"></div>
+        <div class="att-cell empty"></div>
+        <div class="att-cell holiday">1</div>
+        <div class="att-cell holiday">2</div>
+        <div class="att-cell present">3</div>
+        <div class="att-cell present">4</div>
+        <div class="att-cell present">5</div>
+        <div class="att-cell absent">6</div>
+        <div class="att-cell present">7</div>
+        <div class="att-cell">8</div>
+        <div class="att-cell">9</div>
+        <div class="att-cell present">10</div>
+        <div class="att-cell present">11</div>
+        <div class="att-cell present">12</div>
+        <div class="att-cell present">13</div>
+        <div class="att-cell absent">14</div>
+        <div class="att-cell">15</div>
+        <div class="att-cell">16</div>
+        <div class="att-cell present">17</div>
+        <div class="att-cell present">18</div>
+        <div class="att-cell present">19</div>
+        <div class="att-cell present">20</div>
+        <div class="att-cell present">21</div>
+        <div class="att-cell">22</div>
+        <div class="att-cell">23</div>
+        <div class="att-cell present">24</div>
+        <div class="att-cell today present">25</div>
+        <div class="att-cell" style="opacity:0.3;">26</div>
+        <div class="att-cell" style="opacity:0.3;">27</div>
+        <div class="att-cell" style="opacity:0.3;">28</div>
+      </div>
+
+      <!-- Legend -->
+      <div class="att-legend">
+        <div class="att-leg-item"><div class="att-leg-dot" style="background:rgba(67,160,71,0.5);"></div>Present</div>
+        <div class="att-leg-item"><div class="att-leg-dot" style="background:rgba(229,57,53,0.4);"></div>Absent</div>
+        <div class="att-leg-item"><div class="att-leg-dot" style="background:rgba(41,182,246,0.3);"></div>Holiday</div>
+        <div class="att-leg-item"><div class="att-leg-dot" style="border:2px solid #1E88E5;background:transparent;"></div>Today</div>
+      </div>
+
+      <!-- Sport filter pills -->
+      <div style="display:flex;gap:8px;padding:0 20px 12px;overflow-x:auto;scrollbar-width:none;">
+        <div class="badge primary" style="padding:5px 12px;cursor:pointer;">🏸 Badminton</div>
+        <div class="badge" style="padding:5px 12px;background:rgba(255,255,255,0.05);border-color:var(--glass-border);color:var(--text2);cursor:pointer;">🏊 Swimming</div>
+      </div>
+
+      <!-- Recent records -->
+      <div class="att-recent">
+        <div class="sec-hd"><div class="sec-title">Recent Records</div></div>
+        <div class="att-rec-item g-card">
+          <div class="att-rec-icon" style="background:rgba(67,160,71,0.12);">✅</div>
+          <div class="att-rec-info">
+            <div class="att-rec-name">Badminton Training</div>
+            <div class="att-rec-date">Today · 08:00 AM · Signed in 07:58</div>
+          </div>
+          <div class="badge success">Present</div>
+        </div>
+        <div class="att-rec-item g-card">
+          <div class="att-rec-icon" style="background:rgba(229,57,53,0.12);">❌</div>
+          <div class="att-rec-info">
+            <div class="att-rec-name">Badminton Training</div>
+            <div class="att-rec-date">Feb 14 · 08:00 AM</div>
+          </div>
+          <div class="badge error">Absent</div>
+        </div>
+      </div>
+
+      <div class="bnav">
+        <div class="bni"><div class="bni-icon">🏠</div><div class="bni-lbl">Home</div></div>
+        <div class="bni"><div class="bni-icon">📅</div><div class="bni-lbl">Schedule</div></div>
+        <div class="bni"><div class="bni-icon">💳</div><div class="bni-lbl">Payments</div></div>
+        <div class="bni on"><div class="bni-icon">✅</div><div class="bni-lbl">Attendance</div><div class="bni-dot"></div></div>
+        <div class="bni"><div class="bni-icon">👤</div><div class="bni-lbl">Profile</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCREEN 7: PROFILE ═══════════════ -->
+<div class="screen-col">
+  <span class="screen-label">07 · Profile</span>
+  <div class="phone">
+    <div class="screen">
+      <div class="sb">
+        <span>9:41</span>
+        <div class="sb-icons">📶 📡 🔋</div>
+      </div>
+
+      <div class="prof-hero">
+        <div class="prof-hero-orb"></div>
+        <div style="display:flex;justify-content:flex-end;">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid var(--glass-border);display:flex;align-items:center;justify-content:center;font-size:16px;">⚙️</div>
+        </div>
+        <div class="prof-avatar-wrap">
+          <div class="prof-avatar">KP</div>
+          <div class="prof-edit-btn">✏️</div>
+        </div>
+        <div class="prof-name">Kasun Perera</div>
+        <div class="prof-role">Youth Member · Colombo District</div>
+        <div class="prof-id">ID · NYC-2024-0892</div>
+
+        <div class="prof-stat-row">
+          <div class="prof-stat"><div class="prof-stat-val">3</div><div class="prof-stat-lbl">Sports</div></div>
+          <div class="prof-stat"><div class="prof-stat-val" style="color:var(--primary-light);">89%</div><div class="prof-stat-lbl">Attend.</div></div>
+          <div class="prof-stat"><div class="prof-stat-val" style="color:#81C784;">Active</div><div class="prof-stat-lbl">Status</div></div>
+        </div>
+      </div>
+
+      <!-- Enrolled sports -->
+      <div class="prof-sports">
+        <div class="sec-hd"><div class="sec-title">Enrolled Sports</div><div class="sec-link">Edit →</div></div>
+        <div class="prof-sport-item g-card">
+          <div class="ps-icon" style="background:rgba(21,101,192,0.15);">🏸</div>
+          <div class="ps-info">
+            <div class="ps-name">Badminton</div>
+            <div class="ps-coach">Coach: Ravi Mendis · Mon, Wed, Fri</div>
+          </div>
+          <div class="badge primary">Senior</div>
+        </div>
+        <div class="prof-sport-item g-card">
+          <div class="ps-icon" style="background:rgba(38,166,154,0.15);">🏊</div>
+          <div class="ps-info">
+            <div class="ps-name">Swimming</div>
+            <div class="ps-coach">Coach: Kumara B. · Tue, Thu</div>
+          </div>
+          <div class="badge teal">Junior</div>
+        </div>
+      </div>
+
+      <!-- Menu -->
+      <div class="prof-menu">
+        <div class="prof-sec-lbl">Account</div>
+        <div class="prof-menu-item g-card">
+          <div class="pmi-icon-wrap" style="background:rgba(21,101,192,0.12);">👤</div>
+          <div class="pmi-text">
+            <div class="pmi-name">Personal Information</div>
+            <div class="pmi-sub">Name, DOB, contacts</div>
+          </div>
+          <div class="pmi-right">›</div>
+        </div>
+        <div class="prof-menu-item g-card">
+          <div class="pmi-icon-wrap" style="background:rgba(67,160,71,0.12);">🔒</div>
+          <div class="pmi-text">
+            <div class="pmi-name">Security</div>
+            <div class="pmi-sub">Password, 2FA</div>
+          </div>
+          <div class="pmi-right">›</div>
+        </div>
+        <div class="prof-sec-lbl">Preferences</div>
+        <div class="prof-menu-item g-card">
+          <div class="pmi-icon-wrap" style="background:rgba(255,167,38,0.12);">🔔</div>
+          <div class="pmi-text">
+            <div class="pmi-name">Notifications</div>
+            <div class="pmi-sub">Class reminders, payments</div>
+          </div>
+          <div class="pmi-badge">ON</div>
+        </div>
+        <div class="prof-menu-item g-card">
+          <div class="pmi-icon-wrap" style="background:rgba(41,182,246,0.1);">🌙</div>
+          <div class="pmi-text">
+            <div class="pmi-name">App Theme</div>
+            <div class="pmi-sub">Dark mode enabled</div>
+          </div>
+          <div class="pmi-right">›</div>
+        </div>
+      </div>
+
+      <div class="logout-btn">🚪 Sign Out</div>
+
+      <div class="bnav">
+        <div class="bni"><div class="bni-icon">🏠</div><div class="bni-lbl">Home</div></div>
+        <div class="bni"><div class="bni-icon">📅</div><div class="bni-lbl">Schedule</div></div>
+        <div class="bni"><div class="bni-icon">💳</div><div class="bni-lbl">Payments</div></div>
+        <div class="bni"><div class="bni-icon">✅</div><div class="bni-lbl">Attendance</div></div>
+        <div class="bni on"><div class="bni-icon">👤</div><div class="bni-lbl">Profile</div><div class="bni-dot"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end screens-grid -->
+</body>
+</html>

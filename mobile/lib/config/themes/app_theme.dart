@@ -7,24 +7,44 @@ class AppTheme {
   AppTheme._();
 
   static ThemeData get lightTheme {
+    return _buildTheme();
+  }
+
+  static ThemeData get darkTheme {
+    return _buildTheme();
+  }
+
+  static ThemeData _buildTheme() {
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: ColorPalette.primary,
-        brightness: Brightness.light,
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: ColorPalette.backgroundDark,
+      colorScheme: const ColorScheme.dark(
+        primary: ColorPalette.primary,
+        secondary: ColorPalette.accent,
+        surface: ColorPalette.background,
+        error: ColorPalette.error,
+        onPrimary: Colors.white,
+        onSecondary: Colors.white,
+        onSurface: ColorPalette.textPrimary,
+        onError: Colors.white,
       ),
-      textTheme: GoogleFonts.interTextTheme(),
+      textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(
+        bodyLarge: GoogleFonts.inter(color: ColorPalette.textPrimary),
+        bodyMedium: GoogleFonts.inter(color: ColorPalette.textSecondary),
+        titleLarge: GoogleFonts.inter(color: ColorPalette.textPrimary),
+      ),
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
-        backgroundColor: ColorPalette.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: ColorPalette.backgroundDark,
+        foregroundColor: ColorPalette.textPrimary,
         titleTextStyle: GoogleFonts.inter(
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          color: Colors.white,
+          color: ColorPalette.textPrimary,
         ),
+        iconTheme: const IconThemeData(color: ColorPalette.textPrimary),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -42,71 +62,54 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.grey.shade50,
+        fillColor: ColorPalette.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: const BorderSide(color: ColorPalette.glassBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: const BorderSide(color: ColorPalette.glassBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: ColorPalette.primary, width: 2),
         ),
+        labelStyle: const TextStyle(color: ColorPalette.textSecondary),
+        hintStyle: const TextStyle(color: ColorPalette.textMuted),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
       cardTheme: CardThemeData(
-        elevation: 2,
+        elevation: 0,
+        color: ColorPalette.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: ColorPalette.glassBorder),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: ColorPalette.primary,
-        unselectedItemColor: Colors.grey,
-      ),
-    );
-  }
-
-  static ThemeData get darkTheme {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: ColorPalette.primary,
-        brightness: Brightness.dark,
-      ),
-      textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
-      appBarTheme: AppBarTheme(
-        centerTitle: true,
+        backgroundColor: ColorPalette.background,
+        selectedItemColor: ColorPalette.primaryLight,
+        unselectedItemColor: ColorPalette.textMuted,
         elevation: 0,
-        titleTextStyle: GoogleFonts.inter(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-        ),
       ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          textStyle: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-      cardTheme: CardThemeData(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: ColorPalette.background,
+        indicatorColor: Colors.transparent,
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: ColorPalette.primaryLight);
+          }
+          return const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: ColorPalette.textMuted);
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: ColorPalette.primaryLight, size: 24);
+          }
+          return const IconThemeData(color: ColorPalette.textMuted, size: 24);
+        }),
       ),
     );
   }

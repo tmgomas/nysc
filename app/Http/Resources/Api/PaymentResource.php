@@ -10,11 +10,25 @@ class PaymentResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $title = $this->type;
+        $monthName = null;
+        if ($this->month_year) {
+            try {
+                $date = \Carbon\Carbon::createFromFormat('Y-m', $this->month_year);
+                $monthName = $date->format('F');
+                $title = $monthName . ' ' . ucfirst($this->type) . ' Fee';
+            } catch (\Exception $e) {
+                // Ignore parsing errors, keep original type
+            }
+        }
+
         return [
             'id' => $this->id,
             'type' => $this->type,
+            'title' => $title,
             'amount' => $this->amount,
             'month_year' => $this->month_year,
+            'month_name' => $monthName,
             'status' => $this->status,
             'due_date' => $this->due_date?->format('Y-m-d'),
             'paid_date' => $this->paid_date?->format('Y-m-d'),

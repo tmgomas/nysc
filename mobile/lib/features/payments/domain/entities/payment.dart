@@ -4,8 +4,10 @@ import 'package:equatable/equatable.dart';
 class Payment extends Equatable {
   final String id;
   final String? type;
+  final String? title;
   final String amount;
   final String? monthYear;
+  final String? monthName;
   final String? status;
   final String? dueDate;
   final String? paidDate;
@@ -20,7 +22,9 @@ class Payment extends Equatable {
     required this.id,
     required this.amount,
     this.type,
+    this.title,
     this.monthYear,
+    this.monthName,
     this.status,
     this.dueDate,
     this.paidDate,

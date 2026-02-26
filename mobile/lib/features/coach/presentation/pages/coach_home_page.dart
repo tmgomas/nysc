@@ -30,8 +30,9 @@ class _CoachHomePageState extends State<CoachHomePage> {
       ],
       child: Builder(
         builder: (context) {
+          final isDashboard = _currentIndex == 0;
           return Scaffold(
-            appBar: AppBar(
+            appBar: isDashboard ? null : AppBar(
               title: Text(_titles[_currentIndex]),
               actions: [
                 IconButton(
@@ -49,22 +50,27 @@ class _CoachHomePageState extends State<CoachHomePage> {
                 CoachAttendancePage(),
               ],
             ),
-            bottomNavigationBar: NavigationBar(
-              selectedIndex: _currentIndex,
-              onDestinationSelected: (index) =>
-                  setState(() => _currentIndex = index),
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.dashboard_outlined),
-                  selectedIcon: Icon(Icons.dashboard),
-                  label: 'Dashboard',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.fact_check_outlined),
-                  selectedIcon: Icon(Icons.fact_check),
-                  label: 'Attendance',
-                ),
-              ],
+            bottomNavigationBar: Container(
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: Colors.white12, width: 1)),
+              ),
+              child: NavigationBar(
+                selectedIndex: _currentIndex,
+                onDestinationSelected: (index) =>
+                    setState(() => _currentIndex = index),
+                destinations: const [
+                  NavigationDestination(
+                    icon: Icon(Icons.dashboard_outlined),
+                    selectedIcon: Icon(Icons.dashboard),
+                    label: 'Dashboard',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.fact_check_outlined),
+                    selectedIcon: Icon(Icons.fact_check),
+                    label: 'Attendance',
+                  ),
+                ],
+              ),
             ),
           );
         },

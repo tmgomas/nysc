@@ -38,11 +38,10 @@ class _HomePageState extends State<HomePage> {
       ],
       child: Builder(
         builder: (context) {
+          final isDashboard = _currentIndex == 0;
           return Scaffold(
-            appBar: AppBar(
+            appBar: isDashboard ? null : AppBar(
               title: Text(_titles[_currentIndex]),
-              backgroundColor: const Color(0xFF1565C0),
-              foregroundColor: Colors.white,
               actions: [
                 IconButton(
                   icon: const Icon(Icons.logout),
@@ -61,32 +60,37 @@ class _HomePageState extends State<HomePage> {
                 ProfilePage(),
               ],
             ),
-            bottomNavigationBar: NavigationBar(
-              selectedIndex: _currentIndex,
-              onDestinationSelected: (index) =>
-                  setState(() => _currentIndex = index),
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.home_outlined),
-                  selectedIcon: Icon(Icons.home),
-                  label: 'Home',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.calendar_month_outlined),
-                  selectedIcon: Icon(Icons.calendar_month),
-                  label: 'Schedule',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.payment_outlined),
-                  selectedIcon: Icon(Icons.payment),
-                  label: 'Payments',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.person_outline),
-                  selectedIcon: Icon(Icons.person),
-                  label: 'Profile',
-                ),
-              ],
+            bottomNavigationBar: Container(
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: Colors.white12, width: 1)),
+              ),
+              child: NavigationBar(
+                selectedIndex: _currentIndex,
+                onDestinationSelected: (index) =>
+                    setState(() => _currentIndex = index),
+                destinations: const [
+                  NavigationDestination(
+                    icon: Icon(Icons.home_outlined),
+                    selectedIcon: Icon(Icons.home),
+                    label: 'Home',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.calendar_month_outlined),
+                    selectedIcon: Icon(Icons.calendar_month),
+                    label: 'Schedule',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.payment_outlined),
+                    selectedIcon: Icon(Icons.payment),
+                    label: 'Payments',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.person_outline),
+                    selectedIcon: Icon(Icons.person),
+                    label: 'Profile',
+                  ),
+                ],
+              ),
             ),
           );
         },
