@@ -17,6 +17,7 @@ class MemberProfile extends Equatable {
   final String? status;
   final String? membershipType;
   final String? registrationDate;
+  final String? district;
   final List<ProgramEnrollment> programs;
 
   const MemberProfile({
@@ -35,6 +36,7 @@ class MemberProfile extends Equatable {
     this.status,
     this.membershipType,
     this.registrationDate,
+    this.district,
     this.programs = const [],
   });
 

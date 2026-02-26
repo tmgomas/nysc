@@ -18,6 +18,7 @@ class MemberProfileModel extends MemberProfile {
     super.status,
     super.membershipType,
     super.registrationDate,
+    super.district,
     super.programs,
   });
 
@@ -43,6 +44,7 @@ class MemberProfileModel extends MemberProfile {
       status: json['status'] as String?,
       membershipType: json['membership_type'] as String?,
       registrationDate: json['registration_date'] as String?,
+      district: json['district'] as String?,
       programs: programsList,
     );
   }
