@@ -10,13 +10,14 @@ class PaymentResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $title = $this->type;
+        $title = $this->type?->value ?? $this->type;
         $monthName = null;
         if ($this->month_year) {
             try {
                 $date = \Carbon\Carbon::createFromFormat('Y-m', $this->month_year);
                 $monthName = $date->format('F');
-                $title = $monthName . ' ' . ucfirst($this->type) . ' Fee';
+                $typeString = $this->type instanceof \BackedEnum ? $this->type->value : (string) $this->type;
+                $title = $monthName . ' ' . ucfirst($typeString) . ' Fee';
             } catch (\Exception $e) {
                 // Ignore parsing errors, keep original type
             }
