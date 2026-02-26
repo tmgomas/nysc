@@ -41,7 +41,7 @@ class _HomePageState extends State<HomePage> {
         builder: (context) {
           final isDashboard = _currentIndex == 0;
           return Scaffold(
-            appBar: isDashboard ? null : AppBar(
+            appBar: (isDashboard || _currentIndex == 4) ? null : AppBar(
               title: Text(_titles[_currentIndex]),
               actions: [
                 IconButton(
