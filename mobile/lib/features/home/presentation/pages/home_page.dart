@@ -10,6 +10,7 @@ import '../../../profile/presentation/cubit/profile_cubit.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../schedule/presentation/cubit/schedule_cubit.dart';
 import '../../../schedule/presentation/pages/schedule_page.dart';
+import '../../../attendance/presentation/pages/attendance_page.dart';
 import '../../../../injection_container.dart';
 
 /// Home page with bottom navigation for members.
@@ -24,7 +25,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
-  static const _titles = ['Dashboard', 'Schedule', 'Payments', 'Profile'];
+  static const _titles = ['Dashboard', 'Schedule', 'Payments', 'Attendance', 'Profile'];
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +58,7 @@ class _HomePageState extends State<HomePage> {
                 DashboardPage(),
                 SchedulePage(),
                 PaymentsPage(),
+                AttendancePage(),
                 ProfilePage(),
               ],
             ),
@@ -83,6 +85,11 @@ class _HomePageState extends State<HomePage> {
                     icon: Icon(Icons.payment_outlined),
                     selectedIcon: Icon(Icons.payment),
                     label: 'Payments',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.check_circle_outline),
+                    selectedIcon: Icon(Icons.check_circle),
+                    label: 'Attendance',
                   ),
                   NavigationDestination(
                     icon: Icon(Icons.person_outline),
