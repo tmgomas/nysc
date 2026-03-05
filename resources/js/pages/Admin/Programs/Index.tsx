@@ -30,6 +30,7 @@ import {
     Users,
     DollarSign,
     MapPin,
+    ArrowRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -206,28 +207,6 @@ export default function Index({ programs, filters }: Props) {
                                                     {program.location || 'No location set'}
                                                 </CardDescription>
                                             </div>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon">
-                                                        <MoreVertical className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem asChild>
-                                                        <Link href={`/admin/programs/${program.id}/edit`}>
-                                                            <Edit className="mr-2 h-4 w-4" />
-                                                            Edit
-                                                        </Link>
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() => handleDelete(program)}
-                                                        className="text-destructive focus:text-destructive"
-                                                    >
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
                                         </div>
                                     </CardHeader>
                                     <CardContent className="space-y-4 pt-4">
@@ -294,6 +273,21 @@ export default function Index({ programs, filters }: Props) {
                                                 </p>
                                             )}
                                         </div>
+
+                                        {/* Card Actions */}
+                                        <div className="flex gap-2 pt-3 border-t">
+                                            <Button asChild className="flex-1" size="sm">
+                                                <Link href={`/admin/programs/${program.id}`}>
+                                                    <ArrowRight className="mr-2 h-4 w-4" />
+                                                    Enter Program
+                                                </Link>
+                                            </Button>
+                                            <Button variant="outline" size="sm" asChild>
+                                                <Link href={`/admin/programs/${program.id}/edit`}>
+                                                    <Edit className="h-4 w-4" />
+                                                </Link>
+                                            </Button>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             ))}
@@ -343,6 +337,6 @@ export default function Index({ programs, filters }: Props) {
                     </div>
                 </div>
             </div>
-        </AppLayout>
+        </AppLayout >
     );
 }

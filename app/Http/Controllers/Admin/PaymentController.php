@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Member, Payment};
+use App\Models\{Member, Payment, Program};
 use App\Services\PaymentService;
 use App\Enums\{PaymentType, PaymentMethod};
 use Illuminate\Http\Request;
@@ -32,6 +32,25 @@ class PaymentController extends Controller
         return Inertia::render('Admin/Payments/Index', [
             'payments' => $payments,
             'filters' => $request->only(['status', 'type', 'search']),
+        ]);
+    }
+
+    public function create()
+    {
+        $members = Member::with('user')
+            ->whereHas('user')
+            ->get()
+            ->map(fn($m) => [
+                'id'            => $m->id,
+                'member_number' => $m->member_number,
+                'name'          => $m->user->name ?? 'N/A',
+            ]);
+
+        $programs = Program::select('id', 'name', 'monthly_fee', 'admission_fee')->get();
+
+        return Inertia::render('Admin/Payments/Create', [
+            'members'  => $members,
+            'programs' => $programs,
         ]);
     }
 

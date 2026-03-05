@@ -68,6 +68,7 @@ interface Program {
     weekly_limit: number | null;
     is_active: boolean;
     classes: ProgramClassItem[];
+    coaches?: { id: string; name: string; specialization: string | null }[];
 }
 
 interface Props {
@@ -818,6 +819,87 @@ export default function EditProgram({ program, coaches, locations }: Props) {
                                 </Button>
                             </div>
                         </form>
+
+                        {/* Program Coaches Card */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Users className="h-5 w-5" />
+                                    Assigned Coaches
+                                </CardTitle>
+                                <CardDescription>
+                                    Coaches assigned to this program. You can assign coaches to specific classes below.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    {program.coaches && program.coaches.length > 0 ? (
+                                        <div className="flex flex-wrap gap-2">
+                                            {program.coaches.map((coach: any) => (
+                                                <Badge key={coach.id} variant="secondary" className="px-3 py-1 text-sm flex items-center gap-2">
+                                                    {coach.name}
+                                                    {coach.specialization && <span className="text-muted-foreground text-xs">({coach.specialization})</span>}
+                                                    <button
+                                                        onClick={() => {
+                                                            confirm({
+                                                                title: 'Remove Coach',
+                                                                description: `Are you sure you want to remove ${coach.name} from this program?`,
+                                                                confirmText: 'Remove',
+                                                                cancelText: 'Cancel',
+                                                                variant: 'destructive',
+                                                            }).then((confirmed) => {
+                                                                if (confirmed) {
+                                                                    router.delete(`/admin/programs/${program.id}/coaches/${coach.id}`, {
+                                                                        preserveScroll: true,
+                                                                        onSuccess: () => toast.success('Coach removed successfully.'),
+                                                                        onError: () => toast.error('Failed to remove coach.'),
+                                                                    });
+                                                                }
+                                                            });
+                                                        }}
+                                                        className="hover:bg-destructive hover:text-destructive-foreground rounded-full p-0.5 transition-colors"
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </button>
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground italic">No coaches assigned yet.</p>
+                                    )}
+
+                                    <div className="flex items-center gap-2 mt-4 pt-4 border-t">
+                                        <Select
+                                            value=""
+                                            onValueChange={(val) => {
+                                                if (!val) return;
+                                                router.post(`/admin/programs/${program.id}/coaches`, { coach_id: val }, {
+                                                    preserveScroll: true,
+                                                    onSuccess: () => toast.success('Coach assigned successfully.'),
+                                                    onError: (err) => {
+                                                        if (err.error) toast.error(err.error);
+                                                        else toast.error('Failed to assign coach.');
+                                                    },
+                                                });
+                                            }}
+                                        >
+                                            <SelectTrigger className="w-[250px]">
+                                                <SelectValue placeholder="Add new coach..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {coaches
+                                                    .filter(c => !program.coaches?.some((pc: any) => pc.id === c.id))
+                                                    .map((coach) => (
+                                                        <SelectItem key={coach.id} value={coach.id}>
+                                                            {coach.name} {coach.specialization ? `(${coach.specialization})` : ''}
+                                                        </SelectItem>
+                                                    ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
 
                         {/* Class Management Card (only for class_based programs) */}
                         {data.schedule_type === 'class_based' && (

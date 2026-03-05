@@ -14,7 +14,8 @@ use App\Http\Controllers\Admin\{
     ReportController as AdminReportController,
     SettingController as AdminSettingController,
     SmsTemplateController as AdminSmsTemplateController,
-    QRCodeController as AdminQRCodeController
+    QRCodeController as AdminQRCodeController,
+    CoachController as AdminCoachController
 };
 
 // Public Routes
@@ -42,6 +43,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    
+    // Coaches
+    Route::resource('coaches', AdminCoachController::class)->except(['show']);
     
     // Members
     Route::resource('members', AdminMemberController::class);
@@ -89,6 +93,10 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
 
     Route::post('programs/{program}/practices/cancel-date', [\App\Http\Controllers\Admin\ProgramController::class, 'cancelPracticeDate'])->name('programs.practices.cancel-date');
     Route::delete('programs/{program}/practices/cancellations/{cancellation}', [\App\Http\Controllers\Admin\ProgramController::class, 'restorePracticeDate'])->name('programs.practices.restore-date');
+
+    // Program Coaches Assignment
+    Route::post('programs/{program}/coaches', [\App\Http\Controllers\Admin\ProgramCoachController::class, 'store'])->name('programs.coaches.store');
+    Route::delete('programs/{program}/coaches/{coach}', [\App\Http\Controllers\Admin\ProgramCoachController::class, 'destroy'])->name('programs.coaches.destroy');
 
     // Class Assignments (assign members to specific class slots)
     Route::post('class-assignments/assign', [AdminMemberController::class, 'assignClass'])->name('class-assignments.assign');

@@ -88,11 +88,50 @@ class ProgramController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified resource (Program Profile/Detail page).
      */
     public function show(\App\Models\Program $program)
     {
-        // Not implemented (Index or Edit usually sufficient)
+        $program->load([
+            'classes' => function ($query) {
+                $query->with([
+                    'coach:id,name,specialization',
+                    'assignedMembers' => function ($q) {
+                        $q->with('member:id,full_name,calling_name,member_number,contact_number');
+                    },
+                    'cancellations',
+                ])
+                ->orderBy('label')
+                ->orderByRaw("FIELD(day_of_week, 'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')")
+                ->orderBy('start_time');
+            },
+            'coaches:id,name,specialization,contact_number',
+            'location:id,name',
+        ]);
+
+        // Members enrolled in this program (for add-to-class dropdown)
+        $enrolledMembers = $program->members()
+            ->wherePivot('status', 'active')
+            ->select('members.id', 'members.full_name', 'members.calling_name', 'members.member_number')
+            ->orderBy('full_name')
+            ->get();
+
+        // All active coaches (for assigning to class slots)
+        $allCoaches = Coach::active()->select('id', 'name', 'specialization')->get();
+
+        $stats = [
+            'members_count' => $enrolledMembers->count(),
+            'coaches_count' => $program->coaches->count(),
+            'classes_count' => $program->classes->count(),
+            'active_classes_count' => $program->classes->where('is_active', true)->count(),
+        ];
+
+        return \Inertia\Inertia::render('Admin/Programs/Show', [
+            'program' => $program,
+            'enrolledMembers' => $enrolledMembers,
+            'allCoaches' => $allCoaches,
+            'stats' => $stats,
+        ]);
     }
 
     /**
@@ -102,7 +141,7 @@ class ProgramController extends Controller
     {
         $program->load(['classes' => function ($query) {
             $query->with('coach:id,name', 'cancellations')->orderByRaw("FIELD(day_of_week, 'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')")->orderBy('start_time');
-        }, 'location:id,name']);
+        }, 'location:id,name', 'coaches:id,name,specialization']);
 
         $coaches = Coach::active()->select('id', 'name', 'specialization')->get();
         $locations = \App\Models\Location::active()->orderBy('name')->get(['id', 'name']);
