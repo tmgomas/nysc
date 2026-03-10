@@ -34,7 +34,11 @@ jobs:
             export NODE_OPTIONS="--max-old-space-size=2048"
             npm run build
             
-            # Clear and rebuild cache
+            # Clear old cache first, then rebuild
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan route:clear
+            php artisan view:clear
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
