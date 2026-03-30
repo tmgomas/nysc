@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\MemberStatus;
+use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Attendance;
+use App\Models\Member;
+use App\Models\Payment;
+use App\Models\Program;
 use App\Services\ReportService;
-use App\Models\{Member, Payment, Attendance, Program};
-use App\Enums\{MemberStatus, PaymentStatus};
 use Inertia\Inertia;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -60,7 +62,7 @@ class DashboardController extends Controller
             }
         }
 
-        usort($todaySchedule, fn($a, $b) => ($a['start_time'] ?? '') <=> ($b['start_time'] ?? ''));
+        usort($todaySchedule, fn ($a, $b) => ($a['start_time'] ?? '') <=> ($b['start_time'] ?? ''));
 
         // === NEW DATA FOR REDESIGNED DASHBOARD ===
 
@@ -94,11 +96,11 @@ class DashboardController extends Controller
             $query->where('member_programs.status', 'active');
         }])
             ->get()
-            ->map(fn($p) => [
+            ->map(fn ($p) => [
                 'name' => $p->name,
                 'value' => $p->members_count,
             ])
-            ->filter(fn($p) => $p['value'] > 0)
+            ->filter(fn ($p) => $p['value'] > 0)
             ->values()
             ->toArray();
 
@@ -107,14 +109,14 @@ class DashboardController extends Controller
             ->orderByDesc('registration_date')
             ->limit(5)
             ->get(['id', 'full_name', 'calling_name', 'status', 'registration_date', 'photo_url'])
-            ->map(fn($m) => [
+            ->map(fn ($m) => [
                 'id' => $m->id,
                 'name' => $m->full_name,
                 'calling_name' => $m->calling_name,
                 'status' => $m->status->value,
                 'registration_date' => $m->registration_date?->format('M d, Y'),
                 'programs' => $m->programs->pluck('short_code')->join(', '),
-                'initials' => collect(explode(' ', $m->full_name))->map(fn($w) => strtoupper($w[0] ?? ''))->take(2)->join(''),
+                'initials' => collect(explode(' ', $m->full_name))->map(fn ($w) => strtoupper($w[0] ?? ''))->take(2)->join(''),
             ]);
 
         // 5. Recent payments (last 5)
@@ -122,7 +124,7 @@ class DashboardController extends Controller
             ->orderByDesc('created_at')
             ->limit(5)
             ->get(['id', 'member_id', 'amount', 'status', 'type', 'created_at', 'payment_method'])
-            ->map(fn($p) => [
+            ->map(fn ($p) => [
                 'id' => $p->id,
                 'member_name' => $p->member?->calling_name ?? $p->member?->full_name ?? 'Unknown',
                 'amount' => (float) $p->amount,
@@ -138,7 +140,7 @@ class DashboardController extends Controller
             ->orderBy('due_date')
             ->limit(5)
             ->get(['id', 'member_id', 'amount', 'due_date', 'type'])
-            ->map(fn($p) => [
+            ->map(fn ($p) => [
                 'id' => $p->id,
                 'member_id' => $p->member_id,
                 'member_name' => $p->member?->calling_name ?? $p->member?->full_name ?? 'Unknown',
@@ -153,13 +155,20 @@ class DashboardController extends Controller
             ->orderByDesc('created_at')
             ->limit(5)
             ->get(['id', 'full_name', 'calling_name', 'created_at', 'contact_number'])
-            ->map(fn($m) => [
+            ->map(fn ($m) => [
                 'id' => $m->id,
                 'name' => $m->full_name,
                 'calling_name' => $m->calling_name,
                 'applied_at' => $m->created_at->diffForHumans(),
-                'initials' => collect(explode(' ', $m->full_name))->map(fn($w) => strtoupper($w[0] ?? ''))->take(2)->join(''),
+                'initials' => collect(explode(' ', $m->full_name))->map(fn ($w) => strtoupper($w[0] ?? ''))->take(2)->join(''),
             ]);
+
+        // === ENHANCED ANALYTICS DATA ===
+        $memberGrowthTrend = $this->reportService->memberGrowthTrend();
+        $attendanceByProgram = $this->reportService->attendanceByProgram();
+        $topProgramsByRevenue = $this->reportService->topProgramsByRevenue();
+        $coachWorkload = $this->reportService->coachWorkload();
+        $paymentBreakdown = $this->reportService->paymentBreakdownThisMonth();
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => $stats,
@@ -172,6 +181,12 @@ class DashboardController extends Controller
             'recentPayments' => $recentPayments,
             'overduePayments' => $overduePayments,
             'pendingRegistrations' => $pendingRegistrations,
+            // New enhanced analytics
+            'memberGrowthTrend' => $memberGrowthTrend,
+            'attendanceByProgram' => $attendanceByProgram,
+            'topProgramsByRevenue' => $topProgramsByRevenue,
+            'coachWorkload' => $coachWorkload,
+            'paymentBreakdown' => $paymentBreakdown,
         ]);
     }
 }
