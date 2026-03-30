@@ -4,7 +4,6 @@ namespace App\Actions;
 
 use App\Models\Member;
 use App\Models\User;
-use App\Enums\MemberStatus;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -17,7 +16,7 @@ class CreateMemberAccountAction
     {
         // Generate email if not provided
         $email = $this->generateEmail($member);
-        
+
         // Generate temporary password
         $temporaryPassword = Str::random(12);
 
@@ -41,19 +40,21 @@ class CreateMemberAccountAction
         return $user;
     }
 
-    /**
-     * Generate email from member number
-     */
     protected function generateEmail(Member $member): string
     {
-        $baseEmail = strtolower($member->member_number) . '@nysc.lk';
-        
-        // Check if email already exists
+        // Use member's registered email if available and not taken in users table
+        if (! empty($member->email) && ! User::where('email', $member->email)->exists()) {
+            return $member->email;
+        }
+
+        $baseEmail = strtolower($member->member_number).'@nysc.lk';
+
+        // Check if generated email already exists
         $counter = 1;
         $email = $baseEmail;
-        
+
         while (User::where('email', $email)->exists()) {
-            $email = strtolower($member->member_number) . $counter . '@nysc.lk';
+            $email = strtolower($member->member_number).$counter.'@nysc.lk';
             $counter++;
         }
 
