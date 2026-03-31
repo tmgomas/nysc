@@ -29,12 +29,12 @@ class WelcomeMemberNotification extends Notification implements ShouldQueue
     public function via(object $notifiable): array
     {
         $channels = ['mail'];
-        
+
         // Add SMS channel if member prefers SMS
         if ($this->member->preferred_contact_method === 'sms') {
             $channels[] = \TextLK\Laravel\TextLKSMSChannel::class;
         }
-        
+
         return $channels;
     }
 
@@ -43,12 +43,14 @@ class WelcomeMemberNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
+        $loginEmail = $notifiable->email ?? $this->member->email;
+
         return (new MailMessage)
             ->subject('Welcome to NYCSC!')
             ->greeting("Welcome to NYCSC, {$this->member->calling_name}!")
             ->line('Your membership registration has been received.')
             ->line('Your login credentials are:')
-            ->line("**Email:** {$this->member->email}")
+            ->line("**Login Email:** {$loginEmail}")
             ->line("**Temporary Password:** {$this->temporaryPassword}")
             ->action('Login Now', url('/login'))
             ->line('Please change your password after your first login.')
@@ -60,19 +62,22 @@ class WelcomeMemberNotification extends Notification implements ShouldQueue
      */
     public function toTextlk(object $notifiable): TextLKSMSMessage
     {
+        // Use the system-generated login email from the User account, not member's personal email
+        $loginEmail = $notifiable->email ?? $this->member->email;
+
         $template = \App\Models\SmsTemplate::where('key', 'member.credentials')->first();
-        
+
         if ($template && $template->active) {
             $message = $template->parse([
                 'name' => $this->member->calling_name,
-                'email' => $this->member->email,
+                'email' => $loginEmail,
                 'password' => $this->temporaryPassword,
             ]);
         } else {
-            $message = "Welcome to NYCSC! Your login: {$this->member->email}. Password: {$this->temporaryPassword}. Change it after first login.";
+            $message = "Welcome to NYCSC! Your login: {$loginEmail}. Password: {$this->temporaryPassword}. Change it after first login.";
         }
-        
-        return (new TextLKSMSMessage())
+
+        return (new TextLKSMSMessage)
             ->message($message)
             ->recipient($notifiable->routeNotificationFor('textlk', $this));
     }
