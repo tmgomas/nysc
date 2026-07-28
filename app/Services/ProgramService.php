@@ -2,9 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Program;
 use App\Models\Coach;
-use Illuminate\Support\Facades\DB;
+use App\Models\Program;
 
 class ProgramService
 {
@@ -22,6 +21,7 @@ class ProgramService
     public function update(Program $program, array $data): Program
     {
         $program->update($data);
+
         return $program->fresh();
     }
 
@@ -31,7 +31,7 @@ class ProgramService
     public function assignCoaches(Program $program, array $coachIds): Program
     {
         $program->coaches()->sync($coachIds);
-        
+
         // Log the assignment
         foreach ($coachIds as $coachId) {
             $coach = Coach::find($coachId);
@@ -55,7 +55,7 @@ class ProgramService
         return [
             'total_members' => $program->members()->where('member_programs.status', 'active')->count(),
             'available_slots' => $program->available_slots,
-            'capacity_percentage' => $program->capacity 
+            'capacity_percentage' => $program->capacity
                 ? round(($program->members()->where('member_programs.status', 'active')->count() / $program->capacity) * 100, 2)
                 : null,
             'total_coaches' => $program->coaches()->count(),
@@ -72,7 +72,7 @@ class ProgramService
     protected function calculateRevenue(Program $program): array
     {
         $activeMembers = $program->members()->where('member_programs.status', 'active')->count();
-        
+
         return [
             'admission_revenue' => $program->admission_fee * $program->members()->count(),
             'monthly_revenue' => $program->monthly_fee * $activeMembers,
@@ -85,7 +85,7 @@ class ProgramService
      */
     public function hasCapacity(Program $program): bool
     {
-        if (!$program->capacity) {
+        if (! $program->capacity) {
             return true; // Unlimited capacity
         }
 
@@ -100,18 +100,18 @@ class ProgramService
         return Program::withCount(['members' => function ($query) {
             $query->where('member_programs.status', 'active');
         }])
-        ->orderByDesc('members_count')
-        ->limit($limit)
-        ->get()
-        ->map(function ($program) {
-            return [
-                'id' => $program->id,
-                'name' => $program->name,
-                'members_count' => $program->members_count,
-                'capacity' => $program->capacity,
-                'monthly_fee' => $program->monthly_fee,
-            ];
-        })
-        ->toArray();
+            ->orderByDesc('members_count')
+            ->limit($limit)
+            ->get()
+            ->map(function ($program) {
+                return [
+                    'id' => $program->id,
+                    'name' => $program->name,
+                    'members_count' => $program->members_count,
+                    'capacity' => $program->capacity,
+                    'monthly_fee' => $program->monthly_fee,
+                ];
+            })
+            ->toArray();
     }
 }

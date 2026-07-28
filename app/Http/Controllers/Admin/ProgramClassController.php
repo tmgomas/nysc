@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ClassCancellation;
 use App\Models\Program;
 use App\Models\ProgramClass;
-use App\Models\ClassCancellation;
 use Illuminate\Http\Request;
 
 class ProgramClassController extends Controller
@@ -44,7 +44,7 @@ class ProgramClassController extends Controller
             ]);
         }
 
-        return back()->with('success', count($created) . ' class slot(s) created successfully.');
+        return back()->with('success', count($created).' class slot(s) created successfully.');
     }
 
     /**
@@ -85,9 +85,10 @@ class ProgramClassController extends Controller
      */
     public function toggleActive(Program $program, ProgramClass $class)
     {
-        $class->update(['is_active' => !$class->is_active]);
+        $class->update(['is_active' => ! $class->is_active]);
 
         $status = $class->is_active ? 'activated' : 'deactivated';
+
         return back()->with('success', "Class slot {$status} successfully.");
     }
 

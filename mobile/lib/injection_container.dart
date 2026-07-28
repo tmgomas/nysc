@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 import 'core/network/api_client.dart';
 import 'core/network/network_info.dart';
 import 'core/storage/secure_storage.dart';
+import 'core/services/firebase_service.dart';
 import 'features/auth/data/datasources/auth_local_datasource.dart';
 import 'features/auth/data/datasources/auth_remote_datasource.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
@@ -51,11 +52,17 @@ Future<void> setupDependencies() async {
     () => AuthLocalDataSourceImpl(getIt<SecureStorageService>()),
   );
 
+  // ── Firebase Service ──────────────────────────────────
+  getIt.registerLazySingleton<FirebaseService>(
+    () => FirebaseService(),
+  );
+
   // ── Auth: Repository ──────────────────────────────────
   getIt.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(
       remoteDataSource: getIt<AuthRemoteDataSource>(),
       localDataSource: getIt<AuthLocalDataSource>(),
+      firebaseService: getIt<FirebaseService>(),
     ),
   );
 

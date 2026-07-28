@@ -2,12 +2,12 @@
 
 namespace App\Actions;
 
-use App\Models\Member;
-use App\Models\Attendance;
-use App\Models\Program;
 use App\Enums\AttendanceMethod;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Attendance;
+use App\Models\Member;
+use App\Models\Program;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class MarkAttendanceAction
 {
@@ -22,7 +22,7 @@ class MarkAttendanceAction
         ?string $notes = null
     ): Attendance {
         // Verify member is enrolled in this sport
-        if (!$member->isActivelyEnrolledIn($program->id)) {
+        if (! $member->isActivelyEnrolledIn($program->id)) {
             throw new \Exception('Member is not actively enrolled in this sport');
         }
 

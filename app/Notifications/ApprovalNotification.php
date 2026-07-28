@@ -28,12 +28,12 @@ class ApprovalNotification extends Notification implements ShouldQueue
     public function via(object $notifiable): array
     {
         $channels = ['mail'];
-        
+
         // Add SMS channel if member prefers SMS
         if ($this->member->preferred_contact_method === 'sms') {
             $channels[] = \TextLK\Laravel\TextLKSMSChannel::class;
         }
-        
+
         return $channels;
     }
 
@@ -68,8 +68,8 @@ class ApprovalNotification extends Notification implements ShouldQueue
         } else {
             $message = "Congratulations! Your NYCSC membership is approved. Member ID: {$this->member->member_number}. Welcome to the club!";
         }
-        
-        return (new TextLKSMSMessage())
+
+        return (new TextLKSMSMessage)
             ->message($message)
             ->recipient($notifiable->routeNotificationFor('textlk', $this));
     }

@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class RoleAndPermissionSeeder extends Seeder
 {
@@ -22,7 +22,7 @@ class RoleAndPermissionSeeder extends Seeder
             'delete_members',
             'approve_members',
             'suspend_members',
-            
+
             // Payment permissions
             'view_payments',
             'create_payments',
@@ -30,30 +30,30 @@ class RoleAndPermissionSeeder extends Seeder
             'delete_payments',
             'verify_payments',
             'approve_payments',
-            
+
             // Attendance permissions
             'view_attendance',
             'mark_attendance',
             'edit_attendance',
             'delete_attendance',
-            
+
             // Sport permissions
             'view_sports',
             'create_sports',
             'edit_sports',
             'delete_sports',
-            
+
             // Coach permissions
             'view_coaches',
             'create_coaches',
             'edit_coaches',
             'delete_coaches',
             'assign_coaches',
-            
+
             // Report permissions
             'view_reports',
             'export_reports',
-            
+
             // System permissions
             'manage_settings',
             'manage_roles',
@@ -82,17 +82,26 @@ class RoleAndPermissionSeeder extends Seeder
             'view_audit_logs',
         ]);
 
-        // 3. Staff - Operational tasks (limited)
-        $staff = Role::firstOrCreate(['name' => 'staff']);
-        $staff->syncPermissions([
-            'view_members', 'create_members', 'edit_members',
-            'view_payments', 'create_payments',
-            'view_attendance', 'mark_attendance',
-            'view_sports',
-            'view_reports',
+        // 3. Manager - Almost all admin rights, no settings or destructive payment actions
+        $manager = Role::firstOrCreate(['name' => 'manager']);
+        $manager->syncPermissions([
+            'view_members', 'create_members', 'edit_members', 'delete_members', 'approve_members', 'suspend_members',
+            'view_payments', 'create_payments', 'edit_payments', 'verify_payments', 'approve_payments',
+            'view_attendance', 'mark_attendance', 'edit_attendance',
+            'view_sports', 'create_sports', 'edit_sports',
+            'view_coaches', 'create_coaches', 'edit_coaches', 'assign_coaches',
+            'view_reports', 'export_reports',
         ]);
 
-        // 4. Coach - Sport-specific access
+        // 4. Cashier - Focused on payments and registration
+        $cashier = Role::firstOrCreate(['name' => 'cashier']);
+        $cashier->syncPermissions([
+            'view_members', 'create_members', 'edit_members',
+            'view_payments', 'create_payments', 'verify_payments',
+            'view_sports', // Needs to see programs/sports to bill for them
+        ]);
+
+        // 5. Coach - Sport-specific access
         $coach = Role::firstOrCreate(['name' => 'coach']);
         $coach->syncPermissions([
             'view_members',

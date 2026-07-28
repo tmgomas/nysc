@@ -1,22 +1,20 @@
 <?php
 
+use App\Http\Controllers\Admin\AttendanceController as AdminAttendanceController;
+use App\Http\Controllers\Admin\CoachController as AdminCoachController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\MemberController as AdminMemberController;
+use App\Http\Controllers\Admin\MemberImportController as AdminMemberImportController;
+use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
+use App\Http\Controllers\Admin\ProgramController as AdminProgramController;
+use App\Http\Controllers\Admin\QRCodeController as AdminQRCodeController;
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Admin\SettingController as AdminSettingController;
+use App\Http\Controllers\Admin\SmsTemplateController as AdminSmsTemplateController;
+use App\Http\Controllers\PublicRegistrationController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
-use App\Http\Controllers\PublicRegistrationController;
-use App\Http\Controllers\Admin\{
-    DashboardController as AdminDashboardController,
-    MemberController as AdminMemberController,
-    MemberImportController as AdminMemberImportController,
-    PaymentController as AdminPaymentController,
-    AttendanceController as AdminAttendanceController,
-    ProgramController as AdminProgramController,
-    ReportController as AdminReportController,
-    SettingController as AdminSettingController,
-    SmsTemplateController as AdminSmsTemplateController,
-    QRCodeController as AdminQRCodeController,
-    CoachController as AdminCoachController
-};
 
 // Public Routes
 Route::get('/', function () {
@@ -40,35 +38,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // Admin Routes
-Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:super_admin|admin|manager|cashier'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
-    
+
     // Coaches
     Route::resource('coaches', AdminCoachController::class)->except(['show']);
-    
+
     // Members
     Route::resource('members', AdminMemberController::class);
     Route::post('members/{member}/approve', [AdminMemberController::class, 'approve'])->name('members.approve');
     Route::post('members/{member}/suspend', [AdminMemberController::class, 'suspend'])->name('members.suspend');
     Route::post('members/{member}/reactivate', [AdminMemberController::class, 'reactivate'])->name('members.reactivate');
     Route::put('members/{member}/programs', [AdminMemberController::class, 'updatePrograms'])->name('members.update-programs');
-    
+
     // Member Import
     Route::get('members/import/create', [AdminMemberImportController::class, 'create'])->name('members.import.create');
     Route::get('members/import/template', [AdminMemberImportController::class, 'downloadTemplate'])->name('members.import.template');
     Route::post('members/import/preview', [AdminMemberImportController::class, 'preview'])->name('members.import.preview');
     Route::post('members/import', [AdminMemberImportController::class, 'import'])->name('members.import');
     Route::get('members/import/history', [AdminMemberImportController::class, 'history'])->name('members.import.history');
-    
+
     Route::put('payments/{payment}/mark-as-paid', [AdminPaymentController::class, 'markAsPaid'])->name('payments.mark-as-paid');
     Route::post('payments/bulk', [AdminPaymentController::class, 'bulkSchedulePayment'])->name('payments.bulk');
-    
+
     // Payments
     Route::resource('payments', AdminPaymentController::class)->except(['edit', 'update', 'destroy']);
+    Route::get('payments/{payment}/receipt', [AdminPaymentController::class, 'receipt'])->name('payments.receipt');
     Route::post('payments/{payment}/verify', [AdminPaymentController::class, 'verify'])->name('payments.verify');
     Route::post('payments/{payment}/reject', [AdminPaymentController::class, 'reject'])->name('payments.reject');
-    
+
     // Attendance
     Route::get('attendance', [AdminAttendanceController::class, 'index'])->name('attendance.index');
     Route::get('attendance/qr-scanner', function () {
@@ -81,7 +80,7 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
     Route::get('attendance/today', [AdminAttendanceController::class, 'getTodayAttendance'])->name('attendance.today');
     Route::post('attendance/quick-scan', [AdminAttendanceController::class, 'quickScan'])->name('attendance.quick-scan');
     Route::get('members/{member}/attendance', [AdminAttendanceController::class, 'getMemberAttendance'])->name('members.attendance');
-    
+
     // Programs
     Route::resource('programs', AdminProgramController::class);
     Route::resource('programs.classes', \App\Http\Controllers\Admin\ProgramClassController::class)
@@ -120,21 +119,23 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
     Route::post('special-bookings', [\App\Http\Controllers\Admin\SpecialBookingController::class, 'store'])->name('special-bookings.store');
     Route::delete('special-bookings/{specialBooking}', [\App\Http\Controllers\Admin\SpecialBookingController::class, 'destroy'])->name('special-bookings.destroy');
     // Reports
+    Route::get('reports', [AdminReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/export', [AdminReportController::class, 'export'])->name('reports.export');
     Route::get('reports/members', [AdminReportController::class, 'members'])->name('reports.members');
     Route::get('reports/payments', [AdminReportController::class, 'payments'])->name('reports.payments');
     Route::get('reports/attendance', [AdminReportController::class, 'attendance'])->name('reports.attendance');
     Route::get('reports/revenue', [AdminReportController::class, 'revenue'])->name('reports.revenue');
-    
+
     // Settings
     Route::get('settings', [AdminSettingController::class, 'index'])->name('settings.index');
     Route::post('settings', [AdminSettingController::class, 'update'])->name('settings.update');
     Route::get('settings/{key}', [AdminSettingController::class, 'show'])->name('settings.show');
     Route::put('settings/{key}', [AdminSettingController::class, 'updateSingle'])->name('settings.update-single');
-    
+
     // SMS Templates
     Route::get('sms-templates', [AdminSmsTemplateController::class, 'index'])->name('sms-templates.index');
     Route::put('sms-templates/{id}', [AdminSmsTemplateController::class, 'update'])->name('sms-templates.update');
-    
+
     // QR Codes
     Route::prefix('qr-codes')->name('qr-codes.')->group(function () {
         Route::get('members/{member}', [AdminQRCodeController::class, 'getMemberQRCode'])->name('members.get');
@@ -170,8 +171,14 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin
 Route::middleware(['auth', 'verified', 'role:member'])->prefix('member')->name('member.')->group(function () {
     Route::get('/profile', [\App\Http\Controllers\Member\ProfileController::class, 'show'])->name('profile.show');
     Route::put('/profile', [\App\Http\Controllers\Member\ProfileController::class, 'update'])->name('profile.update');
-    
+
     Route::get('/payments', [\App\Http\Controllers\Member\PaymentController::class, 'index'])->name('payments.index');
+    Route::get('/payments/{payment}/receipt', [\App\Http\Controllers\Member\PaymentController::class, 'receipt'])->name('payments.receipt');
+    Route::post('/payments/{payment}/pay-online', [\App\Http\Controllers\PayHere\PayHereController::class, 'initiatePayment'])->name('payhere.initiate');
+    Route::post('/payments/{payment}/confirm-online', [\App\Http\Controllers\PayHere\PayHereController::class, 'confirmPayment'])->name('payhere.confirm');
+    Route::get('/payments/online/return', [\App\Http\Controllers\PayHere\PayHereController::class, 'handleReturn'])->name('payhere.return');
+    Route::get('/payments/online/cancel', [\App\Http\Controllers\PayHere\PayHereController::class, 'handleCancel'])->name('payhere.cancel');
+
     Route::get('/attendance', [\App\Http\Controllers\Member\AttendanceController::class, 'index'])->name('attendance.index');
 });
 
@@ -181,5 +188,8 @@ Route::middleware(['auth', 'verified', 'role:coach'])->prefix('coach')->name('co
     Route::get('/attendance', [\App\Http\Controllers\Coach\AttendanceController::class, 'index'])->name('attendance.index');
     Route::post('/attendance/mark', [\App\Http\Controllers\Coach\AttendanceController::class, 'mark'])->name('attendance.mark');
 });
+
+// PayHere Webhook (no auth required - server-to-server)
+Route::post('/payhere/notify', [\App\Http\Controllers\PayHere\PayHereController::class, 'handleNotify'])->name('payhere.notify');
 
 require __DIR__.'/settings.php';

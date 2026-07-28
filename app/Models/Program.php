@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Program extends Model
 {
     use HasFactory, HasUuids;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -85,11 +86,12 @@ class Program extends Model
 
     public function getAvailableSlotsAttribute()
     {
-        if (!$this->capacity) {
+        if (! $this->capacity) {
             return null;
         }
-        
+
         $enrolledCount = $this->members()->where('member_programs.status', 'active')->count();
+
         return $this->capacity - $enrolledCount;
     }
 }

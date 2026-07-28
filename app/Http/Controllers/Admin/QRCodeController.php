@@ -22,7 +22,7 @@ class QRCodeController extends Controller
     {
         try {
             $qrCodePath = $this->qrCodeService->generateMemberQRCode($member);
-            $qrCodeUrl = asset('storage/' . $qrCodePath);
+            $qrCodeUrl = asset('storage/'.$qrCodePath);
 
             return response()->json([
                 'success' => true,
@@ -33,7 +33,7 @@ class QRCodeController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to generate QR code: ' . $e->getMessage(),
+                'message' => 'Failed to generate QR code: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -59,7 +59,7 @@ class QRCodeController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to get QR code: ' . $e->getMessage(),
+                'message' => 'Failed to get QR code: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -70,7 +70,7 @@ class QRCodeController extends Controller
     public function downloadMemberQRCode(Member $member): Response
     {
         $qrCodePath = $this->qrCodeService->generateMemberQRCode($member);
-        $fullPath = storage_path('app/public/' . $qrCodePath);
+        $fullPath = storage_path('app/public/'.$qrCodePath);
 
         return response()->download(
             $fullPath,
@@ -104,14 +104,14 @@ class QRCodeController extends Controller
 
         $verificationResult = $this->qrCodeService->verifyQRCode($request->qr_data);
 
-        if (!$verificationResult['valid']) {
+        if (! $verificationResult['valid']) {
             return response()->json($verificationResult, 400);
         }
 
         // If it's a member QR code, record the check-in
         if ($verificationResult['type'] === 'member') {
             $member = $verificationResult['data']['member'];
-            
+
             // You can add attendance logging here
             // For now, just return the member data
             return response()->json([
@@ -145,7 +145,7 @@ class QRCodeController extends Controller
                 $qrCodePath = $this->qrCodeService->generateMemberQRCode($member);
                 $generated[] = [
                     'member_id' => $memberId,
-                    'qr_code_url' => asset('storage/' . $qrCodePath),
+                    'qr_code_url' => asset('storage/'.$qrCodePath),
                 ];
             } catch (\Exception $e) {
                 $failed[] = [

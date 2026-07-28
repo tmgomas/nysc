@@ -12,7 +12,7 @@ enum UserRole: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::SUPER_ADMIN => 'Super Admin',
             self::ADMIN => 'Admin',
             self::STAFF => 'Staff',
@@ -23,7 +23,7 @@ enum UserRole: string
 
     public function description(): string
     {
-        return match($this) {
+        return match ($this) {
             self::SUPER_ADMIN => 'Full system access',
             self::ADMIN => 'Club management',
             self::STAFF => 'Operational tasks',
@@ -34,7 +34,7 @@ enum UserRole: string
 
     public function permissions(): array
     {
-        return match($this) {
+        return match ($this) {
             self::SUPER_ADMIN => ['*'],
             self::ADMIN => [
                 'view_members', 'create_members', 'edit_members', 'delete_members', 'approve_members', 'suspend_members',

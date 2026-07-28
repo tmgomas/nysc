@@ -36,8 +36,10 @@ class MemberRemoteDataSource {
         .toList();
   }
 
-
-
+  Future<Map<String, dynamic>> initiateOnlinePayment(String paymentId) async {
+    final response = await apiClient.post(ApiConstants.memberPayOnline(paymentId));
+    return response.data as Map<String, dynamic>;
+  }
   Future<List<AttendanceRecordModel>> getAttendance({int page = 1}) async {
     final response = await apiClient.get(
       ApiConstants.memberAttendance,

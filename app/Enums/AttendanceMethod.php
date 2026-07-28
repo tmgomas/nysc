@@ -12,7 +12,7 @@ enum AttendanceMethod: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::QR_CODE => 'QR Code Scan',
             self::NFC => 'NFC Tag Scan',
             self::RFID => 'RFID Card Scan',
@@ -23,7 +23,7 @@ enum AttendanceMethod: string
 
     public function icon(): string
     {
-        return match($this) {
+        return match ($this) {
             self::QR_CODE => 'qrcode',
             self::NFC => 'nfc',
             self::RFID => 'credit-card',

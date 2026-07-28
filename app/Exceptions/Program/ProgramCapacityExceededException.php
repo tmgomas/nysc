@@ -23,7 +23,7 @@ class ProgramCapacityExceededException extends Exception
     public static function withCount(Program $program, int $currentCount): self
     {
         return new self(
-            "Program '{$program->name}' has reached maximum capacity. " .
+            "Program '{$program->name}' has reached maximum capacity. ".
             "Current enrollment: {$currentCount}/{$program->capacity}"
         );
     }

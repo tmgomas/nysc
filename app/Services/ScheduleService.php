@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\Member;
-use App\Models\Holiday;
 use App\Models\ClassCancellation;
+use App\Models\Holiday;
+use App\Models\Member;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -18,22 +18,20 @@ class ScheduleService
      *  - practice_days : Schedule from Program.schedule JSON (no slot assignment needed)
      *  - class_based   : Schedule from member's MemberProgramClass assignments
      *
-     * @param  Member  $member
-     * @param  int     $days  Number of days to look ahead
-     * @return array
+     * @param  int  $days  Number of days to look ahead
      */
     public function getUpcomingSchedule(Member $member, int $days = 30): array
     {
-        $now   = Carbon::now();
+        $now = Carbon::now();
         $until = $now->copy()->addDays($days);
 
         // ── Load all required relationships ──────────────────────────
         $member->loadMissing([
             // Active program enrollments
-            'programs' => fn($q) => $q->wherePivot('status', 'active')->with('location'),
+            'programs' => fn ($q) => $q->wherePivot('status', 'active')->with('location'),
 
             // Active class-slot assignments
-            'programClasses' => fn($q) => $q->where('status', 'active'),
+            'programClasses' => fn ($q) => $q->where('status', 'active'),
             'programClasses.programClass.program.location',
             'programClasses.programClass.coach',
         ]);
@@ -41,7 +39,7 @@ class ScheduleService
         // ── Pre-compute holidays ──────────────────────────────────────
         $holidays = Holiday::where(function ($q) use ($now, $until) {
             $q->whereBetween('date', [$now->toDateString(), $until->toDateString()])
-              ->where('is_recurring', false);
+                ->where('is_recurring', false);
         })->orWhere('is_recurring', true)->get();
 
         $holidayLookup = $this->buildHolidayLookup($holidays, $now, $days);
@@ -57,11 +55,11 @@ class ScheduleService
                 ->whereDate('cancelled_date', '>=', $now->toDateString())
                 ->whereDate('cancelled_date', '<=', $until->toDateString())
                 ->get()
-                ->groupBy(fn($item) => $item->program_class_id . '_' . $item->cancelled_date->toDateString());
+                ->groupBy(fn ($item) => $item->program_class_id.'_'.$item->cancelled_date->toDateString());
         }
 
         // ── Pre-compute cancellations for practice_days slots ──────────
-        $activePrograms = $member->programs->filter(fn($p) => $p->pivot?->status === 'active');
+        $activePrograms = $member->programs->filter(fn ($p) => $p->pivot?->status === 'active');
         $practiceProgramIds = $activePrograms->where('schedule_type', 'practice_days')->pluck('id');
 
         $practiceCancellations = collect();
@@ -70,13 +68,13 @@ class ScheduleService
                 ->whereDate('cancelled_date', '>=', $now->toDateString())
                 ->whereDate('cancelled_date', '<=', $until->toDateString())
                 ->get()
-                ->groupBy(fn($item) => $item->program_id . '_' . $item->cancelled_date->toDateString());
+                ->groupBy(fn ($item) => $item->program_id.'_'.$item->cancelled_date->toDateString());
         }
 
         // ── Generate occurrences from both program types ──────────────
         $occurrences = collect();
 
-        $activePrograms = $member->programs->filter(fn($p) => $p->pivot?->status === 'active');
+        $activePrograms = $member->programs->filter(fn ($p) => $p->pivot?->status === 'active');
 
         foreach ($activePrograms as $program) {
             if ($program->schedule_type === 'practice_days') {
@@ -88,7 +86,7 @@ class ScheduleService
                 // ── TIER 2: Class-based — only enrolled slots ──
                 $memberClasses = $member->programClasses
                     ->where('status', 'active')
-                    ->filter(fn($mc) => $mc->programClass?->program_id === $program->id);
+                    ->filter(fn ($mc) => $mc->programClass?->program_id === $program->id);
 
                 foreach ($memberClasses as $memberClass) {
                     $cls = $memberClass->programClass;
@@ -118,65 +116,62 @@ class ScheduleService
     /**
      * Get member's enrolled programs with schedule info.
      * Returns schedule_type-aware data for both program types.
-     *
-     * @param  Member  $member
-     * @return array
      */
     public function getMemberPrograms(Member $member): array
     {
         $member->loadMissing([
-            'programs' => fn($q) => $q->wherePivot('status', 'active'),
+            'programs' => fn ($q) => $q->wherePivot('status', 'active'),
             'programs.location',
         ]);
 
         $activePrograms = $member->programs->filter(
-            fn($p) => $p->pivot?->status === 'active'
+            fn ($p) => $p->pivot?->status === 'active'
         );
 
         return $activePrograms->map(function ($program) use ($member) {
 
             $base = [
-                'id'            => $program->id,
-                'name'          => $program->name,
-                'short_code'    => $program->short_code,
-                'monthly_fee'   => $program->monthly_fee,
-                'location'      => $program->location?->name,
-                'enrolled_at'   => $program->pivot?->enrolled_at,
-                'status'        => $program->pivot?->status,
+                'id' => $program->id,
+                'name' => $program->name,
+                'short_code' => $program->short_code,
+                'monthly_fee' => $program->monthly_fee,
+                'location' => $program->location?->name,
+                'enrolled_at' => $program->pivot?->enrolled_at,
+                'status' => $program->pivot?->status,
                 'schedule_type' => $program->schedule_type,
             ];
 
             if ($program->schedule_type === 'practice_days') {
                 // Build nice practice days array from JSON
                 $schedule = $program->schedule ?? [];
-                $practiceDays = collect($schedule)->map(fn($times, $day) => [
-                    'day'            => $day,
-                    'start_time'     => $times['start'] ?? null,
-                    'end_time'       => $times['end'] ?? null,
+                $practiceDays = collect($schedule)->map(fn ($times, $day) => [
+                    'day' => $day,
+                    'start_time' => $times['start'] ?? null,
+                    'end_time' => $times['end'] ?? null,
                     'formatted_time' => isset($times['start'], $times['end'])
-                        ? Carbon::parse($times['start'])->format('g:i A') . ' - ' . Carbon::parse($times['end'])->format('g:i A')
+                        ? Carbon::parse($times['start'])->format('g:i A').' - '.Carbon::parse($times['end'])->format('g:i A')
                         : null,
                 ])->values();
 
-                $base['practice_days']    = $practiceDays;
+                $base['practice_days'] = $practiceDays;
                 $base['assigned_classes'] = [];
 
             } else {
                 // class_based: show assigned class slots
                 $assignedClasses = $member->programClasses()
                     ->where('status', 'active')
-                    ->whereHas('programClass', fn($q) => $q->where('program_id', $program->id))
+                    ->whereHas('programClass', fn ($q) => $q->where('program_id', $program->id))
                     ->with('programClass.coach')
                     ->get()
-                    ->map(fn($mc) => [
-                        'id'             => $mc->programClass->id,
-                        'label'          => $mc->programClass->label,
-                        'day_of_week'    => ucfirst($mc->programClass->day_of_week),
+                    ->map(fn ($mc) => [
+                        'id' => $mc->programClass->id,
+                        'label' => $mc->programClass->label,
+                        'day_of_week' => ucfirst($mc->programClass->day_of_week),
                         'formatted_time' => $mc->programClass->formatted_time,
-                        'coach'          => $mc->programClass->coach?->name,
+                        'coach' => $mc->programClass->coach?->name,
                     ]);
 
-                $base['practice_days']    = [];
+                $base['practice_days'] = [];
                 $base['assigned_classes'] = $assignedClasses->values();
             }
 
@@ -207,11 +202,11 @@ class ScheduleService
             $dayOfWeek = strtolower($day); // normalise
 
             $startTime = $times['start'] ?? '00:00';
-            $endTime   = $times['end']   ?? '00:00';
+            $endTime = $times['end'] ?? '00:00';
 
             // Format for display
             $formattedTime = Carbon::parse($startTime)->format('g:i A')
-                . ' - ' . Carbon::parse($endTime)->format('g:i A');
+                .' - '.Carbon::parse($endTime)->format('g:i A');
 
             // Find first occurrence on or after $from
             $cursor = $from->copy()->startOfDay();
@@ -229,11 +224,11 @@ class ScheduleService
 
             // Walk weekly
             while ($cursor->lte($until)) {
-                $dateStr     = $cursor->toDateString();
+                $dateStr = $cursor->toDateString();
                 $holidayName = $holidayLookup[$dateStr] ?? null;
 
                 // Check for explicit cancellations
-                $cancelKey = $program->id . '_' . $dateStr;
+                $cancelKey = $program->id.'_'.$dateStr;
                 $isCancelled = false;
                 $reason = null;
 
@@ -250,24 +245,24 @@ class ScheduleService
                 $status = $isCancelled ? 'cancelled' : 'scheduled';
 
                 $occurrences->push([
-                    'id'                  => $program->id . '-practice-' . $day . '-' . $dateStr,
-                    'program_class_id'    => null,
-                    'date'                => $dateStr,
-                    'day_of_week'         => ucfirst($dayOfWeek),
-                    'start_time'          => Carbon::parse($startTime)->format('H:i'),
-                    'end_time'            => Carbon::parse($endTime)->format('H:i'),
-                    'formatted_time'      => $formattedTime,
-                    'program_name'        => $program->name,
-                    'program_short_code'  => $program->short_code,
-                    'label'               => 'Practice',
-                    'coach'               => null,
-                    'location'            => $program->location?->name,
-                    'schedule_type'       => 'practice_days',
-                    'status'              => $status,
+                    'id' => $program->id.'-practice-'.$day.'-'.$dateStr,
+                    'program_class_id' => null,
+                    'date' => $dateStr,
+                    'day_of_week' => ucfirst($dayOfWeek),
+                    'start_time' => Carbon::parse($startTime)->format('H:i'),
+                    'end_time' => Carbon::parse($endTime)->format('H:i'),
+                    'formatted_time' => $formattedTime,
+                    'program_name' => $program->name,
+                    'program_short_code' => $program->short_code,
+                    'label' => 'Practice',
+                    'coach' => null,
+                    'location' => $program->location?->name,
+                    'schedule_type' => 'practice_days',
+                    'status' => $status,
                     'cancellation_reason' => $reason,
-                    'is_holiday'          => ! is_null($holidayName),
-                    'holiday_name'        => $holidayName,
-                    'is_cancelled'        => $isCancelled,
+                    'is_holiday' => ! is_null($holidayName),
+                    'holiday_name' => $holidayName,
+                    'is_cancelled' => $isCancelled,
                 ]);
 
                 $cursor->addWeek();
@@ -303,37 +298,37 @@ class ScheduleService
         }
 
         while ($cursor->lte($until)) {
-            $dateStr   = $cursor->toDateString();
-            $cancelKey = $cls->id . '_' . $dateStr;
+            $dateStr = $cursor->toDateString();
+            $cancelKey = $cls->id.'_'.$dateStr;
 
-            $status             = 'scheduled';
+            $status = 'scheduled';
             $cancellationReason = null;
 
             if ($cancellations->has($cancelKey)) {
-                $status             = 'cancelled';
+                $status = 'cancelled';
                 $cancellationReason = $cancellations->get($cancelKey)->first()?->reason;
             }
 
             $holidayName = $holidayLookup[$dateStr] ?? null;
 
             $occurrences->push([
-                'id'                  => $cls->id . '-' . $dateStr,
-                'program_class_id'    => $cls->id,
-                'date'                => $dateStr,
-                'day_of_week'         => ucfirst($dayOfWeek),
-                'start_time'          => Carbon::parse($cls->start_time)->format('H:i'),
-                'end_time'            => Carbon::parse($cls->end_time)->format('H:i'),
-                'formatted_time'      => $cls->formatted_time,
-                'program_name'        => $cls->program?->name,
-                'program_short_code'  => $cls->program?->short_code,
-                'label'               => $cls->label,
-                'coach'               => $cls->coach?->name,
-                'location'            => $cls->program?->location?->name,
-                'schedule_type'       => 'class_based',
-                'status'              => $status,
+                'id' => $cls->id.'-'.$dateStr,
+                'program_class_id' => $cls->id,
+                'date' => $dateStr,
+                'day_of_week' => ucfirst($dayOfWeek),
+                'start_time' => Carbon::parse($cls->start_time)->format('H:i'),
+                'end_time' => Carbon::parse($cls->end_time)->format('H:i'),
+                'formatted_time' => $cls->formatted_time,
+                'program_name' => $cls->program?->name,
+                'program_short_code' => $cls->program?->short_code,
+                'label' => $cls->label,
+                'coach' => $cls->coach?->name,
+                'location' => $cls->program?->location?->name,
+                'schedule_type' => 'class_based',
+                'status' => $status,
                 'cancellation_reason' => $cancellationReason,
-                'is_holiday'          => ! is_null($holidayName),
-                'holiday_name'        => $holidayName,
+                'is_holiday' => ! is_null($holidayName),
+                'holiday_name' => $holidayName,
             ]);
 
             $cursor->addWeek();
@@ -373,14 +368,14 @@ class ScheduleService
     private function buildResponse(Collection $occurrences, Carbon $now): array
     {
         $sorted = $occurrences
-            ->sortBy(fn($o) => $o['date'] . ' ' . $o['start_time'])
+            ->sortBy(fn ($o) => $o['date'].' '.$o['start_time'])
             ->values();
 
         // Group by date
         $grouped = $sorted
             ->groupBy('date')
-            ->map(fn($dayClasses, $date) => [
-                'date'    => $date,
+            ->map(fn ($dayClasses, $date) => [
+                'date' => $date,
                 'classes' => $dayClasses->values(),
             ])
             ->values();
@@ -389,14 +384,14 @@ class ScheduleService
 
         return [
             'summary' => [
-                'total_upcoming'           => $sorted->count(),
+                'total_upcoming' => $sorted->count(),
                 'total_upcoming_scheduled' => $sorted->where('status', 'scheduled')->count(),
-                'next_class'               => $nextScheduled ? [
-                    'date'           => $nextScheduled['date'],
+                'next_class' => $nextScheduled ? [
+                    'date' => $nextScheduled['date'],
                     'formatted_time' => $nextScheduled['formatted_time'],
-                    'program_name'   => $nextScheduled['program_name'],
-                    'coach'          => $nextScheduled['coach'],
-                    'schedule_type'  => $nextScheduled['schedule_type'],
+                    'program_name' => $nextScheduled['program_name'],
+                    'coach' => $nextScheduled['coach'],
+                    'schedule_type' => $nextScheduled['schedule_type'],
                 ] : null,
             ],
             'upcoming_classes' => $grouped,

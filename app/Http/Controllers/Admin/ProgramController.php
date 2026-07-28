@@ -101,9 +101,9 @@ class ProgramController extends Controller
                     },
                     'cancellations',
                 ])
-                ->orderBy('label')
-                ->orderByRaw("FIELD(day_of_week, 'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')")
-                ->orderBy('start_time');
+                    ->orderBy('label')
+                    ->orderByRaw("FIELD(day_of_week, 'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')")
+                    ->orderBy('start_time');
             },
             'coaches:id,name,specialization,contact_number',
             'location:id,name',
@@ -160,7 +160,7 @@ class ProgramController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'short_code' => 'nullable|string|max:10|unique:programs,short_code,' . $program->id,
+            'short_code' => 'nullable|string|max:10|unique:programs,short_code,'.$program->id,
             'description' => 'nullable|string',
             'admission_fee' => 'required|numeric|min:0',
             'monthly_fee' => 'required|numeric|min:0',
@@ -174,7 +174,7 @@ class ProgramController extends Controller
         ]);
 
         $oldMonthlyFee = $program->monthly_fee;
-        
+
         // Remove the extra field before update
         $updateData = collect($validated)->except('update_existing_schedules')->toArray();
         $program->update($updateData);
@@ -198,7 +198,7 @@ class ProgramController extends Controller
     public function destroy(\App\Models\Program $program)
     {
         if ($program->members()->exists()) {
-             return back()->with('error', 'Cannot delete program with active members info. Deactivate it instead.');
+            return back()->with('error', 'Cannot delete program with active members info. Deactivate it instead.');
         }
 
         $program->delete();

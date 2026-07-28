@@ -10,7 +10,7 @@ enum PaymentMethod: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::CASH => 'Cash',
             self::BANK_TRANSFER => 'Bank Transfer',
             self::ONLINE => 'Online Payment',

@@ -2,11 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Member;
 use App\Models\Program;
 use App\Models\User;
-use App\Enums\MemberStatus;
+use Illuminate\Database\Seeder;
 
 class MemberSeeder extends Seeder
 {
@@ -18,15 +17,15 @@ class MemberSeeder extends Seeder
         try {
             // Get all programs
             $programs = Program::all();
-            
+
             if ($programs->isEmpty()) {
                 $this->command->warn('No programs found. Skipping member program enrollment.');
             }
 
             // Admin User for 'approved_by' relationship
             $admin = User::role('admin')->first();
-            
-            if (!$admin) {
+
+            if (! $admin) {
                 $this->command->info('Creating admin user for member approval...');
                 $admin = User::factory()->create();
                 $admin->assignRole('admin');
@@ -87,7 +86,7 @@ class MemberSeeder extends Seeder
                 ->count(5)
                 ->state(function (array $attributes) use ($admin) {
                     return [
-                        'status' => 'suspended', 
+                        'status' => 'suspended',
                         'approved_by' => $admin->id,
                         'approved_at' => now()->subMonths(6),
                     ];
@@ -97,7 +96,7 @@ class MemberSeeder extends Seeder
                     if ($member->user) {
                         $member->user->assignRole('member');
                     }
-                    
+
                     if ($programs->count() > 0) {
                         $randomPrograms = $programs->random(rand(1, min(3, $programs->count())));
                         $member->programs()->attach($randomPrograms, [

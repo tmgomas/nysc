@@ -97,8 +97,8 @@ trait HasAttendance
     public function getAverageMonthlyAttendanceAttribute()
     {
         $firstAttendance = $this->attendances()->oldest('check_in_time')->first();
-        
-        if (!$firstAttendance) {
+
+        if (! $firstAttendance) {
             return 0;
         }
 
@@ -116,10 +116,10 @@ trait HasAttendance
         return Program::whereHas('attendances', function ($query) {
             $query->where('member_id', $this->id);
         })
-        ->withCount(['attendances' => function ($query) {
-            $query->where('member_id', $this->id);
-        }])
-        ->orderByDesc('attendances_count')
-        ->first();
+            ->withCount(['attendances' => function ($query) {
+                $query->where('member_id', $this->id);
+            }])
+            ->orderByDesc('attendances_count')
+            ->first();
     }
 }

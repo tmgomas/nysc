@@ -68,7 +68,7 @@ class SettingController extends Controller
         ]);
 
         $setting = Setting::where('key', $key)->first();
-        
+
         Setting::set(
             $key,
             $validated['value'],

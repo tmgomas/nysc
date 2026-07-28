@@ -1,19 +1,26 @@
 <?php
 
+use App\Models\Program;
+
 test('registration screen can be rendered', function () {
-    $response = $this->get(route('register'));
+    $response = $this->get(route('registration.create'));
 
     $response->assertOk();
 });
 
-test('new users can register', function () {
-    $response = $this->post(route('register.store'), [
-        'name' => 'Test User',
-        'email' => 'test@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
+test('new members can submit a registration application', function () {
+    $program = Program::factory()->create(['is_active' => true]);
+
+    $response = $this->post(route('registration.store'), [
+        'nic_passport' => 'NIC123456',
+        'date_of_birth' => '1995-01-01',
+        'gender' => 'male',
+        'contact_number' => '0771234567',
+        'address' => '123 Test Street',
+        'emergency_contact' => 'Jane Doe',
+        'emergency_number' => '0779876543',
+        'program_ids' => [$program->id],
     ]);
 
-    $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect(route('registration.success'));
 });

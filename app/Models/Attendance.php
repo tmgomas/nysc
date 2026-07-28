@@ -2,16 +2,17 @@
 
 namespace App\Models;
 
+use App\Enums\AttendanceMethod;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use App\Enums\AttendanceMethod;
 
 class Attendance extends Model
 {
     use HasFactory, HasUuids;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -73,7 +74,7 @@ class Attendance extends Model
     public function setCheckOutTimeAttribute($value)
     {
         $this->attributes['check_out_time'] = $value;
-        
+
         if ($value && $this->check_in_time) {
             $this->attributes['duration_minutes'] = $this->check_in_time->diffInMinutes($value);
         }

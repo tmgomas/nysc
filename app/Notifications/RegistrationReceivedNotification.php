@@ -13,7 +13,6 @@ class RegistrationReceivedNotification extends Notification implements ShouldQue
 {
     use Queueable;
 
-
     /**
      * Create a new notification instance.
      */
@@ -29,12 +28,12 @@ class RegistrationReceivedNotification extends Notification implements ShouldQue
     public function via(object $notifiable): array
     {
         $channels = ['mail'];
-        
+
         // Add SMS channel if member prefers SMS
         if ($this->member->preferred_contact_method === 'sms') {
             $channels[] = \TextLK\Laravel\TextLKSMSChannel::class;
         }
-        
+
         return $channels;
     }
 
@@ -58,17 +57,17 @@ class RegistrationReceivedNotification extends Notification implements ShouldQue
     public function toTextlk(object $notifiable): TextLKSMSMessage
     {
         $template = \App\Models\SmsTemplate::where('key', 'member.welcome')->first();
-        
+
         if ($template && $template->active) {
             $message = $template->parse([
                 'name' => $this->member->calling_name,
                 'member_number' => $this->member->member_number,
             ]);
         } else {
-            $message = "Welcome to NYCSC! Your membership is pending approval. We will notify you once approved.";
+            $message = 'Welcome to NYCSC! Your membership is pending approval. We will notify you once approved.';
         }
-        
-        return (new TextLKSMSMessage())
+
+        return (new TextLKSMSMessage)
             ->message($message)
             ->recipient($notifiable->routeNotificationFor('textlk', $this));
     }

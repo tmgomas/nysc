@@ -23,8 +23,8 @@ class GenerateMemberNumberAction
             ->latest('created_at')
             ->first();
 
-        if (!$lastMember) {
-            return $prefix . str_pad($startNumber, $digits, '0', STR_PAD_LEFT);
+        if (! $lastMember) {
+            return $prefix.str_pad($startNumber, $digits, '0', STR_PAD_LEFT);
         }
 
         // Extract number from last member number (e.g., "SC0001" -> 1)
@@ -32,6 +32,6 @@ class GenerateMemberNumberAction
         $lastNumber = (int) substr($lastMember->member_number, $prefixLength);
         $nextNumber = $lastNumber + 1;
 
-        return $prefix . str_pad($nextNumber, $digits, '0', STR_PAD_LEFT);
+        return $prefix.str_pad($nextNumber, $digits, '0', STR_PAD_LEFT);
     }
 }

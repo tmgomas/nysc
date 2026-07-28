@@ -20,7 +20,7 @@ return new class extends Migration
             $table->date('due_date');
             $table->foreignUuid('payment_id')->nullable()->constrained('payments')->onDelete('set null');
             $table->timestamps();
-            
+
             $table->unique(['member_id', 'month_year']);
         });
     }

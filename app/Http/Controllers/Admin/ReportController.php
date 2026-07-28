@@ -7,6 +7,48 @@ use Illuminate\Http\Request;
 
 class ReportController extends Controller
 {
+    public function index()
+    {
+        $today = now()->format('Y-m-d');
+        $thisMonth = now()->startOfMonth()->format('Y-m-d');
+
+        $isSqlite = \DB::connection()->getDriverName() === 'sqlite';
+        $dateFormat = $isSqlite ? "strftime('%Y-%m-%d', check_in_time)" : "DATE_FORMAT(check_in_time, '%Y-%m-%d')";
+
+        // Revenue KPI
+        $revenueThisMonth = \App\Models\Payment::where('status', 'verified')
+            ->where('paid_date', '>=', $thisMonth)
+            ->sum('amount');
+
+        // Active Members
+        $activeMembers = \App\Models\Member::where('status', 'active')->count();
+
+        // Today's Attendance
+        $attendanceToday = \App\Models\Attendance::whereDate('check_in_time', $today)->count();
+
+        // Trend Graph (Last 14 days attendance)
+        $attendanceTrend = \App\Models\Attendance::selectRaw("$dateFormat as date, count(*) as count")
+            ->where('check_in_time', '>=', now()->subDays(14))
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        // Recent Activity
+        $recentPayments = \App\Models\Payment::with('member:id,full_name,calling_name')
+            ->latest()
+            ->take(5)
+            ->get();
+
+        return \Inertia\Inertia::render('Admin/Reports/Index', [
+            'kpis' => [
+                'revenue' => $revenueThisMonth,
+                'activeMembers' => $activeMembers,
+                'attendanceToday' => $attendanceToday,
+            ],
+            'attendanceTrend' => $attendanceTrend,
+            'recentPayments' => $recentPayments,
+        ]);
+    }
 
     public function members()
     {
@@ -16,14 +58,14 @@ class ReportController extends Controller
             ->pluck('count', 'status');
 
         // 2. Members per Program
-        $sportStats = \App\Models\Program::withCount(['members' => function($q) {
+        $sportStats = \App\Models\Program::withCount(['members' => function ($q) {
             $q->where('member_programs.status', 'active');
         }])
-        ->get()
-        ->map(fn($program) => [
-            'name' => $program->name,
-            'count' => $program->members_count
-        ]);
+            ->get()
+            ->map(fn ($program) => [
+                'name' => $program->name,
+                'count' => $program->members_count,
+            ]);
 
         // 3. Registration Trend (Last 6 Months)
         $isSqlite = \DB::connection()->getDriverName() === 'sqlite';
@@ -63,7 +105,7 @@ class ReportController extends Controller
         return \Inertia\Inertia::render('Admin/Reports/Payments', [
             'payments' => $payments,
             'summary' => $summary,
-            'filters' => ['start_date' => $startDate, 'end_date' => $endDate]
+            'filters' => ['start_date' => $startDate, 'end_date' => $endDate],
         ]);
     }
 
@@ -76,9 +118,9 @@ class ReportController extends Controller
             ->groupBy('program_id')
             ->with('sport:id,name')
             ->get()
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'program' => $item->sport->name,
-                'count' => $item->count
+                'count' => $item->count,
             ]);
 
         $hourlyTraffic = \App\Models\Attendance::whereDate('check_in_time', $date)
@@ -91,7 +133,7 @@ class ReportController extends Controller
             'attendanceByProgram' => $attendanceByProgram,
             'hourlyTraffic' => $hourlyTraffic,
             'date' => $date,
-            'totalToday' => \App\Models\Attendance::whereDate('check_in_time', $date)->count()
+            'totalToday' => \App\Models\Attendance::whereDate('check_in_time', $date)->count(),
         ]);
     }
 
@@ -116,9 +158,44 @@ class ReportController extends Controller
             'monthlyRevenue' => $monthlyRevenue,
             'outstanding' => [
                 'amount' => $outstandingAmount,
-                'member_count' => $outstandingCount
+                'member_count' => $outstandingCount,
             ],
-            'currentYear' => now()->year
+            'currentYear' => now()->year,
         ]);
+    }
+
+    public function export(Request $request)
+    {
+        $type = $request->input('type', 'payments');
+
+        $headers = [
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Content-type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=report_{$type}_".now()->format('Ymd_His').'.csv',
+            'Expires' => '0',
+            'Pragma' => 'public',
+        ];
+
+        $list = \App\Models\Payment::with('member')->latest()->get();
+
+        $callback = function () use ($list) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['ID', 'Date', 'Member', 'Amount', 'Type', 'Status']);
+
+            foreach ($list as $row) {
+                fputcsv($file, [
+                    $row->id,
+                    $row->paid_date ? $row->paid_date->format('Y-m-d') : '',
+                    $row->member ? $row->member->full_name : 'N/A',
+                    $row->amount,
+                    $row->type->value ?? $row->type,
+                    $row->status->value ?? $row->status,
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

@@ -8,9 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
-use Illuminate\Support\Str;
 
 class CoachController extends Controller
 {
@@ -80,16 +78,16 @@ class CoachController extends Controller
     public function edit(Coach $coach)
     {
         $coach->load('user');
-        
+
         return Inertia::render('Admin/Coaches/Edit', [
-            'coach' => $coach
+            'coach' => $coach,
         ]);
     }
 
     public function update(Request $request, Coach $coach)
     {
         $validated = $request->validate([
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $coach->user_id],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$coach->user_id],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'name' => ['required', 'string', 'max:255'],
             'contact_number' => ['nullable', 'string', 'max:50'],
@@ -100,13 +98,13 @@ class CoachController extends Controller
 
         DB::transaction(function () use ($validated, $coach) {
             $user = $coach->user;
-            
+
             $userData = [
                 'name' => $validated['name'],
                 'email' => $validated['email'],
             ];
 
-            if (!empty($validated['password'])) {
+            if (! empty($validated['password'])) {
                 $userData['password'] = Hash::make($validated['password']);
             }
 
@@ -129,7 +127,7 @@ class CoachController extends Controller
         DB::transaction(function () use ($coach) {
             $user = $coach->user;
             $coach->delete();
-            if ($user && !$user->hasRole('admin')) { 
+            if ($user && ! $user->hasRole('admin')) {
                 // Only delete user if they are not also an admin, just to be safe.
                 $user->delete();
             }

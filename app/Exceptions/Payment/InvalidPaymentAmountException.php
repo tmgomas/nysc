@@ -19,7 +19,7 @@ class InvalidPaymentAmountException extends Exception
      */
     public static function zero(): self
     {
-        return new self("Payment amount must be greater than zero.");
+        return new self('Payment amount must be greater than zero.');
     }
 
     /**

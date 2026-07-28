@@ -63,7 +63,13 @@ interface Props {
         date?: string;
         program_id?: string;
     };
-    members: Member[];
+    members: {
+        data: Member[];
+        current_page: number;
+        last_page: number;
+        links: { url: string | null; label: string; active: boolean }[];
+        total: number;
+    };
     currentDate: string;
 }
 
@@ -104,8 +110,8 @@ export default function Index({ programs, filters, members, currentDate }: Props
 
     // Initialize state from props
     useEffect(() => {
-        if (members && members.length > 0) {
-            const initialData = members.map(m => ({
+        if (members && members.data && members.data.length > 0) {
+            const initialData = members.data.map(m => ({
                 id: m.id,
                 present: !!m.attendance,
                 check_in: m.attendance?.check_in_time || '08:00', // Default time
@@ -227,7 +233,7 @@ export default function Index({ programs, filters, members, currentDate }: Props
         });
     };
 
-    const filteredMembers = (members || []).filter(m =>
+    const filteredMembers = (members?.data || []).filter(m =>
         (m.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (m.member_number || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -247,7 +253,7 @@ export default function Index({ programs, filters, members, currentDate }: Props
                             {selectedProgramId && (
                                 <div className="flex items-center gap-2">
                                     <div className="hidden sm:block text-sm text-muted-foreground mr-2">
-                                        <span className="font-medium text-foreground">{presentCount}</span> / {members.length} Present
+                                        <span className="font-medium text-foreground">{presentCount}</span> / {members?.data?.length || 0} Present (Page {members?.current_page} of {members?.last_page})
                                     </div>
                                     <Button
                                         size="sm"
@@ -356,7 +362,7 @@ export default function Index({ programs, filters, members, currentDate }: Props
                     <div className="space-y-4">
                         {/* Stats Banner for Mobile (hidden on desktop as it's in header) */}
                         <div className="flex sm:hidden justify-between items-center px-1 text-sm text-muted-foreground">
-                            <span>Total Members: {members.length}</span>
+                            <span>Total Members: {members?.total || 0}</span>
                             <span>Present: <span className="font-bold text-green-600">{presentCount}</span></span>
                         </div>
 
@@ -435,6 +441,53 @@ export default function Index({ programs, filters, members, currentDate }: Props
                                 );
                             })}
                         </div>
+
+                        {/* Pagination */}
+                        {members?.links && members.links.length > 3 && (
+                            <div className="flex justify-center mt-6">
+                                <div className="flex gap-1 overflow-x-auto pb-2 max-w-full no-scrollbar">
+                                    {members.links.map((link, index) => {
+                                        const isFirst = index === 0;
+                                        const isLast = index === members.links.length - 1;
+                                        const label = isFirst ? "«" : isLast ? "»" : link.label;
+
+                                        return link.url ? (
+                                            <Button
+                                                key={index}
+                                                variant={link.active ? "default" : "outline"}
+                                                size="sm"
+                                                className={cn(
+                                                    "min-w-9 h-9",
+                                                    !link.active && "bg-white text-gray-700"
+                                                )}
+                                                onClick={() => {
+                                                    // Parse URL and preserve state
+                                                    const urlParams = new URLSearchParams(link.url?.split('?')[1]);
+                                                    const page = urlParams.get('page');
+                                                    if (page) {
+                                                        router.get('/admin/attendance', { 
+                                                            date: selectedDate, 
+                                                            program_id: selectedProgramId, 
+                                                            page 
+                                                        }, { preserveState: true, preserveScroll: true });
+                                                    }
+                                                }}
+                                                dangerouslySetInnerHTML={{ __html: label }}
+                                            />
+                                        ) : (
+                                            <Button
+                                                key={index}
+                                                variant="outline"
+                                                size="sm"
+                                                disabled
+                                                className="min-w-9 h-9 opacity-50 bg-white"
+                                                dangerouslySetInnerHTML={{ __html: label }}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

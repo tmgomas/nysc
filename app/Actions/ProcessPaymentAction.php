@@ -2,13 +2,16 @@
 
 namespace App\Actions;
 
-use App\Models\Member;
-use App\Models\Payment;
-use App\Models\MemberPaymentSchedule;
-use App\Enums\{PaymentType, PaymentStatus, ScheduleStatus, MemberStatus};
+use App\Enums\MemberStatus;
+use App\Enums\PaymentStatus;
+use App\Enums\PaymentType;
+use App\Enums\ScheduleStatus;
+use App\Exceptions\Member\InvalidMemberStatusException;
 use App\Exceptions\Payment\InvalidPaymentAmountException;
 use App\Exceptions\Payment\PaymentNotFoundException;
-use App\Exceptions\Member\InvalidMemberStatusException;
+use App\Models\Member;
+use App\Models\MemberPaymentSchedule;
+use App\Models\Payment;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,18 +20,18 @@ class ProcessPaymentAction
 {
     /**
      * Process a payment and update related schedules
-     * 
-     * @param Member $member The member making the payment
-     * @param PaymentType $type Type of payment (monthly, bulk, admission)
-     * @param float $amount Payment amount
-     * @param string $paymentMethod Payment method (cash, bank_transfer, online)
-     * @param string|null $monthYear Month-year for the payment (Y-m format)
-     * @param int $monthsCount Number of months for bulk payment
-     * @param string|null $receiptUrl URL to payment receipt
-     * @param string|null $referenceNumber Payment reference number
-     * @param string|null $programId Program ID if payment is for specific program
+     *
+     * @param  Member  $member  The member making the payment
+     * @param  PaymentType  $type  Type of payment (monthly, bulk, admission)
+     * @param  float  $amount  Payment amount
+     * @param  string  $paymentMethod  Payment method (cash, bank_transfer, online)
+     * @param  string|null  $monthYear  Month-year for the payment (Y-m format)
+     * @param  int  $monthsCount  Number of months for bulk payment
+     * @param  string|null  $receiptUrl  URL to payment receipt
+     * @param  string|null  $referenceNumber  Payment reference number
+     * @param  string|null  $programId  Program ID if payment is for specific program
      * @return Payment The created payment record
-     * 
+     *
      * @throws InvalidPaymentAmountException If payment amount is invalid
      * @throws InvalidMemberStatusException If member status doesn't allow payments
      * @throws PaymentNotFoundException If payment schedule not found
@@ -47,31 +50,31 @@ class ProcessPaymentAction
     ): Payment {
         // Validate payment amount
         $this->validateAmount($amount);
-        
+
         // Validate member status
         $this->validateMemberStatus($member);
 
         // Wrap in database transaction for data integrity
         return DB::transaction(function () use (
-            $member, $type, $amount, $paymentMethod, 
-            $monthYear, $monthsCount, $receiptUrl, 
+            $member, $type, $amount, $paymentMethod,
+            $monthYear, $monthsCount, $receiptUrl,
             $referenceNumber, $programId
         ) {
             try {
-                $dueDate = $monthYear 
+                $dueDate = $monthYear
                     ? Carbon::createFromFormat('Y-m', $monthYear)->endOfMonth()
                     : now();
 
                 // Generate reference number if not provided
-                if (!$referenceNumber) {
-                    $referenceGenerator = new GeneratePaymentReferenceAction();
-                    $referenceNumber = $programId 
+                if (! $referenceNumber) {
+                    $referenceGenerator = new GeneratePaymentReferenceAction;
+                    $referenceNumber = $programId
                         ? $referenceGenerator->execute($programId, $dueDate)
                         : $referenceGenerator->executeForMultiplePrograms($dueDate);
                 }
 
                 // Generate receipt number if not provided
-                $finalReceiptNumber = $receiptNumber ?? (new GenerateReceiptNumberAction())->execute(now());
+                $finalReceiptNumber = $receiptNumber ?? (new GenerateReceiptNumberAction)->execute(now());
 
                 // Create payment record
                 $payment = Payment::create([
@@ -112,7 +115,7 @@ class ProcessPaymentAction
                 } catch (\Exception $e) {
                     Log::error('Failed to send payment notification', [
                         'payment_id' => $payment->id,
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
                     ]);
                 }
 
@@ -122,7 +125,7 @@ class ProcessPaymentAction
                 } catch (\Exception $e) {
                     Log::error('Failed to send payment notification', [
                         'payment_id' => $payment->id,
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
                     ]);
                 }
 
@@ -144,7 +147,7 @@ class ProcessPaymentAction
 
     /**
      * Validate payment amount
-     * 
+     *
      * @throws InvalidPaymentAmountException
      */
     protected function validateAmount(float $amount): void
@@ -166,7 +169,7 @@ class ProcessPaymentAction
 
     /**
      * Validate member status allows payments
-     * 
+     *
      * @throws InvalidMemberStatusException
      */
     protected function validateMemberStatus(Member $member): void
@@ -182,17 +185,17 @@ class ProcessPaymentAction
 
     /**
      * Update payment schedules after payment
-     * 
+     *
      * @throws PaymentNotFoundException If schedule not found
      */
     protected function updateSchedules(
-        Member $member, 
-        Payment $payment, 
-        ?string $startMonthYear, 
-        int $monthsCount, 
+        Member $member,
+        Payment $payment,
+        ?string $startMonthYear,
+        int $monthsCount,
         ?string $programId = null
     ): void {
-        $startDate = $startMonthYear 
+        $startDate = $startMonthYear
             ? Carbon::createFromFormat('Y-m', $startMonthYear)
             : now();
 
@@ -226,10 +229,10 @@ class ProcessPaymentAction
      * Log payment activity
      */
     protected function logPayment(
-        Member $member, 
-        Payment $payment, 
-        PaymentType $type, 
-        float $amount, 
+        Member $member,
+        Payment $payment,
+        PaymentType $type,
+        float $amount,
         ?string $programId
     ): void {
         $member->log('payment_received', "Payment of Rs. {$amount} received", [

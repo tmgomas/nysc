@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\MemberService;
 use App\Models\Program;
+use App\Services\MemberService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -33,13 +33,13 @@ class PublicRegistrationController extends Controller
             'emergency_contact' => 'required|string',
             'emergency_number' => 'required|string',
             'program_ids' => 'required|array|min:1',
-            'program_ids.*' => 'exists:sports,id',
+            'program_ids.*' => 'exists:programs,id',
         ]);
 
         $member = $this->memberService->register($validated);
 
         return redirect()->route('registration.success')
-            ->with('success', 'Registration submitted successfully. Your member number is: ' . $member->member_number);
+            ->with('success', 'Registration submitted successfully. Your member number is: '.$member->member_number);
     }
 
     public function success()

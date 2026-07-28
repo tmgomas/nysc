@@ -3,7 +3,7 @@ class ApiConstants {
   ApiConstants._();
 
   // Base URL — change this to your production URL
-  static const String baseUrl = 'http://134.209.110.157/api'; // Production Server
+  static const String baseUrl = 'https://nycsc.tmgomis.online/api'; // Production Server
   // static const String baseUrl = 'http://nycsc.test/api'; // Local dev (Herd/Laragon)
   // static const String baseUrl = 'http://10.0.2.2:8000/api'; // Android emulator
   // static const String baseUrl = 'http://localhost:8000/api'; // iOS simulator
@@ -18,6 +18,7 @@ class ApiConstants {
   static const String memberPrograms = '/member/programs';
   static const String memberSchedule = '/member/schedule';
   static const String memberPayments = '/member/payments';
+  static String memberPayOnline(String id) => '/member/payments/$id/pay-online';
   static const String memberAttendance = '/member/attendance';
 
   // Coach

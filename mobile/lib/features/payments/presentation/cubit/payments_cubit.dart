@@ -46,4 +46,15 @@ class PaymentsCubit extends Cubit<PaymentsState> {
       (payments) => emit(PaymentsLoaded(payments)),
     );
   }
+
+  Future<Map<String, dynamic>?> initiatePayment(String paymentId) async {
+    final result = await repository.initiateOnlinePayment(paymentId);
+    return result.fold(
+      (failure) {
+        // We might want to reload or just return null and handle in UI
+        return null;
+      },
+      (checkoutData) => checkoutData,
+    );
+  }
 }

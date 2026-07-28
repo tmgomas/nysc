@@ -20,8 +20,8 @@ class NFCController extends Controller
 
         try {
             $nfcData = json_decode($request->nfc_data, true);
-            
-            if (!$nfcData) {
+
+            if (! $nfcData) {
                 return response()->json([
                     'valid' => false,
                     'message' => 'Invalid NFC data format',
@@ -47,9 +47,9 @@ class NFCController extends Controller
             }
 
             // If no member number found in records, try to find by serial number
-            if (!$memberNumber && $serialNumber) {
+            if (! $memberNumber && $serialNumber) {
                 $member = Member::where('nfc_tag_id', $serialNumber)->first();
-                
+
                 if ($member) {
                     return response()->json([
                         'valid' => true,
@@ -66,7 +66,7 @@ class NFCController extends Controller
             // If member number found, verify member exists
             if ($memberNumber) {
                 $member = Member::where('member_number', $memberNumber)->first();
-                
+
                 if ($member) {
                     return response()->json([
                         'valid' => true,
@@ -91,7 +91,7 @@ class NFCController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'valid' => false,
-                'message' => 'Failed to verify NFC tag: ' . $e->getMessage(),
+                'message' => 'Failed to verify NFC tag: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -108,7 +108,7 @@ class NFCController extends Controller
 
         try {
             $member = Member::findOrFail($request->member_id);
-            
+
             // Check if NFC tag is already associated with another member
             $existingMember = Member::where('nfc_tag_id', $request->nfc_tag_id)
                 ->where('id', '!=', $member->id)
@@ -133,7 +133,7 @@ class NFCController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to associate NFC tag: ' . $e->getMessage(),
+                'message' => 'Failed to associate NFC tag: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -160,7 +160,7 @@ class NFCController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to remove NFC tag: ' . $e->getMessage(),
+                'message' => 'Failed to remove NFC tag: '.$e->getMessage(),
             ], 500);
         }
     }

@@ -28,12 +28,12 @@ class PaymentConfirmationNotification extends Notification implements ShouldQueu
     public function via(object $notifiable): array
     {
         $channels = ['mail'];
-        
+
         // Add SMS channel if member prefers SMS
         if ($notifiable->preferred_contact_method === 'sms') {
             $channels[] = \TextLK\Laravel\TextLKSMSChannel::class;
         }
-        
+
         return $channels;
     }
 
@@ -43,12 +43,12 @@ class PaymentConfirmationNotification extends Notification implements ShouldQueu
     public function toMail(object $notifiable): MailMessage
     {
         $sportName = $this->payment->items->first()?->sport?->name ?? 'Membership';
-        
+
         return (new MailMessage)
             ->subject('Payment Received - NYCSC')
             ->greeting('Payment Confirmed!')
-            ->line("We have received your payment. Thank you!")
-            ->line("**Amount:** Rs. " . number_format($this->payment->amount, 2))
+            ->line('We have received your payment. Thank you!')
+            ->line('**Amount:** Rs. '.number_format($this->payment->amount, 2))
             ->line("**For:** {$sportName}")
             ->line("**Receipt Number:** {$this->payment->id}")
             ->line("**Date:** {$this->payment->created_at->format('Y-m-d')}")
@@ -63,21 +63,21 @@ class PaymentConfirmationNotification extends Notification implements ShouldQueu
     {
         $sportName = $this->payment->program ? $this->payment->program->name : 'Membership';
         $amount = number_format($this->payment->amount, 2);
-        
+
         $template = \App\Models\SmsTemplate::where('key', 'payment.received')->first();
-        
+
         if ($template) {
             $content = $template->content;
             $content = str_replace('{amount}', $amount, $content);
             $content = str_replace('{description}', $sportName, $content);
             $content = str_replace('{receipt_number}', $this->payment->receipt_number ?? $this->payment->id, $content);
-            
+
             $message = $content;
         } else {
             $message = "Payment received! Rs.{$amount} for {$sportName}. Receipt #{$this->payment->id}. Thank you!";
         }
-        
-        return (new TextLKSMSMessage())
+
+        return (new TextLKSMSMessage)
             ->message($message)
             ->recipient($notifiable->routeNotificationFor('textlk', $this));
     }

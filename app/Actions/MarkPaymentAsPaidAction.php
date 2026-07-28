@@ -2,19 +2,20 @@
 
 namespace App\Actions;
 
-use App\Models\{Payment, MemberPaymentSchedule};
-use App\Enums\{PaymentStatus, ScheduleStatus};
+use App\Enums\PaymentStatus;
+use App\Enums\ScheduleStatus;
+use App\Models\MemberPaymentSchedule;
+use App\Models\Payment;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 
 class MarkPaymentAsPaidAction
 {
     /**
      * Mark a pending payment as paid and update related schedules
-     * 
-     * @param Payment $payment The pending payment to mark as paid
-     * @param string $paymentMethod Payment method used
-     * @param string|null $referenceNumber Optional reference number
+     *
+     * @param  Payment  $payment  The pending payment to mark as paid
+     * @param  string  $paymentMethod  Payment method used
+     * @param  string|null  $referenceNumber  Optional reference number
      * @return Payment The updated payment
      */
     public function execute(
@@ -28,14 +29,14 @@ class MarkPaymentAsPaidAction
 
         return DB::transaction(function () use ($payment, $paymentMethod, $referenceNumber) {
             // Load payment items if not loaded
-            if (!$payment->relationLoaded('items')) {
+            if (! $payment->relationLoaded('items')) {
                 $payment->load('items.program');
             }
 
             // Generate reference number if not provided
-            if (!$referenceNumber) {
-                $referenceGenerator = new GeneratePaymentReferenceAction();
-                
+            if (! $referenceNumber) {
+                $referenceGenerator = new GeneratePaymentReferenceAction;
+
                 // If payment has multiple sports, use multi-sport reference
                 $programIds = $payment->items->pluck('program_id')->unique()->filter();
                 if ($programIds->count() > 1) {

@@ -2,22 +2,24 @@
 
 namespace App\Actions;
 
-use App\Models\{Member, Payment, PaymentItem};
-use App\Enums\{PaymentType, PaymentStatus};
-use Carbon\Carbon;
+use App\Enums\PaymentStatus;
+use App\Enums\PaymentType;
+use App\Models\Member;
+use App\Models\Payment;
+use App\Models\PaymentItem;
 use Illuminate\Support\Facades\DB;
 
 class CreatePendingAdmissionPaymentAction
 {
     /**
      * Create pending admission payment with line items for member's enrolled sports
-     * 
-     * @param Member $member The approved member
+     *
+     * @param  Member  $member  The approved member
      * @return Payment The created pending payment
      */
     public function execute(Member $member): Payment
     {
-        if (!$member->relationLoaded('programs')) {
+        if (! $member->relationLoaded('programs')) {
             $member->load('programs');
         }
 
@@ -38,7 +40,7 @@ class CreatePendingAdmissionPaymentAction
             }
 
             // Generate receipt number
-            $receiptGenerator = new GenerateReceiptNumberAction();
+            $receiptGenerator = new GenerateReceiptNumberAction;
             $receiptNumber = $receiptGenerator->execute(now());
 
             // Create the main payment record

@@ -27,12 +27,12 @@ class OverduePaymentNotification extends Notification implements ShouldQueue
     public function via(object $notifiable): array
     {
         $channels = ['mail'];
-        
+
         // Add SMS channel if member prefers SMS
         if ($notifiable->member->preferred_contact_method === 'sms') {
             $channels[] = \TextLK\Laravel\TextLKSMSChannel::class;
         }
-        
+
         return $channels;
     }
 
@@ -46,7 +46,7 @@ class OverduePaymentNotification extends Notification implements ShouldQueue
             ->level('warning')
             ->greeting('Payment Overdue')
             ->line('This is an urgent notice regarding your overdue payment.')
-            ->line("**Overdue Amount:** Rs. " . number_format($this->amount, 2))
+            ->line('**Overdue Amount:** Rs. '.number_format($this->amount, 2))
             ->line('Please settle your outstanding payment immediately to avoid account suspension and loss of club privileges.')
             ->action('Pay Now', url('/payments'))
             ->line('If you have already made the payment, please contact our office with your payment proof.');
@@ -57,9 +57,9 @@ class OverduePaymentNotification extends Notification implements ShouldQueue
      */
     public function toTextlk(object $notifiable): TextLKSMSMessage
     {
-        $message = "Payment overdue: Rs." . number_format($this->amount, 2) . ". Please settle immediately to avoid account suspension.";
-        
-        return (new TextLKSMSMessage())
+        $message = 'Payment overdue: Rs.'.number_format($this->amount, 2).'. Please settle immediately to avoid account suspension.';
+
+        return (new TextLKSMSMessage)
             ->message($message)
             ->recipient($notifiable->routeNotificationFor('textlk', $this));
     }

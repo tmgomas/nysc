@@ -32,6 +32,9 @@ import {
     Users,
     Calendar,
     Hash,
+    Printer,
+    Download,
+    FileText,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -44,6 +47,11 @@ interface Payment {
     payment_method: string;
     month_year: string | null;
     paid_date: string;
+    latest_online_transaction?: {
+        order_id: string;
+        gateway_transaction_id: string | null;
+        gateway_method: string | null;
+    } | null;
     member: {
         id: string;
         member_number: string;
@@ -354,6 +362,22 @@ export default function Index({ payments, filters, stats }: Props) {
                                                             Verify Payment
                                                         </DropdownMenuItem>
                                                     )}
+                                                    {(payment.status === 'verified' || payment.status === 'paid') && (
+                                                        <>
+                                                            <DropdownMenuItem asChild>
+                                                                <a href={`/admin/payments/${payment.id}/receipt?action=print`} target="_blank" rel="noopener noreferrer">
+                                                                    <Printer className="mr-2 h-4 w-4" />
+                                                                    Print Receipt
+                                                                </a>
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem asChild>
+                                                                <a href={`/admin/payments/${payment.id}/receipt?action=download`} target="_blank" rel="noopener noreferrer">
+                                                                    <Download className="mr-2 h-4 w-4" />
+                                                                    Download Receipt
+                                                                </a>
+                                                            </DropdownMenuItem>
+                                                        </>
+                                                    )}
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </div>
@@ -448,7 +472,20 @@ export default function Index({ payments, filters, stats }: Props) {
                                                     </Badge>
                                                 </td>
                                                 <td className="px-6 py-4 text-sm capitalize">
-                                                    {payment.payment_method?.replace('_', ' ') || '-'}
+                                                    {payment.payment_method === 'online' ? (
+                                                        <div className="space-y-0.5">
+                                                            <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
+                                                                PayHere
+                                                            </span>
+                                                            {payment.latest_online_transaction?.order_id && (
+                                                                <div className="text-[11px] font-mono text-muted-foreground truncate max-w-[130px]">
+                                                                    {payment.latest_online_transaction.order_id}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        payment.payment_method?.replace('_', ' ') || '-'
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-4 text-sm">
                                                     {payment.month_year || '-'}
@@ -475,6 +512,20 @@ export default function Index({ payments, filters, stats }: Props) {
                                                                 <CheckCircle className="mr-2 h-4 w-4" />
                                                                 Verify
                                                             </Button>
+                                                        )}
+                                                        {(payment.status === 'verified' || payment.status === 'paid') && (
+                                                            <>
+                                                                <Button variant="ghost" size="sm" asChild title="Print Receipt">
+                                                                    <a href={`/admin/payments/${payment.id}/receipt?action=print`} target="_blank" rel="noopener noreferrer">
+                                                                        <Printer className="h-4 w-4 text-gray-600" />
+                                                                    </a>
+                                                                </Button>
+                                                                <Button variant="ghost" size="sm" asChild title="Download Receipt">
+                                                                    <a href={`/admin/payments/${payment.id}/receipt?action=download`} target="_blank" rel="noopener noreferrer">
+                                                                        <Download className="h-4 w-4 text-indigo-600" />
+                                                                    </a>
+                                                                </Button>
+                                                            </>
                                                         )}
                                                     </div>
                                                 </td>

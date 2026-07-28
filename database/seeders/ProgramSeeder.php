@@ -115,11 +115,11 @@ class ProgramSeeder extends Seeder
         foreach ($programs as $program) {
             $locationName = $program['location'];
             unset($program['location']);
-            
+
             // Find or create location
             $locationId = DB::table('locations')->where('name', $locationName)->value('id');
-            
-            if (!$locationId) {
+
+            if (! $locationId) {
                 $locationId = Str::uuid()->toString();
                 DB::table('locations')->insert([
                     'id' => $locationId,

@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class SpecialBooking extends Model
 {
     use HasFactory, HasUuids;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -40,13 +41,13 @@ class SpecialBooking extends Model
     public function scopeForDateRange($query, string $start, string $end)
     {
         return $query->where('start_date', '<=', $end)
-                     ->where('end_date', '>=', $start);
+            ->where('end_date', '>=', $start);
     }
 
     public function scopeForDate($query, string $date)
     {
         return $query->where('start_date', '<=', $date)
-                     ->where('end_date', '>=', $date);
+            ->where('end_date', '>=', $date);
     }
 
     public function scopeCancelling($query)
@@ -60,12 +61,12 @@ class SpecialBooking extends Model
     public function overlapsTime(?string $startTime, ?string $endTime): bool
     {
         // If booking has no specific time range, it's all-day → always overlaps
-        if (!$this->start_time || !$this->end_time) {
+        if (! $this->start_time || ! $this->end_time) {
             return true;
         }
 
         // If class has no time info, assume overlap
-        if (!$startTime || !$endTime) {
+        if (! $startTime || ! $endTime) {
             return true;
         }
 

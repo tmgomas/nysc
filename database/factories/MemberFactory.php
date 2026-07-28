@@ -20,7 +20,10 @@ class MemberFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'member_number' => 'M-' . fake()->unique()->numberBetween(1000, 9999),
+            'member_number' => 'M-'.fake()->unique()->numberBetween(1000, 9999),
+            'full_name' => fake()->name(),
+            'calling_name' => fake()->firstName(),
+            'email' => fake()->unique()->safeEmail(),
             'nic_passport' => fake()->unique()->regexify('[0-9]{9}[V|X]'),
             'date_of_birth' => fake()->date('Y-m-d', '-18 years'),
             'gender' => fake()->randomElement(['male', 'female', 'other']),

@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
@@ -64,7 +64,7 @@ class UserSeeder extends Seeder
             $this->command->info('Coach: coach@nysc.lk / password');
 
         } catch (\Exception $e) {
-            $this->command->error('UserSeeder failed: ' . $e->getMessage());
+            $this->command->error('UserSeeder failed: '.$e->getMessage());
         }
     }
 }

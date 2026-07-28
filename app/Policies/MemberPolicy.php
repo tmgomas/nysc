@@ -2,8 +2,9 @@
 
 namespace App\Policies;
 
-use App\Models\{Member, User};
 use App\Enums\MemberStatus;
+use App\Models\Member;
+use App\Models\User;
 
 class MemberPolicy
 {
@@ -64,7 +65,7 @@ class MemberPolicy
      */
     public function approve(User $user, Member $member): bool
     {
-        return $user->hasPermissionTo('approve_members') 
+        return $user->hasPermissionTo('approve_members')
             && $member->status === MemberStatus::PENDING;
     }
 

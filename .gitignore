@@ -26,3 +26,9 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Debug and dump files
+*_output.txt
+output*.json
+routes.json
+all_routes.txt

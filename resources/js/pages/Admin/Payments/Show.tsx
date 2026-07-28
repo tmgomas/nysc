@@ -15,9 +15,25 @@ import {
     User,
     FileText,
     Trophy,
+    Printer,
+    Download,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+
+interface OnlineTransaction {
+    id: string;
+    order_id: string;
+    amount: number;
+    currency: string;
+    gateway: string;
+    gateway_transaction_id: string | null;
+    gateway_method: string | null;
+    status: string;
+    initiated_at: string | null;
+    completed_at: string | null;
+    gateway_response?: any;
+}
 
 interface Payment {
     id: string;
@@ -29,6 +45,8 @@ interface Payment {
     paid_date: string;
     reference_number: string | null;
     receipt_url: string | null;
+    latest_online_transaction?: OnlineTransaction | null;
+    online_transactions?: OnlineTransaction[];
     member: {
         id: string;
         member_number: string;
@@ -133,6 +151,22 @@ export default function Show({ payment }: Props) {
                                     <CheckCircle className="mr-2 h-4 w-4" />
                                     Verify Payment
                                 </Button>
+                            )}
+                            {(payment.status === 'verified' || payment.status === 'paid') && (
+                                <div className="flex gap-2">
+                                    <a href={`/admin/payments/${payment.id}/receipt?action=print`} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="outline">
+                                            <Printer className="mr-2 h-4 w-4" />
+                                            Print
+                                        </Button>
+                                    </a>
+                                    <a href={`/admin/payments/${payment.id}/receipt?action=download`} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="default" className="bg-indigo-600 hover:bg-indigo-700">
+                                            <Download className="mr-2 h-4 w-4" />
+                                            Download
+                                        </Button>
+                                    </a>
+                                </div>
                             )}
                         </div>
 
@@ -267,6 +301,78 @@ export default function Show({ payment }: Props) {
                                 )}
                             </CardContent>
                         </Card>
+
+                        {/* Online Gateway Details (PayHere) */}
+                        {(payment.payment_method === 'online' || payment.latest_online_transaction) && (
+                            <Card className="border-indigo-100 bg-indigo-50/20 shadow-sm">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-indigo-900">
+                                            <CreditCard className="h-5 w-5 text-indigo-600" />
+                                            Online Payment Gateway (PayHere)
+                                        </div>
+                                        {payment.latest_online_transaction && (
+                                            <Badge variant={payment.latest_online_transaction.status === 'success' ? 'default' : 'secondary'}>
+                                                {payment.latest_online_transaction.status.toUpperCase()}
+                                            </Badge>
+                                        )}
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Real-time transaction details from PayHere gateway
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {payment.latest_online_transaction ? (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <div className="text-sm text-muted-foreground">Order ID</div>
+                                                <div className="font-mono text-sm font-semibold text-gray-900">
+                                                    {payment.latest_online_transaction.order_id}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="text-sm text-muted-foreground">PayHere Transaction ID</div>
+                                                <div className="font-mono text-sm font-semibold text-indigo-600">
+                                                    {payment.latest_online_transaction.gateway_transaction_id || payment.reference_number || 'N/A'}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="text-sm text-muted-foreground">Payment Method / Channel</div>
+                                                <div className="font-medium text-gray-900">
+                                                    {payment.latest_online_transaction.gateway_method || 'CARD / Online'}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="text-sm text-muted-foreground">Currency & Amount</div>
+                                                <div className="font-semibold text-gray-900">
+                                                    {payment.latest_online_transaction.currency || 'LKR'} {Number(payment.latest_online_transaction.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                </div>
+                                            </div>
+                                            {payment.latest_online_transaction.initiated_at && (
+                                                <div>
+                                                    <div className="text-sm text-muted-foreground">Initiated At</div>
+                                                    <div className="font-medium text-xs text-gray-700">
+                                                        {new Date(payment.latest_online_transaction.initiated_at).toLocaleString()}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {payment.latest_online_transaction.completed_at && (
+                                                <div>
+                                                    <div className="text-sm text-muted-foreground">Completed At</div>
+                                                    <div className="font-medium text-xs font-semibold text-emerald-700">
+                                                        {new Date(payment.latest_online_transaction.completed_at).toLocaleString()}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground">
+                                            No detailed gateway transaction log found for this online payment.
+                                        </p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
 
                         {/* Payment Items */}
                         {payment.payment_items && payment.payment_items.length > 0 && (

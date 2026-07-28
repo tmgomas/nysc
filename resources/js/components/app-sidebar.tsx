@@ -90,7 +90,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         },
         {
             title: 'Reports',
-            href: '/admin/reports/members',
+            href: '/admin/reports',
             icon: FileText,
         },
         {

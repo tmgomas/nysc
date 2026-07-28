@@ -2,20 +2,24 @@
 
 namespace App\Models;
 
+use App\Enums\MemberStatus;
+use App\Traits\HasAttendance;
+use App\Traits\HasPayments;
+use App\Traits\HasPrograms;
+use App\Traits\Loggable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Notifications\Notifiable;
-use App\Enums\MemberStatus;
-use App\Traits\{HasPayments, HasAttendance, HasPrograms, Loggable};
 
 class Member extends Model
 {
-    use HasFactory, SoftDeletes, HasUuids, Notifiable;
-    use HasPayments, HasAttendance, HasPrograms, Loggable;
+    use HasAttendance, HasPayments, HasPrograms, Loggable;
+    use HasFactory, HasUuids, Notifiable, SoftDeletes;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -87,7 +91,7 @@ class Member extends Model
     {
         return $this->belongsToMany(Program::class, 'member_programs')
             ->using(MemberProgram::class)
-            ->withPivot('enrolled_at', 'status','program_reference')
+            ->withPivot('enrolled_at', 'status', 'program_reference')
             ->withTimestamps();
     }
 
@@ -138,22 +142,22 @@ class Member extends Model
         }
 
         $phone = $this->contact_number;
-        
+
         // Remove + prefix if present
         if (str_starts_with($phone, '+')) {
             $phone = substr($phone, 1);
         }
-        
+
         // Remove leading 0 and add 94 country code if needed
         if (str_starts_with($phone, '0')) {
-            $phone = '94' . substr($phone, 1);
+            $phone = '94'.substr($phone, 1);
         }
-        
+
         // If doesn't start with 94, assume it's a local number
-        if (!str_starts_with($phone, '94')) {
-            $phone = '94' . $phone;
+        if (! str_starts_with($phone, '94')) {
+            $phone = '94'.$phone;
         }
-        
+
         return $phone;
     }
 
@@ -165,4 +169,3 @@ class Member extends Model
         return $this->preferred_contact_method === 'sms';
     }
 }
-

@@ -8,9 +8,9 @@ class ApplyBulkDiscountAction
 {
     /**
      * Apply discount to bulk payments
-     * 
-     * @param float $originalAmount Original payment amount
-     * @param int $months Number of months
+     *
+     * @param  float  $originalAmount  Original payment amount
+     * @param  int  $months  Number of months
      * @return array Discount details
      */
     public function execute(float $originalAmount, int $months): array
@@ -34,7 +34,7 @@ class ApplyBulkDiscountAction
      */
     protected function calculateDiscountPercentage(int $months): float
     {
-        return match(true) {
+        return match (true) {
             $months >= 12 => 15.0,  // 15% for 12+ months
             $months >= 6 => 10.0,   // 10% for 6-11 months
             $months >= 3 => 5.0,    // 5% for 3-5 months

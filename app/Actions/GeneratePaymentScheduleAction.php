@@ -2,25 +2,24 @@
 
 namespace App\Actions;
 
+use App\Enums\ScheduleStatus;
 use App\Models\Member;
 use App\Models\MemberPaymentSchedule;
-use App\Enums\ScheduleStatus;
 use Carbon\Carbon;
 
 class GeneratePaymentScheduleAction
 {
     /**
      * Generate monthly payment schedule for a member
-     * 
-     * @param Member $member
-     * @param int $months Number of months to generate (default 12)
-     * @param Carbon|null $startDate Start date (default next month)
+     *
+     * @param  int  $months  Number of months to generate (default 12)
+     * @param  Carbon|null  $startDate  Start date (default next month)
      */
     public function execute(Member $member, int $months = 12, ?Carbon $startDate = null): array
     {
         $startDate = $startDate ?? now()->addMonth()->startOfMonth();
-        
-        if (!$member->relationLoaded('programs')) {
+
+        if (! $member->relationLoaded('programs')) {
             $member->load('programs');
         }
 
@@ -45,7 +44,7 @@ class GeneratePaymentScheduleAction
                     ->where('month_year', $monthYear)
                     ->first();
 
-                if (!$existing) {
+                if (! $existing) {
                     $schedule = MemberPaymentSchedule::create([
                         'member_id' => $member->id,
                         'program_id' => $program->id,
@@ -68,7 +67,7 @@ class GeneratePaymentScheduleAction
      */
     public function updateFutureSchedules(Member $member): int
     {
-        if (!$member->relationLoaded('programs')) {
+        if (! $member->relationLoaded('programs')) {
             $member->load('programs');
         }
 

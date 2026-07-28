@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Program;
 use App\Models\Coach;
+use App\Models\Program;
 use Illuminate\Http\Request;
 
 class ProgramCoachController extends Controller
@@ -19,7 +19,7 @@ class ProgramCoachController extends Controller
         ]);
 
         if ($program->coaches()->where('coach_id', $validated['coach_id'])->exists()) {
-             return back()->with('error', 'Coach is already assigned to this program.');
+            return back()->with('error', 'Coach is already assigned to this program.');
         }
 
         $program->coaches()->attach($validated['coach_id'], ['id' => \Illuminate\Support\Str::uuid()]);

@@ -8,6 +8,7 @@ abstract class AuthRemoteDataSource {
   Future<(UserModel, String)> login(String email, String password);
   Future<UserModel> getCurrentUser();
   Future<void> logout();
+  Future<void> registerDeviceToken(String token, String deviceType);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -42,5 +43,16 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> logout() async {
     await apiClient.post(ApiConstants.logout);
+  }
+
+  @override
+  Future<void> registerDeviceToken(String token, String deviceType) async {
+    await apiClient.post(
+      '/user/device-token',
+      data: {
+        'fcm_token': token,
+        'device_type': deviceType,
+      },
+    );
   }
 }

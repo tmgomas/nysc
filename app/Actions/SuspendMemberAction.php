@@ -2,8 +2,8 @@
 
 namespace App\Actions;
 
-use App\Models\Member;
 use App\Enums\MemberStatus;
+use App\Models\Member;
 use Illuminate\Support\Facades\Auth;
 
 class SuspendMemberAction
@@ -23,8 +23,10 @@ class SuspendMemberAction
             'status' => MemberStatus::SUSPENDED,
         ]);
 
+        $userName = Auth::check() ? Auth::user()->name : 'System';
+
         // Log the suspension
-        $member->log('suspended', "Member suspended by " . Auth::user()->name . ". Reason: {$reason}", [
+        $member->log('suspended', 'Member suspended by '.$userName.". Reason: {$reason}", [
             'previous_status' => $previousStatus->value,
             'reason' => $reason,
         ]);
@@ -45,8 +47,10 @@ class SuspendMemberAction
             'status' => MemberStatus::ACTIVE,
         ]);
 
+        $userName = Auth::check() ? Auth::user()->name : 'System';
+
         // Log the reactivation
-        $member->log('reactivated', "Member reactivated by " . Auth::user()->name);
+        $member->log('reactivated', 'Member reactivated by '.$userName);
 
         return $member->fresh();
     }

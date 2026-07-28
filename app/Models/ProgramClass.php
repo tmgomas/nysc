@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class ProgramClass extends Model
 {
     use HasFactory, HasUuids;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $table = 'program_classes';
@@ -55,7 +56,7 @@ class ProgramClass extends Model
     public function assignedMembers()
     {
         return $this->hasMany(MemberProgramClass::class)
-                    ->where('status', 'active');
+            ->where('status', 'active');
     }
 
     // Count of members currently assigned to this slot
@@ -67,7 +68,10 @@ class ProgramClass extends Model
     // Available slots remaining
     public function getAvailableSlotsAttribute(): int
     {
-        if (!$this->capacity) return PHP_INT_MAX;
+        if (! $this->capacity) {
+            return PHP_INT_MAX;
+        }
+
         return max(0, $this->capacity - $this->assigned_count);
     }
 
@@ -86,10 +90,10 @@ class ProgramClass extends Model
     {
         return $query->where(function ($q) {
             $q->whereNull('valid_from')
-              ->orWhere('valid_from', '<=', now());
+                ->orWhere('valid_from', '<=', now());
         })->where(function ($q) {
             $q->whereNull('valid_to')
-              ->orWhere('valid_to', '>=', now());
+                ->orWhere('valid_to', '>=', now());
         });
     }
 
@@ -98,6 +102,7 @@ class ProgramClass extends Model
     {
         $start = \Carbon\Carbon::parse($this->start_time)->format('g:i A');
         $end = \Carbon\Carbon::parse($this->end_time)->format('g:i A');
+
         return "{$start} - {$end}";
     }
 }

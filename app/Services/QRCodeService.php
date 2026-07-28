@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Models\Member;
-use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
 use Illuminate\Support\Facades\Storage;
@@ -17,12 +17,12 @@ class QRCodeService
     public function generateMemberQRCode(Member $member): string
     {
         $qrData = $this->prepareMemberData($member);
-        
+
         $renderer = new ImageRenderer(
             new RendererStyle(300),
-            new SvgImageBackEnd()
+            new SvgImageBackEnd
         );
-        
+
         $writer = new Writer($renderer);
         $qrCodeContent = $writer->writeString(json_encode($qrData));
 
@@ -63,12 +63,12 @@ class QRCodeService
             'event_name' => $eventName,
             'generated_at' => now()->toIso8601String(),
         ];
-        
+
         $renderer = new ImageRenderer(
             new RendererStyle(400),
-            new SvgImageBackEnd()
+            new SvgImageBackEnd
         );
-        
+
         $writer = new Writer($renderer);
         $qrCodeContent = $writer->writeString(json_encode($qrData));
 
@@ -85,8 +85,8 @@ class QRCodeService
     {
         try {
             $data = json_decode($qrData, true);
-            
-            if (!isset($data['type'])) {
+
+            if (! isset($data['type'])) {
                 return [
                     'valid' => false,
                     'message' => 'Invalid QR code format',
@@ -107,7 +107,7 @@ class QRCodeService
         } catch (\Exception $e) {
             return [
                 'valid' => false,
-                'message' => 'Failed to decode QR code: ' . $e->getMessage(),
+                'message' => 'Failed to decode QR code: '.$e->getMessage(),
             ];
         }
     }
@@ -119,7 +119,7 @@ class QRCodeService
     {
         $member = Member::find($data['id']);
 
-        if (!$member) {
+        if (! $member) {
             return [
                 'valid' => false,
                 'message' => 'Member not found',
@@ -163,13 +163,14 @@ class QRCodeService
     public function getMemberQRCodeUrl(Member $member): ?string
     {
         $fileName = "qrcodes/member_{$member->id}_{$member->member_number}.svg";
-        
+
         if (Storage::disk('public')->exists($fileName)) {
             return Storage::url($fileName);
         }
 
         // Generate if doesn't exist
         $this->generateMemberQRCode($member);
+
         return Storage::url($fileName);
     }
 }

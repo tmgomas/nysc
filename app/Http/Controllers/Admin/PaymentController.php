@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PaymentMethod;
+use App\Enums\PaymentType;
 use App\Http\Controllers\Controller;
-use App\Models\{Member, Payment, Program};
+use App\Models\Member;
+use App\Models\Payment;
+use App\Models\Program;
 use App\Services\PaymentService;
-use App\Enums\{PaymentType, PaymentMethod};
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -17,13 +20,13 @@ class PaymentController extends Controller
 
     public function index(Request $request)
     {
-        $payments = Payment::with(['member.user'])
-            ->when($request->status, fn($q, $status) => $q->where('status', $status))
-            ->when($request->type, fn($q, $type) => $q->where('type', $type))
+        $payments = Payment::with(['member.user', 'latestOnlineTransaction'])
+            ->when($request->status, fn ($q, $status) => $q->where('status', $status))
+            ->when($request->type, fn ($q, $type) => $q->where('type', $type))
             ->when($request->search, function ($q, $search) {
                 $q->whereHas('member', function ($mq) use ($search) {
                     $mq->where('member_number', 'like', "%{$search}%")
-                       ->orWhereHas('user', fn($uq) => $uq->where('name', 'like', "%{$search}%"));
+                        ->orWhereHas('user', fn ($uq) => $uq->where('name', 'like', "%{$search}%"));
                 });
             })
             ->latest()
@@ -40,23 +43,23 @@ class PaymentController extends Controller
         $members = Member::with('user')
             ->whereHas('user')
             ->get()
-            ->map(fn($m) => [
-                'id'            => $m->id,
+            ->map(fn ($m) => [
+                'id' => $m->id,
                 'member_number' => $m->member_number,
-                'name'          => $m->user->name ?? 'N/A',
+                'name' => $m->user->name ?? 'N/A',
             ]);
 
         $programs = Program::select('id', 'name', 'monthly_fee', 'admission_fee')->get();
 
         return Inertia::render('Admin/Payments/Create', [
-            'members'  => $members,
+            'members' => $members,
             'programs' => $programs,
         ]);
     }
 
     public function show(Payment $payment)
     {
-        $payment->load(['member.user', 'member.programs']);
+        $payment->load(['member.user', 'member.programs', 'latestOnlineTransaction', 'onlineTransactions']);
 
         return Inertia::render('Admin/Payments/Show', [
             'payment' => $payment,
@@ -80,7 +83,7 @@ class PaymentController extends Controller
         $type = PaymentType::from($validated['type']);
         $method = PaymentMethod::from($validated['payment_method']);
 
-        $payment = match($type) {
+        $payment = match ($type) {
             PaymentType::ADMISSION => $this->paymentService->processAdmissionPayment(
                 $member,
                 $method->value,
@@ -141,7 +144,7 @@ class PaymentController extends Controller
         }
 
         // Use the new action to handle payment items and schedules
-        $markAsPaid = new \App\Actions\MarkPaymentAsPaidAction();
+        $markAsPaid = new \App\Actions\MarkPaymentAsPaidAction;
         $markAsPaid->execute(
             $payment,
             $validated['payment_method'],
@@ -164,18 +167,18 @@ class PaymentController extends Controller
         $member = Member::findOrFail($validated['member_id']);
         $method = PaymentMethod::from($validated['payment_method']);
 
-        $sharedReceiptNumber = (new \App\Actions\GenerateReceiptNumberAction())->execute(now());
+        $sharedReceiptNumber = (new \App\Actions\GenerateReceiptNumberAction)->execute(now());
 
         // Process all schedules in a transaction
         $processedCount = 0;
-        
+
         \DB::transaction(function () use ($member, $validated, $method, $sharedReceiptNumber, &$processedCount) {
             foreach ($validated['schedule_ids'] as $scheduleId) {
                 $schedule = \App\Models\MemberPaymentSchedule::where('id', $scheduleId)
                     ->where('member_id', $member->id)
                     ->where('status', 'pending')
                     ->first();
-                
+
                 if ($schedule) {
                     // Process the payment for this specific schedule
                     $this->paymentService->processMonthlyPayment(
@@ -197,6 +200,23 @@ class PaymentController extends Controller
         }
 
         return redirect()->back()
-            ->with('success', "Successfully processed {$processedCount} payment" . ($processedCount !== 1 ? 's' : ''));
+            ->with('success', "Successfully processed {$processedCount} payment".($processedCount !== 1 ? 's' : ''));
+    }
+
+    public function receipt(Payment $payment)
+    {
+        if (!in_array($payment->status->value, ['paid', 'verified'])) {
+            abort(403, 'Receipt is only available for paid or verified payments.');
+        }
+
+        $payment->load(['member', 'items']);
+        
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('receipts.payment', compact('payment'));
+        
+        if (request()->query('action') === 'print') {
+            return $pdf->stream("receipt-{$payment->receipt_number}.pdf");
+        }
+
+        return $pdf->download("receipt-{$payment->receipt_number}.pdf");
     }
 }

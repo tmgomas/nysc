@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../config/themes/color_palette.dart';
 import '../../domain/entities/payment.dart';
 import '../cubit/payments_cubit.dart';
+import 'payhere_checkout_page.dart';
 
 /// Payments page — matches nycsc-mobile-app-ui.html design
 class PaymentsPage extends StatefulWidget {
@@ -543,7 +544,43 @@ class _PaymentsPageState extends State<PaymentsPage> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      onPressed: () {},
+                      onPressed: () async {
+                        final cubit = context.read<PaymentsCubit>();
+                        
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => const Center(child: CircularProgressIndicator()),
+                        );
+                        
+                        final checkoutData = await cubit.initiatePayment(payment.id.toString());
+                        
+                        if (context.mounted) Navigator.pop(context); // close loading
+                        
+                        if (checkoutData != null && context.mounted) {
+                          final success = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PayHereCheckoutPage(checkoutData: checkoutData),
+                            ),
+                          );
+                          
+                          if (success == true) {
+                            cubit.loadPayments();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Payment completed successfully!')),
+                            );
+                          } else if (success == false) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Payment cancelled.')),
+                            );
+                          }
+                        } else if (context.mounted) {
+                           ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Could not initiate payment.')),
+                            );
+                        }
+                      },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [

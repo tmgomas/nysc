@@ -60,6 +60,21 @@ class MemberRepository {
     }
   }
 
+  Future<Either<Failure, Map<String, dynamic>>> initiateOnlinePayment(String paymentId) async {
+    try {
+      final checkoutData = await remoteDataSource.initiateOnlinePayment(paymentId);
+      return Right(checkoutData);
+    } on UnauthorizedException catch (e) {
+      return Left(UnauthorizedFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Failed to initiate payment: $e'));
+    }
+  }
+
   Future<Either<Failure, List<AttendanceRecord>>> getAttendance({
     int page = 1,
   }) async {

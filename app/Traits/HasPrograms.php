@@ -2,8 +2,8 @@
 
 namespace App\Traits;
 
-use App\Models\Program;
 use App\Models\MemberProgram;
+use App\Models\Program;
 
 trait HasPrograms
 {
@@ -62,7 +62,7 @@ trait HasPrograms
         // Generate program reference if member is already approved
         $programReference = null;
         if ($this->status === \App\Enums\MemberStatus::ACTIVE) {
-            $referenceGenerator = new \App\Actions\GenerateRegistrationReferenceAction();
+            $referenceGenerator = new \App\Actions\GenerateRegistrationReferenceAction;
             $programReference = $referenceGenerator->execute($programId, $this->registration_date);
         }
 

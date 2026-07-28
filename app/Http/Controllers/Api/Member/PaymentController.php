@@ -38,8 +38,9 @@ class PaymentController extends Controller
                 try {
                     $date = \Carbon\Carbon::createFromFormat('Y-m', $schedule->month_year);
                     $monthName = $date->format('F');
-                    $title = $monthName . ' Monthly Fee';
-                } catch (\Exception $e) {}
+                    $title = $monthName.' Monthly Fee';
+                } catch (\Exception $e) {
+                }
             }
 
             return [
@@ -49,7 +50,7 @@ class PaymentController extends Controller
                 'amount' => $schedule->amount,
                 'month_year' => $schedule->month_year,
                 'month_name' => $monthName,
-                'status' => 'pending', 
+                'status' => 'pending',
                 'due_date' => $schedule->due_date?->format('Y-m-d'),
                 'paid_date' => null,
                 'payment_method' => null,

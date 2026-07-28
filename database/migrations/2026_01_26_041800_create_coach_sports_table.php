@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignUuid('program_id')->constrained('programs')->onDelete('cascade');
             $table->timestamp('assigned_at')->useCurrent();
             $table->timestamps();
-            
+
             $table->unique(['coach_id', 'program_id']);
         });
     }

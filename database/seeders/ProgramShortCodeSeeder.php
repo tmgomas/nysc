@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Program;
+use Illuminate\Database\Seeder;
 
 class ProgramShortCodeSeeder extends Seeder
 {
@@ -45,7 +45,7 @@ class ProgramShortCodeSeeder extends Seeder
 
         // Log programs without short codes
         $programsWithoutCode = Program::whereNull('short_code')->get();
-        
+
         if ($programsWithoutCode->isNotEmpty()) {
             $this->command->warn('The following programs do not have short codes:');
             foreach ($programsWithoutCode as $program) {

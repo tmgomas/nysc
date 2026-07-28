@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Member;
-use App\Services\MemberService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -18,13 +17,12 @@ class MemberController extends Controller
     public function index(Request $request)
     {
         $members = Member::with(['user', 'programs'])
-            ->when($request->status, fn($q, $status) => $q->where('status', $status))
-            ->when($request->search, fn($q, $search) => 
-                $q->where('member_number', 'like', "%{$search}%")
-                  ->orWhere('nic_passport', 'like', "%{$search}%")
-                  ->orWhere('full_name', 'like', "%{$search}%")
-                  ->orWhere('calling_name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
+            ->when($request->status, fn ($q, $status) => $q->where('status', $status))
+            ->when($request->search, fn ($q, $search) => $q->where('member_number', 'like', "%{$search}%")
+                ->orWhere('nic_passport', 'like', "%{$search}%")
+                ->orWhere('full_name', 'like', "%{$search}%")
+                ->orWhere('calling_name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
             )
             ->latest()
             ->paginate(15);
@@ -86,7 +84,7 @@ class MemberController extends Controller
             'terms_accepted' => 'accepted',
             'photo_consent' => 'boolean',
         ]);
-        
+
         // Add timestamps for consents
         if ($request->terms_accepted) {
             $validated['terms_accepted_at'] = now();
@@ -131,12 +129,13 @@ class MemberController extends Controller
                 $cls->setAttribute('available_spots', $cls->capacity ? max(0, $cls->capacity - $assignedCount) : null);
                 $cls->setAttribute('is_full', $cls->capacity ? $assignedCount >= $cls->capacity : false);
                 $cls->setAttribute('formatted_time', $cls->formatted_time);
+
                 return $cls;
             });
 
         // Compute upcoming classes for the member using Service
         $scheduleData = $this->scheduleService->getUpcomingSchedule($member, 30);
-        
+
         // Flatten the grouped results for the admin view which expects a flat list
         $upcomingClasses = collect($scheduleData['upcoming_classes'])
             ->pluck('classes')
@@ -144,14 +143,13 @@ class MemberController extends Controller
             ->take(5);
 
         return Inertia::render('Admin/Members/Show', [
-            'member'            => $member,
-            'stats'             => $stats,
+            'member' => $member,
+            'stats' => $stats,
             'availablePrograms' => \App\Models\Program::where('is_active', true)->select('id', 'name', 'monthly_fee')->get(),
-            'availableClasses'  => $availableClasses,
-            'upcomingClasses'   => $upcomingClasses,
+            'availableClasses' => $availableClasses,
+            'upcomingClasses' => $upcomingClasses,
         ]);
     }
-
 
     public function approve(Member $member)
     {
@@ -200,13 +198,13 @@ class MemberController extends Controller
     public function assignClass(Request $request)
     {
         $validated = $request->validate([
-            'member_id'        => 'required|exists:members,id',
+            'member_id' => 'required|exists:members,id',
             'program_class_id' => 'required|exists:program_classes,id',
-            'notes'            => 'nullable|string',
+            'notes' => 'nullable|string',
         ]);
 
         $member = Member::findOrFail($validated['member_id']);
-        $class  = \App\Models\ProgramClass::findOrFail($validated['program_class_id']);
+        $class = \App\Models\ProgramClass::findOrFail($validated['program_class_id']);
 
         // Must be enrolled in the program
         $isEnrolled = $member->programs()
@@ -214,8 +212,8 @@ class MemberController extends Controller
             ->wherePivot('status', 'active')
             ->exists();
 
-        if (!$isEnrolled) {
-            return redirect()->back()->with('error', "Member is not enrolled in this program.");
+        if (! $isEnrolled) {
+            return redirect()->back()->with('error', 'Member is not enrolled in this program.');
         }
 
         // Check capacity
@@ -233,14 +231,14 @@ class MemberController extends Controller
         }
 
         \App\Models\MemberProgramClass::create([
-            'member_id'        => $member->id,
+            'member_id' => $member->id,
             'program_class_id' => $class->id,
-            'assigned_by'      => \Illuminate\Support\Facades\Auth::id(),
-            'notes'            => $validated['notes'] ?? null,
-            'status'           => 'active',
+            'assigned_by' => \Illuminate\Support\Facades\Auth::id(),
+            'notes' => $validated['notes'] ?? null,
+            'status' => 'active',
         ]);
 
-        return redirect()->back()->with('success', "Member assigned to class successfully.");
+        return redirect()->back()->with('success', 'Member assigned to class successfully.');
     }
 
     /**
@@ -249,7 +247,7 @@ class MemberController extends Controller
     public function unassignClass(Request $request)
     {
         $validated = $request->validate([
-            'member_id'        => 'required|exists:members,id',
+            'member_id' => 'required|exists:members,id',
             'program_class_id' => 'required|exists:program_classes,id',
         ]);
 

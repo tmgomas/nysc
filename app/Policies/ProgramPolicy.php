@@ -2,7 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\{Program, User};
+use App\Models\Program;
+use App\Models\User;
 
 class ProgramPolicy
 {

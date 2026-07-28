@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\SpecialBooking;
-use App\Models\Location;
 use Illuminate\Http\Request;
 
 class SpecialBookingController extends Controller

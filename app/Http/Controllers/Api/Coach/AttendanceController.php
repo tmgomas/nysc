@@ -4,10 +4,8 @@ namespace App\Http\Controllers\Api\Coach;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\AttendanceResource;
-use App\Models\Attendance;
 use App\Models\Member;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class AttendanceController extends Controller
 {
@@ -53,7 +51,7 @@ class AttendanceController extends Controller
                 $validated['method'] ?? 'manual'
             );
 
-            $isCheckOut = !is_null($attendance->check_out_time);
+            $isCheckOut = ! is_null($attendance->check_out_time);
 
             return response()->json([
                 'message' => $isCheckOut ? 'Member checked out successfully.' : 'Member checked in successfully.',

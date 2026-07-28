@@ -20,10 +20,10 @@ class RFIDController extends Controller
 
         try {
             $rfidData = trim($request->rfid_data);
-            
+
             // Find member by RFID card ID
             $member = Member::where('rfid_card_id', $rfidData)->first();
-            
+
             if ($member) {
                 return response()->json([
                     'valid' => true,
@@ -47,7 +47,7 @@ class RFIDController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'valid' => false,
-                'message' => 'Failed to verify RFID card: ' . $e->getMessage(),
+                'message' => 'Failed to verify RFID card: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -64,7 +64,7 @@ class RFIDController extends Controller
 
         try {
             $member = Member::findOrFail($request->member_id);
-            
+
             // Check if RFID card is already associated with another member
             $existingMember = Member::where('rfid_card_id', $request->rfid_card_id)
                 ->where('id', '!=', $member->id)
@@ -89,7 +89,7 @@ class RFIDController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to associate RFID card: ' . $e->getMessage(),
+                'message' => 'Failed to associate RFID card: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -116,7 +116,7 @@ class RFIDController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to remove RFID card: ' . $e->getMessage(),
+                'message' => 'Failed to remove RFID card: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -134,7 +134,7 @@ class RFIDController extends Controller
         $verificationResult = $this->verify($request);
         $verificationData = $verificationResult->getData(true);
 
-        if (!$verificationData['valid']) {
+        if (! $verificationData['valid']) {
             return response()->json($verificationData, 400);
         }
 

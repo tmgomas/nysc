@@ -2,16 +2,19 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
+use App\Enums\PaymentType;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use App\Enums\{PaymentType, PaymentStatus, PaymentMethod};
 
 class Payment extends Model
 {
     use HasFactory, HasUuids;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -68,6 +71,16 @@ class Payment extends Model
     public function items()
     {
         return $this->hasMany(PaymentItem::class);
+    }
+
+    public function onlineTransactions()
+    {
+        return $this->hasMany(OnlinePaymentTransaction::class);
+    }
+
+    public function latestOnlineTransaction()
+    {
+        return $this->hasOne(OnlinePaymentTransaction::class)->latestOfMany();
     }
 
     // Scopes

@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
 use App\Rules\ValidNicNumber;
+use Illuminate\Foundation\Http\FormRequest;
 
 class StoreMemberRequest extends FormRequest
 {
@@ -15,7 +15,7 @@ class StoreMemberRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nic_passport' => ['nullable', 'string', 'unique:members', new ValidNicNumber()],
+            'nic_passport' => ['nullable', 'string', 'unique:members', new ValidNicNumber],
             'date_of_birth' => 'required|date|before:today|after:1900-01-01',
             'gender' => 'required|in:male,female,other',
             'contact_number' => 'required|string|regex:/^[0-9]{10}$/',

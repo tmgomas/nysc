@@ -4,7 +4,6 @@ namespace App\Http\Resources\Api;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Http\Resources\Api\ProgramResource;
 
 class PaymentResource extends JsonResource
 {
@@ -17,7 +16,7 @@ class PaymentResource extends JsonResource
                 $date = \Carbon\Carbon::createFromFormat('Y-m', $this->month_year);
                 $monthName = $date->format('F');
                 $typeString = $this->type instanceof \BackedEnum ? $this->type->value : (string) $this->type;
-                $title = $monthName . ' ' . ucfirst($typeString) . ' Fee';
+                $title = $monthName.' '.ucfirst($typeString).' Fee';
             } catch (\Exception $e) {
                 // Ignore parsing errors, keep original type
             }

@@ -2,7 +2,8 @@
 
 namespace App\DTOs;
 
-use App\Enums\{PaymentType, PaymentMethod};
+use App\Enums\PaymentMethod;
+use App\Enums\PaymentType;
 
 class PaymentData
 {

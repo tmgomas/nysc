@@ -10,7 +10,7 @@ enum PaymentType: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::ADMISSION => 'Admission Fee',
             self::MONTHLY => 'Monthly Fee',
             self::BULK => 'Bulk Payment',
@@ -19,7 +19,7 @@ enum PaymentType: string
 
     public function description(): string
     {
-        return match($this) {
+        return match ($this) {
             self::ADMISSION => 'One-time admission fee',
             self::MONTHLY => 'Monthly membership fee',
             self::BULK => 'Advance payment for multiple months',

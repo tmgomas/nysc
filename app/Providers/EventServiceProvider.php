@@ -2,22 +2,13 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use App\Events\MemberApproved;
+use App\Events\PaymentReceived;
+use App\Listeners\GenerateMembershipCard;
+use App\Listeners\SendPaymentConfirmation;
+use App\Listeners\SendWelcomeEmail;
 use Illuminate\Support\Facades\Event;
-use App\Events\{
-    MemberRegistered,
-    MemberApproved,
-    MemberRejected,
-    MemberSuspended,
-    PaymentReceived,
-    PaymentVerified,
-    AttendanceMarked
-};
-use App\Listeners\{
-    SendWelcomeEmail,
-    GenerateMembershipCard,
-    SendPaymentConfirmation
-};
+use Illuminate\Support\ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
 {

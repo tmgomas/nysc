@@ -2,8 +2,8 @@
 
 namespace App\Actions;
 
-use App\Models\Payment;
 use App\Enums\PaymentStatus;
+use App\Models\Payment;
 use Illuminate\Support\Facades\Auth;
 
 class VerifyPaymentAction
@@ -24,7 +24,7 @@ class VerifyPaymentAction
         ]);
 
         // Log the verification
-        $payment->member->log('payment_verified', "Payment of Rs. {$payment->amount} verified by " . Auth::user()->name, [
+        $payment->member->log('payment_verified', "Payment of Rs. {$payment->amount} verified by ".Auth::user()->name, [
             'payment_id' => $payment->id,
             'amount' => $payment->amount,
             'type' => $payment->type->value,
@@ -44,7 +44,7 @@ class VerifyPaymentAction
         ]);
 
         // Log the rejection
-        $payment->member->log('payment_rejected', "Payment rejected by " . Auth::user()->name . ". Reason: {$reason}", [
+        $payment->member->log('payment_rejected', 'Payment rejected by '.Auth::user()->name.". Reason: {$reason}", [
             'payment_id' => $payment->id,
             'amount' => $payment->amount,
         ]);

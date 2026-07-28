@@ -8,9 +8,9 @@ class CalculateMembershipFeeAction
 {
     /**
      * Calculate total membership fees for selected programs
-     * 
-     * @param array $programIds Array of program IDs
-     * @param bool $includeAdmission Whether to include admission fees
+     *
+     * @param  array  $programIds  Array of program IDs
+     * @param  bool  $includeAdmission  Whether to include admission fees
      * @return array Fee breakdown
      */
     public function execute(array $programIds, bool $includeAdmission = true): array

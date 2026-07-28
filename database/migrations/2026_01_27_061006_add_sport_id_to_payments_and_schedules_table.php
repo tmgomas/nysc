@@ -18,7 +18,7 @@ return new class extends Migration
 
         // Step 1: Add a simple index on member_id so the generic FK has something to latch onto
         Schema::table('member_payment_schedules', function (Blueprint $table) {
-             $table->index('member_id');
+            $table->index('member_id');
         });
 
         // Step 2: Drop the unique index (now safe) and modify columns
@@ -27,7 +27,7 @@ return new class extends Migration
             $table->foreignUuid('program_id')->nullable()->after('member_id')->constrained('programs')->onDelete('cascade');
             $table->unique(['member_id', 'program_id', 'month_year'], 'mps_member_program_month_unique');
         });
-        
+
         // Remove Step 3 since we didn't drop the FK
     }
 

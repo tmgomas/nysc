@@ -65,12 +65,12 @@ class MemberImportController extends Controller
             'program_ids',
         ];
 
-        $callback = function() use ($columns) {
+        $callback = function () use ($columns) {
             $file = fopen('php://output', 'w');
-            
+
             // Write header row
             fputcsv($file, $columns);
-            
+
             // Write example row
             fputcsv($file, [
                 'John Doe',                          // full_name
@@ -99,7 +99,7 @@ class MemberImportController extends Controller
                 'None',                              // previous_club_experience
                 '1,2',                               // program_ids (comma-separated program IDs)
             ]);
-            
+
             fclose($file);
         };
 
@@ -117,7 +117,7 @@ class MemberImportController extends Controller
 
         try {
             $preview = $this->importService->previewImport($request->file('file'));
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $preview,
@@ -127,7 +127,7 @@ class MemberImportController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -163,7 +163,7 @@ class MemberImportController extends Controller
                 ));
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'Import failed: ' . $e->getMessage());
+                ->with('error', 'Import failed: '.$e->getMessage());
         }
     }
 

@@ -2,15 +2,17 @@
 
 namespace App\Services;
 
-use App\Models\{Member, Payment, MemberPaymentSchedule};
-use App\Actions\{
-    CalculateMembershipFeeAction,
-    ProcessPaymentAction,
-    GeneratePaymentScheduleAction
-};
-use App\Enums\{PaymentType, PaymentStatus, ScheduleStatus};
-use Illuminate\Support\Facades\DB;
+use App\Actions\CalculateMembershipFeeAction;
+use App\Actions\GeneratePaymentScheduleAction;
+use App\Actions\ProcessPaymentAction;
+use App\Enums\PaymentStatus;
+use App\Enums\PaymentType;
+use App\Enums\ScheduleStatus;
+use App\Models\Member;
+use App\Models\MemberPaymentSchedule;
+use App\Models\Payment;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PaymentService
 {
@@ -26,6 +28,7 @@ class PaymentService
     public function calculateFees(Member $member, bool $includeAdmission = false): array
     {
         $programIds = $member->activePrograms()->pluck('programs.id')->toArray();
+
         return $this->calculateFee->execute($programIds, $includeAdmission);
     }
 
@@ -67,8 +70,8 @@ class PaymentService
         // Option 1: Pay for specific program
         if ($programId) {
             $program = $member->activePrograms()->where('programs.id', $programId)->first();
-            if (!$program) {
-                throw new \Exception("Program not found or not active for this member");
+            if (! $program) {
+                throw new \Exception('Program not found or not active for this member');
             }
 
             return $this->processPayment->execute(
@@ -88,7 +91,7 @@ class PaymentService
         // Option 2: Pay for ALL active programs (Split into individual records)
         $programs = $member->activePrograms;
         $payments = [];
-        $sharedReceiptNumber = $receiptNumber ?? (new \App\Actions\GenerateReceiptNumberAction())->execute(now());
+        $sharedReceiptNumber = $receiptNumber ?? (new \App\Actions\GenerateReceiptNumberAction)->execute(now());
 
         DB::transaction(function () use ($member, $programs, $monthYear, $paymentMethod, $receiptUrl, $referenceNumber, $sharedReceiptNumber, &$payments) {
             foreach ($programs as $program) {
@@ -99,7 +102,9 @@ class PaymentService
                     ->where('status', ScheduleStatus::PAID)
                     ->exists();
 
-                if ($isPaid) continue;
+                if ($isPaid) {
+                    continue;
+                }
 
                 $payments[] = $this->processPayment->execute(
                     $member,
@@ -117,7 +122,7 @@ class PaymentService
         });
 
         if (empty($payments)) {
-            throw new \Exception("No pending payments found for the selected month.");
+            throw new \Exception('No pending payments found for the selected month.');
         }
 
         // Return the last payment to satisfy return type (Controller handles response)
@@ -165,7 +170,7 @@ class PaymentService
             'verified_at' => now(),
         ]);
 
-        $payment->member->log('payment_verified', "Payment verified by " . Auth::user()->name, [
+        $payment->member->log('payment_verified', 'Payment verified by '.Auth::user()->name, [
             'payment_id' => $payment->id,
             'amount' => $payment->amount,
         ]);
@@ -221,4 +226,3 @@ class PaymentService
             ->paginate($perPage);
     }
 }
-

@@ -5,8 +5,6 @@ namespace App\Actions;
 use App\Models\Payment;
 use App\Models\Program;
 use App\Models\Setting;
-use Carbon\Carbon;
-use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 
 class GeneratePaymentReferenceAction
@@ -15,19 +13,19 @@ class GeneratePaymentReferenceAction
      * Generate sport-specific payment reference number
      * Format: {YEAR}-{SPORT_CODE}-{NUMBER}
      * Example: 26-SW-0001 (2026, Swimming, 1st payment)
-     * 
-     * @param string $programId The program ID
-     * @param CarbonInterface|null $date The payment date (defaults to current date)
+     *
+     * @param  string  $programId  The program ID
+     * @param  CarbonInterface|null  $date  The payment date (defaults to current date)
      * @return string The generated reference number
      */
     public function execute(string $programId, ?CarbonInterface $date = null): string
     {
         $date = $date ?? now();
-        
+
         // Get sport
         $program = Program::findOrFail($programId);
-        
-        if (!$program->short_code) {
+
+        if (! $program->short_code) {
             throw new \Exception("Program '{$program->name}' does not have a short code configured.");
         }
 
@@ -36,8 +34,8 @@ class GeneratePaymentReferenceAction
         $digits = Setting::get('payment_reference_digits', 4);
 
         // Format year based on setting
-        $year = $yearFormat === 'yyyy' 
-            ? $date->format('Y') 
+        $year = $yearFormat === 'yyyy'
+            ? $date->format('Y')
             : $date->format('y');
 
         // Get the last payment for this program in this year
@@ -47,7 +45,7 @@ class GeneratePaymentReferenceAction
             ->latest('created_at')
             ->first();
 
-        if (!$lastPayment) {
+        if (! $lastPayment) {
             $nextNumber = 1;
         } else {
             // Extract number from reference (e.g., "26-SW-0001" -> 1)
@@ -58,7 +56,7 @@ class GeneratePaymentReferenceAction
 
         // Generate reference number
         $number = str_pad($nextNumber, $digits, '0', STR_PAD_LEFT);
-        
+
         return "{$year}-{$program->short_code}-{$number}";
     }
 
@@ -70,14 +68,14 @@ class GeneratePaymentReferenceAction
     public function executeForMultiplePrograms(?CarbonInterface $date = null): string
     {
         $date = $date ?? now();
-        
+
         // Get settings
         $yearFormat = Setting::get('payment_reference_year_format', 'yy');
         $digits = Setting::get('payment_reference_digits', 4);
 
         // Format year
-        $year = $yearFormat === 'yyyy' 
-            ? $date->format('Y') 
+        $year = $yearFormat === 'yyyy'
+            ? $date->format('Y')
             : $date->format('y');
 
         // Get the last multi-sport payment in this year
@@ -87,7 +85,7 @@ class GeneratePaymentReferenceAction
             ->latest('created_at')
             ->first();
 
-        if (!$lastPayment) {
+        if (! $lastPayment) {
             $nextNumber = 1;
         } else {
             // Extract number from reference
@@ -97,7 +95,7 @@ class GeneratePaymentReferenceAction
         }
 
         $number = str_pad($nextNumber, $digits, '0', STR_PAD_LEFT);
-        
+
         return "{$year}-ALL-{$number}";
     }
 }

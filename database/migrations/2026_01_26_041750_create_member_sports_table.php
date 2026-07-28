@@ -18,7 +18,7 @@ return new class extends Migration
             $table->timestamp('enrolled_at')->useCurrent();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
-            
+
             $table->unique(['member_id', 'program_id']);
         });
     }

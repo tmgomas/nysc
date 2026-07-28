@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class SmsTemplate extends Model
 {
     use HasFactory, HasUuids;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -32,7 +33,7 @@ class SmsTemplate extends Model
         $content = $this->content;
 
         foreach ($data as $key => $value) {
-            $content = str_replace('{' . $key . '}', $value, $content);
+            $content = str_replace('{'.$key.'}', $value, $content);
         }
 
         return $content;

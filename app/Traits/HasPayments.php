@@ -2,9 +2,9 @@
 
 namespace App\Traits;
 
-use App\Models\Payment;
-use App\Models\MemberPaymentSchedule;
 use App\Enums\PaymentStatus;
+use App\Models\MemberPaymentSchedule;
+use App\Models\Payment;
 
 trait HasPayments
 {
@@ -105,6 +105,6 @@ trait HasPayments
      */
     public function isPaymentUpToDate(): bool
     {
-        return !$this->hasOverduePayments();
+        return ! $this->hasOverduePayments();
     }
 }

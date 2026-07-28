@@ -11,7 +11,7 @@ enum ScheduleStatus: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::PENDING => 'Pending',
             self::PAID => 'Paid',
             self::OVERDUE => 'Overdue',
@@ -21,7 +21,7 @@ enum ScheduleStatus: string
 
     public function color(): string
     {
-        return match($this) {
+        return match ($this) {
             self::PENDING => 'yellow',
             self::PAID => 'green',
             self::OVERDUE => 'red',

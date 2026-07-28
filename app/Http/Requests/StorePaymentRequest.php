@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
 use App\Rules\ValidPaymentAmount;
+use Illuminate\Foundation\Http\FormRequest;
 
 class StorePaymentRequest extends FormRequest
 {
@@ -18,7 +18,7 @@ class StorePaymentRequest extends FormRequest
             'member_id' => 'required|exists:members,id',
             'type' => 'required|in:admission,monthly,bulk',
             'payment_method' => 'required|in:cash,bank_transfer,online',
-            'amount' => ['required', 'numeric', 'min:0', new ValidPaymentAmount()],
+            'amount' => ['required', 'numeric', 'min:0', new ValidPaymentAmount],
             'month_year' => 'required_if:type,monthly,bulk|nullable|date_format:Y-m',
             'months_count' => 'required_if:type,bulk|nullable|integer|min:1|max:12',
             'receipt_url' => 'nullable|url',

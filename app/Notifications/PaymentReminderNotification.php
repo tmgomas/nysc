@@ -29,12 +29,12 @@ class PaymentReminderNotification extends Notification implements ShouldQueue
     public function via(object $notifiable): array
     {
         $channels = ['mail'];
-        
+
         // Add SMS channel if member prefers SMS
         if ($notifiable->member->preferred_contact_method === 'sms') {
             $channels[] = \TextLK\Laravel\TextLKSMSChannel::class;
         }
-        
+
         return $channels;
     }
 
@@ -46,8 +46,8 @@ class PaymentReminderNotification extends Notification implements ShouldQueue
         return (new MailMessage)
             ->subject('Payment Reminder - NYCSC')
             ->greeting('Hello!')
-            ->line("This is a friendly reminder that you have a payment due.")
-            ->line("**Amount:** Rs. " . number_format($this->amount, 2))
+            ->line('This is a friendly reminder that you have a payment due.')
+            ->line('**Amount:** Rs. '.number_format($this->amount, 2))
             ->line("**Due Date:** {$this->dueDate}")
             ->line('Please ensure your payment is made on time to avoid any account suspension.')
             ->action('Make Payment', url('/payments'))
@@ -77,10 +77,10 @@ class PaymentReminderNotification extends Notification implements ShouldQueue
                 'description' => $this->description,
             ]);
         } else {
-            $message = "Payment reminder: Rs." . $this->getFormattedAmount() . " due on {$this->dueDate}. Please pay on time to avoid suspension.";
+            $message = 'Payment reminder: Rs.'.$this->getFormattedAmount()." due on {$this->dueDate}. Please pay on time to avoid suspension.";
         }
-        
-        return (new TextLKSMSMessage())
+
+        return (new TextLKSMSMessage)
             ->message($message)
             ->recipient($notifiable->routeNotificationFor('textlk', $this));
     }

@@ -40,4 +40,10 @@ return [
         'sender_id' => env('TEXTLK_SMS_SENDER_ID', 'NYCSC'),
     ],
 
+    'payhere' => [
+        'merchant_id' => env('PAYHERE_MERCHANT_ID'),
+        'merchant_secret' => env('PAYHERE_MERCHANT_SECRET'),
+        'mode' => env('PAYHERE_MODE', 'sandbox'),
+    ],
+
 ];

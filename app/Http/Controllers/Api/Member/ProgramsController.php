@@ -28,7 +28,7 @@ class ProgramsController extends Controller
 
         return response()->json([
             'programs' => $programs,
-            'total'    => count($programs),
+            'total' => count($programs),
         ]);
     }
 }

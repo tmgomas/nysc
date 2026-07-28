@@ -3,10 +3,7 @@
 namespace App\Http\Controllers\Api\Coach;
 
 use App\Http\Controllers\Controller;
-use App\Models\Attendance;
-use App\Models\Program;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
 {

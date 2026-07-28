@@ -2,16 +2,14 @@
 
 namespace App\Services;
 
-use App\Models\Member;
-use App\Actions\{
-    GenerateMemberNumberAction,
-    ApproveMemberRegistrationAction,
-    CreateMemberAccountAction,
-    GeneratePaymentScheduleAction,
-    SuspendMemberAction,
-    GenerateQRCodeAction
-};
+use App\Actions\ApproveMemberRegistrationAction;
+use App\Actions\CreateMemberAccountAction;
+use App\Actions\GenerateMemberNumberAction;
+use App\Actions\GeneratePaymentScheduleAction;
+use App\Actions\GenerateQRCodeAction;
+use App\Actions\SuspendMemberAction;
 use App\Enums\MemberStatus;
+use App\Models\Member;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -42,7 +40,7 @@ class MemberService
             ]));
 
             // Enroll in selected programs
-            if (!empty($data['program_ids'])) {
+            if (! empty($data['program_ids'])) {
                 foreach ($data['program_ids'] as $programId) {
                     $member->enrollInProgram($programId, 'active');
                 }
@@ -119,11 +117,11 @@ class MemberService
             // Get current enrolled programs with their pivot data
             $currentPrograms = $member->programs()->get();
             $currentProgramIds = $currentPrograms->pluck('id')->toArray();
-            
+
             // Build sync data preserving existing attributes, assigning refs for new ones
             $syncData = [];
-            $registrationReferenceGenerator = new \App\Actions\GenerateRegistrationReferenceAction();
-            
+            $registrationReferenceGenerator = new \App\Actions\GenerateRegistrationReferenceAction;
+
             foreach ($programIds as $id) {
                 if (in_array($id, $currentProgramIds)) {
                     // Existing program: Keep existing pivot data so we don't wipe it!
@@ -131,43 +129,43 @@ class MemberService
                     $syncData[$id] = [
                         'id' => $existingPivot->id,
                         'status' => $existingPivot->status ?? 'active',
-                        'program_reference' => $existingPivot->program_reference
+                        'program_reference' => $existingPivot->program_reference,
                     ];
                 } else {
                     // New program added: Generate unique ID and program_reference
                     $programReference = $registrationReferenceGenerator->execute(
-                        $id, 
+                        $id,
                         $member->registration_date ?? now()
                     );
-                    
+
                     $syncData[$id] = [
-                        'id' => (string) Str::uuid(), 
+                        'id' => (string) Str::uuid(),
                         'status' => 'active',
-                        'program_reference' => $programReference
+                        'program_reference' => $programReference,
                     ];
                 }
             }
-            
+
             $member->programs()->sync($syncData);
 
             // Find newly added programs so we can invoice them
             $addedProgramIds = array_diff($programIds, $currentProgramIds);
-            
-            if (!empty($addedProgramIds)) {
+
+            if (! empty($addedProgramIds)) {
                 $addedPrograms = \App\Models\Program::whereIn('id', $addedProgramIds)->get();
-                
+
                 // 1. Create Initial Payment (Admission Fee + First Month)
                 $totalAmount = 0;
                 $currentMonth = now()->format('Y-m');
-                
+
                 foreach ($addedPrograms as $program) {
                     $totalAmount += $program->admission_fee + $program->monthly_fee;
                 }
-                
+
                 if ($totalAmount > 0) {
-                    $receiptGenerator = new \App\Actions\GenerateReceiptNumberAction();
+                    $receiptGenerator = new \App\Actions\GenerateReceiptNumberAction;
                     $receiptNumber = $receiptGenerator->execute(now());
-                    
+
                     $payment = \App\Models\Payment::create([
                         'member_id' => $member->id,
                         'type' => \App\Enums\PaymentType::ADMISSION,
@@ -179,7 +177,7 @@ class MemberService
                         'paid_date' => null, // Not paid yet
                         'payment_method' => null, // Will be set when paid
                         'receipt_number' => $receiptNumber,
-                        'notes' => 'Admission and first month fee for newly added programs: ' . $addedPrograms->pluck('name')->implode(', '),
+                        'notes' => 'Admission and first month fee for newly added programs: '.$addedPrograms->pluck('name')->implode(', '),
                     ]);
 
                     // Add line items for the new programs so UI can render breakdowns
@@ -207,13 +205,13 @@ class MemberService
                     }
                 }
 
-                // 2. Generate monthly schedules for new programs starting from NEXT month 
+                // 2. Generate monthly schedules for new programs starting from NEXT month
                 //    (since current month is covered by the combined payment above)
                 $member->load('programs');
                 $nextMonth = \Carbon\Carbon::parse(now()->addMonth()->startOfMonth());
                 $this->generatePaymentSchedule->execute($member, 12, $nextMonth);
             }
-            
+
             return $member->fresh();
         });
     }
@@ -243,6 +241,7 @@ class MemberService
     public function updateProfile(Member $member, array $data): Member
     {
         $member->update($data);
+
         return $member->fresh();
     }
 }

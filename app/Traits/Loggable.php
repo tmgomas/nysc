@@ -13,15 +13,15 @@ trait Loggable
     protected static function bootLoggable()
     {
         static::created(function ($model) {
-            $model->logActivity('created', 'Created new ' . class_basename($model));
+            $model->logActivity('created', 'Created new '.class_basename($model));
         });
 
         static::updated(function ($model) {
-            $model->logActivity('updated', 'Updated ' . class_basename($model), $model->getChanges());
+            $model->logActivity('updated', 'Updated '.class_basename($model), $model->getChanges());
         });
 
         static::deleted(function ($model) {
-            $model->logActivity('deleted', 'Deleted ' . class_basename($model));
+            $model->logActivity('deleted', 'Deleted '.class_basename($model));
         });
     }
 

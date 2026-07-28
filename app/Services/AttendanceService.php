@@ -2,9 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\{Member, Program, Attendance};
-use App\Actions\{MarkAttendanceAction, GenerateQRCodeAction};
+use App\Actions\GenerateQRCodeAction;
+use App\Actions\MarkAttendanceAction;
 use App\Enums\AttendanceMethod;
+use App\Models\Attendance;
+use App\Models\Member;
+use App\Models\Program;
 use Carbon\Carbon;
 
 class AttendanceService
@@ -21,7 +24,7 @@ class AttendanceService
     {
         $member = $this->generateQRCode->verify($qrData);
 
-        if (!$member) {
+        if (! $member) {
             throw new \Exception('Invalid QR code');
         }
 
@@ -178,7 +181,7 @@ class AttendanceService
     public function toggleCoachAttendance(Member $member, Program $program, $markedBy, $method = 'manual')
     {
         // Check if member is enrolled
-        if (!$member->isActivelyEnrolledIn($program->id)) {
+        if (! $member->isActivelyEnrolledIn($program->id)) {
             throw new \Exception('Member is not actively enrolled in this program');
         }
 

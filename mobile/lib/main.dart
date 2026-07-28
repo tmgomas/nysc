@@ -4,10 +4,12 @@ import 'config/routes/app_router.dart';
 import 'config/themes/app_theme.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'injection_container.dart';
+import 'core/services/firebase_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setupDependencies();
+  await getIt<FirebaseService>().initialize();
   runApp(const NycscApp());
 }
 

@@ -17,7 +17,7 @@ class CoachService
             $coach = Coach::create($data);
 
             // Assign to programs if provided
-            if (!empty($data['program_ids'])) {
+            if (! empty($data['program_ids'])) {
                 $coach->programs()->attach($data['program_ids'], [
                     'assigned_at' => now(),
                 ]);
@@ -50,6 +50,7 @@ class CoachService
     public function assignPrograms(Coach $coach, array $programIds): Coach
     {
         $coach->programs()->sync($programIds);
+
         return $coach->fresh();
     }
 
@@ -95,6 +96,7 @@ class CoachService
     public function activate(Coach $coach): Coach
     {
         $coach->update(['is_active' => true]);
+
         return $coach->fresh();
     }
 
@@ -104,6 +106,7 @@ class CoachService
     public function deactivate(Coach $coach): Coach
     {
         $coach->update(['is_active' => false]);
+
         return $coach->fresh();
     }
 

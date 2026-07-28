@@ -2,17 +2,17 @@
 
 namespace App\Services;
 
-use App\Models\{Member, Payment, User};
-use App\Notifications\{
-    WelcomeMemberNotification,
-    RegistrationReceivedNotification,
-    PaymentReminderNotification,
-    PaymentConfirmationNotification,
-    ApprovalNotification,
-    OverduePaymentNotification
-};
-use Illuminate\Support\Facades\Log;
+use App\Models\Member;
+use App\Models\Payment;
+use App\Models\User;
+use App\Notifications\ApprovalNotification;
+use App\Notifications\OverduePaymentNotification;
+use App\Notifications\PaymentConfirmationNotification;
+use App\Notifications\PaymentReminderNotification;
+use App\Notifications\RegistrationReceivedNotification;
+use App\Notifications\WelcomeMemberNotification;
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class NotificationService
 {
@@ -27,7 +27,7 @@ class NotificationService
             // Yes, Member model should be Notifiable. If not, we might need to rely on email/phone directly.
             // Let's check Member model. Assuming it is Notifiable.
             $member->notify(new RegistrationReceivedNotification($member));
-            
+
             Log::info("Registration received notification sent to {$member->email}", [
                 'member_id' => $member->id,
                 'member_number' => $member->member_number,
@@ -48,7 +48,7 @@ class NotificationService
     {
         try {
             $member->user->notify(new WelcomeMemberNotification($member, $temporaryPassword));
-            
+
             Log::info("Welcome notification sent to {$member->user->email}", [
                 'member_id' => $member->id,
                 'member_number' => $member->member_number,
@@ -69,7 +69,7 @@ class NotificationService
     {
         try {
             $member->user->notify(new ApprovalNotification($member));
-            
+
             Log::info("Approval notification sent to {$member->user->email}", [
                 'member_id' => $member->id,
                 'channels' => $member->preferred_contact_method === 'sms' ? ['mail', 'sms'] : ['mail'],
@@ -87,7 +87,7 @@ class NotificationService
      */
     public function sendRejectionNotification(Member $member, string $reason): void
     {
-        \Log::info("Rejection notification sent", [
+        \Log::info('Rejection notification sent', [
             'member_id' => $member->id,
             'reason' => $reason,
         ]);
@@ -100,7 +100,7 @@ class NotificationService
     {
         try {
             $member->user->notify(new PaymentReminderNotification($amount, $dueDate));
-            
+
             Log::info("Payment reminder sent to {$member->user->email}", [
                 'member_id' => $member->id,
                 'amount' => $amount,
@@ -122,7 +122,7 @@ class NotificationService
     {
         try {
             $member->user->notify(new OverduePaymentNotification($amount));
-            
+
             Log::info("Overdue notice sent to {$member->user->email}", [
                 'member_id' => $member->id,
                 'amount' => $amount,
@@ -143,7 +143,7 @@ class NotificationService
     {
         try {
             $payment->member->user->notify(new PaymentConfirmationNotification($payment));
-            
+
             Log::info("Payment confirmation sent to {$payment->member->user->email}", [
                 'payment_id' => $payment->id,
                 'amount' => $payment->amount,

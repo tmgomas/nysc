@@ -17,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Trust all proxies - required for Digital Ocean / Nginx reverse proxy (fixes 419 CSRF)
         $middleware->trustProxies(at: '*');
+        $middleware->validateCsrfTokens(except: [
+            'payhere/notify',
+        ]);
 
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
@@ -25,7 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
-        
+
         // Register Spatie Permission middleware aliases
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
@@ -39,10 +42,10 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->expectsJson()) {
                 return response()->json([
                     'message' => $e->getMessage(),
-                    'error' => 'invalid_payment_amount'
+                    'error' => 'invalid_payment_amount',
                 ], 422);
             }
-            
+
             return back()->withErrors(['amount' => $e->getMessage()]);
         });
 
@@ -50,10 +53,10 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->expectsJson()) {
                 return response()->json([
                     'message' => $e->getMessage(),
-                    'error' => 'payment_not_found'
+                    'error' => 'payment_not_found',
                 ], 404);
             }
-            
+
             return back()->withErrors(['payment' => $e->getMessage()]);
         });
 
@@ -62,10 +65,10 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->expectsJson()) {
                 return response()->json([
                     'message' => $e->getMessage(),
-                    'error' => 'member_not_found'
+                    'error' => 'member_not_found',
                 ], 404);
             }
-            
+
             return redirect()->route('admin.members.index')
                 ->withErrors(['member' => $e->getMessage()]);
         });
@@ -74,10 +77,10 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->expectsJson()) {
                 return response()->json([
                     'message' => $e->getMessage(),
-                    'error' => 'invalid_member_status'
+                    'error' => 'invalid_member_status',
                 ], 403);
             }
-            
+
             return back()->withErrors(['status' => $e->getMessage()]);
         });
 
@@ -86,10 +89,10 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->expectsJson()) {
                 return response()->json([
                     'message' => $e->getMessage(),
-                    'error' => 'sport_not_found'
+                    'error' => 'sport_not_found',
                 ], 404);
             }
-            
+
             return back()->withErrors(['sport' => $e->getMessage()]);
         });
 
@@ -97,11 +100,10 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->expectsJson()) {
                 return response()->json([
                     'message' => $e->getMessage(),
-                    'error' => 'sport_capacity_exceeded'
+                    'error' => 'sport_capacity_exceeded',
                 ], 422);
             }
-            
+
             return back()->withErrors(['sport' => $e->getMessage()]);
         });
     })->create();
-

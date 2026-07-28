@@ -2,10 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\MemberStatus;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\Enums\MemberStatus;
 
 class CheckMembershipStatus
 {
@@ -16,18 +16,18 @@ class CheckMembershipStatus
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return redirect()->route('login');
         }
 
         // Check if user has a member profile
-        if (!$user->member) {
+        if (! $user->member) {
             abort(403, 'No member profile found.');
         }
 
         // Check if member is active
         if ($user->member->status !== MemberStatus::ACTIVE) {
-            $message = match($user->member->status) {
+            $message = match ($user->member->status) {
                 MemberStatus::PENDING => 'Your membership is pending approval.',
                 MemberStatus::SUSPENDED => 'Your membership has been suspended.',
                 MemberStatus::INACTIVE => 'Your membership is inactive.',

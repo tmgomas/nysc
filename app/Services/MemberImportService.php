@@ -7,7 +7,6 @@ use App\Models\MemberImportLog;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Carbon\Carbon;
 
 class MemberImportService
 {
@@ -24,7 +23,7 @@ class MemberImportService
     public function previewImport(UploadedFile $file): array
     {
         $data = $this->parseCsvFile($file);
-        
+
         $preview = [
             'total_rows' => count($data),
             'valid_rows' => 0,
@@ -36,7 +35,7 @@ class MemberImportService
         // Validate all rows and count
         foreach ($data as $index => $row) {
             $validation = $this->validateRow($row, $index + 2); // +2 for header and 0-index
-            
+
             if ($validation['valid']) {
                 $preview['valid_rows']++;
             } else {
@@ -49,7 +48,7 @@ class MemberImportService
                     ];
                 }
             }
-            
+
             // Only add first 10 rows to samples
             if (count($preview['samples']) < 10) {
                 $preview['samples'][] = [
@@ -73,7 +72,7 @@ class MemberImportService
         $autoApprove = $options['auto_approve'] ?? false;
 
         $data = $this->parseCsvFile($file);
-        
+
         $result = [
             'success_count' => 0,
             'error_count' => 0,
@@ -90,43 +89,45 @@ class MemberImportService
         ]);
 
         DB::beginTransaction();
-        
+
         try {
             foreach ($data as $index => $row) {
                 $rowNumber = $index + 2; // +2 for header and 0-index
-                
+
                 try {
                     // Validate row
                     $validation = $this->validateRow($row, $rowNumber);
-                    
-                    if (!$validation['valid']) {
+
+                    if (! $validation['valid']) {
                         $result['error_count']++;
                         $result['errors'][] = [
                             'row' => $rowNumber,
                             'errors' => $validation['errors'],
                         ];
+
                         continue;
                     }
 
                     // Check for duplicates
                     if ($skipDuplicates && $this->isDuplicate($row)) {
                         $result['skipped_count']++;
+
                         continue;
                     }
 
                     // Prepare member data
                     $memberData = $this->prepareMemberData($row);
-                    
+
                     // Register member
                     $member = $this->memberService->register($memberData);
-                    
+
                     // Auto-approve if requested
                     if ($autoApprove) {
                         $this->memberService->approveAndCreateAccount($member);
                     }
-                    
+
                     $result['success_count']++;
-                    
+
                 } catch (\Exception $e) {
                     $result['error_count']++;
                     $result['errors'][] = [
@@ -147,15 +148,15 @@ class MemberImportService
             ]);
 
             DB::commit();
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             $importLog->update([
                 'status' => 'failed',
                 'errors' => [['message' => $e->getMessage()]],
             ]);
-            
+
             throw $e;
         }
 
@@ -169,11 +170,11 @@ class MemberImportService
     {
         $data = [];
         $handle = fopen($file->getRealPath(), 'r');
-        
+
         // Get headers
         $headers = fgetcsv($handle);
-        
-        if (!$headers) {
+
+        if (! $headers) {
             throw new \Exception('Invalid CSV file: No headers found');
         }
 
@@ -183,13 +184,13 @@ class MemberImportService
             if (empty(array_filter($row))) {
                 continue;
             }
-            
+
             // Combine headers with row data
             $data[] = array_combine($headers, $row);
         }
-        
+
         fclose($handle);
-        
+
         return $data;
     }
 
@@ -237,14 +238,14 @@ class MemberImportService
     protected function isDuplicate(array $row): bool
     {
         // Check by NIC/Passport
-        if (!empty($row['nic_passport'])) {
+        if (! empty($row['nic_passport'])) {
             if (Member::where('nic_passport', $row['nic_passport'])->exists()) {
                 return true;
             }
         }
 
         // Check by email
-        if (!empty($row['email'])) {
+        if (! empty($row['email'])) {
             if (Member::where('email', $row['email'])->exists()) {
                 return true;
             }
@@ -260,12 +261,12 @@ class MemberImportService
     {
         // Parse program IDs - handle empty values
         $programIds = [];
-        if (!empty($row['program_ids'])) {
+        if (! empty($row['program_ids'])) {
             $programIds = array_filter(array_map('trim', explode(',', $row['program_ids'])));
         }
 
         // Parse preferred training days
-        $preferredTrainingDays = !empty($row['preferred_training_days']) 
+        $preferredTrainingDays = ! empty($row['preferred_training_days'])
             ? array_map('trim', explode(',', $row['preferred_training_days']))
             : [];
 
